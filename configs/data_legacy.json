@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "inputs": [
+    {
+      "path": "crawl/dataset.csv",
+      "format": "csv",
+      "role": "comments",
+      "source_dataset": "legacy_crawl",
+      "post_namespace": "legacy_facebook",
+      "columns": {"text_raw": "text"},
+      "license": null,
+      "privacy": null,
+      "movie_id": null
+    },
+    {
+      "path": "crawl/dataset_daxuly_gannhan.csv",
+      "format": "csv",
+      "role": "annotations",
+      "source_dataset": "legacy_crawl",
+      "join_on": "text_raw_hash",
+      "columns": {"text_raw": "text"},
+      "annotations": {
+        "machine": {
+          "column": "nhan_may",
+          "values": {"positive": "POS", "negative": "NEG", "neutral": "NEU", "hard": "REVIEW", "unrelated": "EXCLUDE"},
+          "model_id": "legacy_lexicon_gan_nhan",
+          "model_version": "unknown_legacy_run",
+          "score_column": "do_tin",
+          "score_kind": "uncalibrated_heuristic_not_probability"
+        },
+        "human": {
+          "column": "nhan_nguoi",
+          "values": {"POS": "POS", "NEG": "NEG", "NEU": "NEU", "REVIEW": "REVIEW", "EXCLUDE": "EXCLUDE", "positive": "POS", "negative": "NEG", "neutral": "NEU", "hard": "REVIEW", "unrelated": "EXCLUDE"}
+        }
+      }
+    }
+  ],
+  "quality": {
+    "ui_strings": ["Thích", "Phản hồi", "Trả lời", "Chia sẻ", "Xem thêm", "Xem bản dịch", "Viết bình luận", "Tất cả bình luận", "Bình luận hàng đầu", "Mới nhất", "Cũ nhất"],
+    "spam_patterns": []
+  },
+  "near_duplicate": {"threshold": 0.9, "min_chars": 40, "shingle_size": 3},
+  "split": {"seed": 42, "ratios": {"train": 0.7, "dev": 0.15, "test": 0.15}}
+}

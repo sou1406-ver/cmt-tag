@@ -1,0 +1,14 @@
+# Local datasets, labels, model artifacts and existing animation outputs
+/data/
+/outputs/
+/crawl/*.csv
+/media/
+.venv/
+.venv-*/
+__pycache__/
+*.py[cod]
+*.npz
+*.npy
+*.pkl
+*.model
+.pytest_cache/

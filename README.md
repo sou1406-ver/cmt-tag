@@ -1,0 +1,168 @@
+# Phân loại sắc thái bình luận phim tiếng Việt
+
+Đặc tả chính thức: [CODEX_HANDOFF_MOVIE_SENTIMENT.md](CODEX_HANDOFF_MOVIE_SENTIMENT.md).
+Đã triển khai **Phase A (audit)** và **Phase B (data foundation)**. Phạm vi chỉ
+là comment về phim với ba sentiment `POS / NEG / NEU`.
+`REVIEW` và `EXCLUDE` là trạng thái, không phải lớp huấn luyện.
+
+## Setup và test
+
+Phase B chỉ cần **Python 3.10+**, dùng standard library. Không cần cài package
+trong `requirements-data.txt`. Không sửa virtualenv cũ trong `.venv`.
+
+Chạy tại thư mục gốc:
+
+```powershell
+python -m unittest discover -s tests -v
+python scripts/prepare_data.py --config configs/data_fixture.json --output-root outputs/fixture_data
+```
+
+Máy hiện tại chưa có Python trên PATH chạy được. Có thể dùng Python bundled
+đã kiểm tra (đổi đường dẫn nếu máy khác):
+
+```powershell
+$pythonExe = 'C:\Users\phuc1\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe'
+& $pythonExe -m unittest discover -s tests -v
+& $pythonExe scripts/prepare_data.py --config configs/data_legacy.json
+```
+
+Test tích hợp của `gan_nhan.py` dùng pandas nếu có, nếu thiếu sẽ ghi rõ skipped;
+các test nền tảng dữ liệu không cần pandas. sklearn/scipy/torch/pyvi/manim
+của scripts cũ chưa được cài/xác nhận, không thuộc dependency Phase B.
+
+## Dữ liệu và chạy pipeline
+
+Kiểm kê ban đầu: `crawl/dataset.csv` có **3.471 dòng raw**;
+hai file derived có **3.430 dòng**. Toàn bộ `nhan_nguoi` trống. Không có file
+29k hoặc metadata bài/comment được xác nhận. CSV thật được giữ local và
+gitignore. Clone repo mới vẫn chạy được fixture CSV/JSON trong `tests/fixtures`.
+
+Với dữ liệu local hiện có:
+
+```powershell
+python scripts/prepare_data.py --config configs/data_legacy.json
+```
+
+Lệnh in `data_version`, số lượng, warnings, đường dẫn report và manifest.
+Sau đó xác minh phiên bản vừa tạo:
+
+```powershell
+python scripts/validate_data.py --data-root data --version <data_version>
+```
+
+Lệnh dưới đây **phải thất bại** với dữ liệu hiện tại, vì chưa có gold:
+
+```powershell
+python scripts/validate_data.py --data-root data --version <data_version> --require-gold
+```
+
+Mỗi phiên bản gồm:
+
+```text
+data/raw/<input_sha256>/<original_name>      snapshot byte nguyên vẹn
+data/processed/<version>/records.jsonl       tất cả dòng + metadata + provenance
+data/processed/<version>/quality_decisions.jsonl
+data/processed/<version>/near_duplicates.jsonl
+data/processed/<version>/config.json
+data/processed/<version>/report.json
+data/processed/<version>/run.json
+data/splits/<version>/manifest.json
+data/splits/<version>/{train,dev,test}_blind.jsonl
+```
+
+Không ghi đè dữ liệu gốc hoặc phiên bản đã có. Cùng input/config/code/runtime
+sẽ có cùng version, IDs, processed records và split. Chạy lại đúng phiên bản
+đã có trả lỗi để bảo vệ artifacts; có thể đọc/validate phiên bản hiện tại hoặc
+chọn `--output-root` mới khi cần chạy lại kiểm chứng. `run.json` ghi thời điểm
+hoàn tất; report lưu checksum input/code/config/output và Python runtime.
+Một thư mục chưa có `run.json` status complete là run chưa hoàn tất, không sử dụng.
+
+## Cấu hình nguồn mới
+
+Dựa theo `configs/data_fixture.json` cho CSV và JSON array of objects, UTF-8
+(có hoặc không BOM). Mỗi nguồn khai báo rõ `source_dataset`, `path`, `format`,
+và `columns` map tên chuẩn → cột đầu vào. Không tự dò cột.
+
+```json
+{
+  "path": "data_local/comments.json",
+  "format": "json",
+  "source_dataset": "source_batch_01",
+  "post_namespace": "facebook",
+  "columns": {
+    "text_raw": "message",
+    "comment_id": "id",
+    "post_id": "post",
+    "post_url": "url",
+    "collected_at": "collection_time"
+  },
+  "license": null,
+  "privacy": null
+}
+```
+
+Nguồn cùng nền tảng dùng cùng `post_namespace` để nối các post/comment ID;
+không mặc định numeric ID của hai nền tảng là cùng bài. Metadata thiếu là
+`null`. ID nội bộ là hash định danh nguồn + comment ID nếu có, nếu thiếu dùng
+hash raw + occurrence của bản trùng; không giả mạo ID ngoài hay thời gian thu thập.
+Tách nguồn theo batch khi cần; không nhập raw và derived thành hai corpus độc lập.
+
+Config local dùng file gán nhãn cũ làm **annotation sidecar**, join theo hash
+`text_raw` chính xác, không theo thứ tự dòng hay `clean`. `report.json` báo
+dòng match/unmatched. Nhãn `positive/negative/neutral` map sang đề xuất máy
+`POS/NEG/NEU`, `hard` sang REVIEW, `unrelated` sang đề xuất EXCLUDE.
+`model_version=unknown_legacy_run` ghi rõ không biết phiên bản chạy cũ;
+`do_tin` chỉ là heuristic, không phải xác suất. Nhãn máy EXCLUDE chưa được
+con người xác nhận **không tự loại comment**.
+
+## Bảo toàn dữ liệu và chống leakage
+
+- Giữ `text_raw`; processed chỉ NFC + chuẩn hóa khoảng trắng. Giữ emoji,
+  dấu câu, chữ số, teencode, phủ định và cả nội dung ngoài phim trong comment.
+- Quality loại rỗng, UI exact match, suffix UI có dấu ellipsis; spam chỉ theo
+  regex cấu hình rõ ràng (mặc định rỗng). Không lọc theo độ dài hay chính tả.
+- Exact dedup theo NFC/whitespace/casefold. Mỗi dòng vẫn nằm trong records,
+  bản trùng có `duplicate_of` và không trở thành mẫu độc lập.
+- Near duplicate: token 3-gram Jaccard ≥ 0.9, từ 40 ký tự (cấu hình được).
+  Giữ cả hai dòng, xuất cặp + score `pending_review`, gom cùng nhóm split.
+  Đây là heuristic bảo thủ, không phát hiện hết paraphrase và không tự xóa.
+- Union các post ID/URL, comment ID, exact duplicate và near candidate;
+  nối cả nhóm bắc cầu trước khi split. Seed 42; cố gắng gần tỷ lệ yêu cầu,
+  giữ nguyên nhóm kể cả khi một tập rỗng hoặc phân phối lệch.
+- Pool ban đầu không dùng nhãn máy/người để cân bằng; phân phối thật được
+  báo riêng sau lọc. Sau annotation cần kiểm tra lại đại diện ba lớp.
+- Thiếu post metadata ở dữ liệu thật: chỉ kiểm tra trùng text/nhóm phát hiện,
+  **không chứng minh được độc lập bài viết hoặc phim/nguồn chưa từng thấy**.
+- Manifest B là **annotation pool reservation**, `locked_gold=false`.
+  Bản `*_blind.jsonl` không có nhãn hay dự đoán/score. Dùng chúng cho người
+  gán dev/test; không mở đề xuất máy để quyết định đáp án holdout.
+- Lịch sử `annotations.human` và `annotations.machine` tách biệt, append-only.
+  Nhãn người cũ chưa có người xác nhận/timestamp/guideline vẫn chưa là gold.
+  Dev/test gold phải có xác nhận `evidence_mode=blind`, không dùng nhãn máy.
+  Nhãn người xung đột trên exact duplicates cần phân xử trước khi dùng gold.
+
+Chi tiết field và validation: [docs/DATA_SCHEMA.md](docs/DATA_SCHEMA.md).
+
+## Scripts cũ và các phase tiếp theo
+
+`gan_nhan.py` được giữ thuật toán cũ để đối chiếu, chỉ vá bảo toàn nhãn người,
+metadata và từ chối ghi đè file. Không dùng nhãn luật làm gold hoặc ép cân bằng.
+`trich_dac_trung.py` giữ các helper nhưng CLI giờ yêu cầu `records.jsonl`,
+`--split-manifest` và `--near-duplicates`, xác minh nhóm rồi chỉ fit train pool.
+Chưa chạy numerical feature extraction vì môi trường thiếu sklearn/scipy.
+Không dùng `X_*.npz` cũ đã fit toàn corpus cho thực nghiệm. Phase D sẽ nối
+gold labels, train-only vectorization, transform dev/test và test vocabulary.
+
+Chưa triển khai `sample-annotation`, train/evaluate, active learning,
+pseudo-labeling hay Transformer. Các trường provenance/pseudo trong schema
+chỉ là ràng buộc dữ liệu, không phải một thuật toán pseudo đã được kiểm định.
+Tiếp theo: **Phase C** guideline versioned, dry-run/pilot sampler, bảng gán
+độc lập, review queue, agreement/kappa; sau đó Phase D baseline trên fixture
+và gold thật khi có. Chưa có kết quả thực nghiệm sentiment được công bố.
+
+Không thay crawler trước Phase G. MMR và media cũ giữ nguyên, không nhập vào
+pipeline sentiment. Chỉ code/config/docs/fixture được đưa lên Git; không đưa
+CSV comment thật, snapshot, annotation thật, model, media hoặc virtualenv.
+
+Audit và báo cáo phase: [Phase A](docs/REPO_AUDIT_PHASE_A.md),
+[Phase B](docs/PHASE_B_REPORT.md).

@@ -1,0 +1,1 @@
+"""Vietnamese movie sentiment pipeline."""

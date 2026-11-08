@@ -1,0 +1,2 @@
+# Phase B uses only the Python 3.10+ standard library.
+# No installation is required; tests run with unittest.

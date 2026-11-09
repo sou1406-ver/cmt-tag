@@ -88,7 +88,14 @@
     if (!dialog) targets.push(document.scrollingElement);
     for (const target of new Set(targets.filter(Boolean))) {
       const before = target.scrollTop;
-      target.scrollBy(0,Math.max(180,target.clientHeight*.7));
+      // collect() has already read every currently loaded comment container.
+      // Move to the end of that loaded range instead of rereading it in tiny
+      // viewport steps. Do not jump past an unrendered/virtualized spacer.
+      const viewportBottom=target===document.scrollingElement ? innerHeight :
+        target.getBoundingClientRect().top+target.clientHeight;
+      const loadedBottom=comments.filter(c=>target.contains(c)).reduce(
+        (bottom,c)=>Math.max(bottom,c.getBoundingClientRect().bottom),viewportBottom);
+      target.scrollBy(0,Math.max(180,target.clientHeight*.7,loadedBottom-viewportBottom));
       if (target.scrollTop > before) return {moved:true};
     }
     return {moved:false};

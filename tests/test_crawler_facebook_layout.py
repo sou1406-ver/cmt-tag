@@ -189,5 +189,21 @@ class FacebookLayoutTests(unittest.TestCase):
             self.assertEqual(len(store.rows),33)
             self.assertEqual(len({r['comment_id'] for r in store.rows}),33)
 
+    def test_scroll_reaches_loaded_tail_without_jumping_virtual_spacer(self):
+        comments=''.join(f'<div aria-label="Comment by Fixture" style="height:50px">'
+            f'<div dir="auto">Fixture {i}</div><a href="{GROUP}?comment_id={500+i}">time</a></div>'
+            for i in range(30))
+        self.load(f'<div style="height:3000px">Background feed</div>'
+            f'<div role="dialog" id="viewport" style="position:fixed;top:0;height:200px;overflow-y:auto">'
+            f'<a href="{GROUP}">source</a>{comments}<div style="height:10000px"></div></div>')
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual((len(rows),errors),(30,0))
+        before=self.driver.execute_script('return document.scrollingElement.scrollTop')
+        self.assertTrue(dom(self.driver,GROUP,'scroll')['moved'])
+        position=self.driver.execute_script('return document.getElementById("viewport").scrollTop')
+        self.assertGreater(position,1000)
+        self.assertLess(position,1600)
+        self.assertEqual(self.driver.execute_script('return document.scrollingElement.scrollTop'),before)
+
 
 if __name__=='__main__': unittest.main()

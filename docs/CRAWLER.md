@@ -388,3 +388,9 @@ chứa link/tag/emoji, loại tác giả, giữ lỗi DOM trong partial export v
 raw sai kể cả khi bật --allow-partial. Audit raw local xác nhận không có field
 author/username/profile/cookie/token; text_raw là nội dung message, không lấy
 header tên tác giả. Tên được tag trong nội dung comment vẫn thuộc text gốc.
+
+Tối ưu cuộn sau đó: **107 tests PASS, không skip**. Sau khi đọc mọi container
+đã tải trong DOM, crawler cuộn đúng viewport tới cuối phạm vi đã đọc, thay vì
+lặp lại phạm vi đó từng đoạn màn hình. Không nhảy thẳng tới scrollHeight qua
+spacer chưa render; fixture có spacer 10.000px xác minh điểm dừng ở tail comment
+đã tải và feed phía sau dialog không bị cuộn.

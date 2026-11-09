@@ -3,3 +3,4 @@ docs/guidelines/MOVIE_SENTIMENT_V2_0.md -text whitespace=-blank-at-eol
 # Preserve CSV bytes and whitespace inside quoted comments for checksum/provenance.
 data/imports/facebook_fresh/comments.csv -text whitespace=-blank-at-eol
 data/imports/facebook_group_1909400102999925/comments.csv -text whitespace=-blank-at-eol
+data/imports/facebook_group_pilot_20261110/comments.csv -text whitespace=-blank-at-eol

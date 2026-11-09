@@ -1,0 +1,199 @@
+{
+  "run_id": "fb_cfe87db5d35f41088e494b585bfe97ec",
+  "source": "facebook",
+  "source_run_count": 1,
+  "merged": false,
+  "raw_records": 504,
+  "exported_text_records": 504,
+  "by_movie": {
+    "rom": 19,
+    "mua_do": 24,
+    "mai": 300,
+    "quy_nhap_trang_2": 95,
+    "dao_pho_va_piano": 66
+  },
+  "by_group": {
+    "binhphim": 19,
+    "youneverwatchedthismovie": 485
+  },
+  "record_types": {
+    "comment": 177,
+    "reply": 327
+  },
+  "source_posts": [
+    {
+      "post_url": "https://www.facebook.com/groups/binhphim/permalink/838995763504724",
+      "movie_id": "rom",
+      "group": "binhphim",
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "selection_reason": "Review phim Ròm; kiểm tra tên phim trên bài gốc; nhóm công khai. Không suy ra nhãn comment từ quan điểm bài.",
+      "public_verified": true
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1898631627410106",
+      "movie_id": "mua_do",
+      "group": "youneverwatchedthismovie",
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "selection_reason": "Bài REVIEW PHIM MƯA ĐỎ; tên phim và nội dung phân tích được đọc trên bài gốc, nhóm công khai; nguồn được chọn cho pilot, không phải nhãn sentiment.",
+      "public_verified": true
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1488490685090871",
+      "movie_id": "mai",
+      "group": "youneverwatchedthismovie",
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "selection_reason": "Review Mai có phê bình cụ thể kịch bản, nhịp phim, chuyển cảnh; chọn cho khảo sát train/pilot, không suy ra nhãn comment.",
+      "public_verified": true
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1486195815320358",
+      "movie_id": "mai",
+      "group": "youneverwatchedthismovie",
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "selection_reason": "Review Mai thảo luận kịch bản và cách triển khai; bổ sung góc nhìn trong cùng phim; comment chưa được gán nhãn.",
+      "public_verified": true
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/2051192968820637",
+      "movie_id": "quy_nhap_trang_2",
+      "group": "youneverwatchedthismovie",
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "selection_reason": "Bài bàn riêng kịch bản và diễn xuất Quỷ Nhập Tràng 2; loại các bài quảng bá poster/doanh thu khỏi đợt pilot.",
+      "public_verified": true
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1488365451770061",
+      "movie_id": "dao_pho_va_piano",
+      "group": "youneverwatchedthismovie",
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "selection_reason": "Bài review Đào, phở và piano; ưu tiên theo số bình luận nhìn thấy trong các bài đã khảo sát; không khẳng định đứng đầu toàn nhóm.",
+      "public_verified": true,
+      "engagement_observed": [
+        "1.461 bình luận",
+        "977 lượt chia sẻ"
+      ],
+      "engagement_observed_at": "2026-11-09T22:38:21.841676+00:00",
+      "selection_stage": "prioritize_comment_count"
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1490824468190826",
+      "movie_id": "dao_pho_va_piano",
+      "group": "youneverwatchedthismovie",
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "selection_reason": "Bài phản biện lời chê Đào, phở và piano; bàn kỹ xảo, kịch bản, lời thoại; ưu tiên 198 bình luận hiển thị. Không suy ra sentiment của comment từ thái độ bài gốc.",
+      "public_verified": true,
+      "engagement_observed": [
+        "198 bình luận",
+        "147 lượt chia sẻ"
+      ],
+      "engagement_observed_at": "2026-11-09T22:39:43.665923+00:00",
+      "selection_stage": "prioritize_comment_count"
+    }
+  ],
+  "post_results": [
+    {
+      "post_url": "https://www.facebook.com/groups/binhphim/permalink/838995763504724",
+      "movie_id": "rom",
+      "status": "success",
+      "reason": "visible_dom_exhausted",
+      "at": "2026-11-09T22:09:08.628104+00:00",
+      "attempt": 1
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1898631627410106",
+      "movie_id": "mua_do",
+      "status": "success",
+      "reason": "visible_dom_exhausted",
+      "at": "2026-11-09T22:20:19.440057+00:00",
+      "attempt": 1
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1488490685090871",
+      "movie_id": "mai",
+      "status": "partial",
+      "reason": "comment_limit",
+      "at": "2026-11-09T22:23:54.952442+00:00",
+      "attempt": 1
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1486195815320358",
+      "movie_id": "mai",
+      "status": "partial",
+      "reason": "comment_limit",
+      "at": "2026-11-09T22:24:07.536868+00:00",
+      "attempt": 1
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/2051192968820637",
+      "movie_id": "quy_nhap_trang_2",
+      "status": "partial",
+      "reason": "unparsed_comments",
+      "at": "2026-11-09T22:27:29.707140+00:00",
+      "attempt": 1
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1488365451770061",
+      "movie_id": "dao_pho_va_piano",
+      "status": "success",
+      "reason": "visible_dom_exhausted",
+      "at": "2026-11-09T22:38:21.839804+00:00",
+      "attempt": 1
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1490824468190826",
+      "movie_id": "dao_pho_va_piano",
+      "status": "success",
+      "reason": "visible_dom_exhausted",
+      "at": "2026-11-09T22:39:43.663190+00:00",
+      "attempt": 1
+    }
+  ],
+  "per_post_exported": {
+    "838995763504724": 19,
+    "1898631627410106": 24,
+    "1488490685090871": 150,
+    "1486195815320358": 150,
+    "2051192968820637": 95,
+    "1488365451770061": 38,
+    "1490824468190826": 28
+  },
+  "removed_account_mentions": 0,
+  "omitted_non_emoji_image_alts": 12,
+  "context_review_records": 3,
+  "excluded_reason_counts": {},
+  "raw_sha256": "b11f0ddf52c0ce69b05f94b445cdcc357a43d48a5ac28d90206d95dec4cf10c8",
+  "csv_sha256": "6c9f4d78a7715db97926ef9274eb80a3fd7dfd10ad33ab5bfe855d2dbdb5c88a",
+  "raw_storage": "local_only; original messages and browser profile are not published",
+  "raw_validation_errors": 0,
+  "dom_parse_observations": 20,
+  "coverage_verified": false,
+  "labels_created": false,
+  "evaluation_split_frozen": false,
+  "selection_method": "Targeted convenience sample of public film review/discussion posts. Initial posts selected for relevant content; later posts prioritize visible comment counts within inspected candidates. Not a verified ranking of all group posts.",
+  "limits": {
+    "interactive": true,
+    "max_posts": 30,
+    "max_comments": 150,
+    "max_rounds": 300,
+    "post_timeout": 300,
+    "max_actions": 20,
+    "wait_ms": 15000,
+    "settle_ms": 1500,
+    "idle_rounds": 4,
+    "retries": 0,
+    "source_dataset": null
+  },
+  "cleaning_policy": "Existing dom_text_v2 only: remove identifiable account-link nodes; preserve ambiguous plaintext names, emoji, negation and line breaks. No author_name/author_id fields.",
+  "clean_text_field": "text",
+  "disjoint_from_previous_exports": true,
+  "xlsx_sha256": "32cfd21667560c20c178387d64dfd3345d86036d67e0fe4b1ced9773ef14c1f7",
+  "verified_xlsx_cells": 9595,
+  "artifact_validation": "passed"
+}

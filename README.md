@@ -34,8 +34,11 @@ observation đầy đủ vào CSV cùng `import_config.json` để chạy Phase 
 |---|---:|---|---|
 | Bài trang phim | 1.538 | [CSV](data/imports/facebook_fresh/comments.csv) | [Excel](data/imports/facebook_fresh/comments.xlsx) |
 | Bài nhóm `1909400102999925` | 117 | [CSV](data/imports/facebook_group_1909400102999925/comments.csv) | [Excel](data/imports/facebook_group_1909400102999925/comments.xlsx) |
+| Pilot 7 bài nhóm, 5 phim — 10/11/2026 | 504 | [CSV](data/imports/facebook_group_pilot_20261110/comments.csv) | [Excel](data/imports/facebook_group_pilot_20261110/comments.xlsx) |
 
-Mỗi bản thuộc một run riêng, kèm nguồn, mã phim `mua_do` theo đầu vào và ID.
+Mỗi bản thuộc một run riêng, kèm nguồn, mã phim theo đầu vào và ID.
+Hai bản đầu là `mua_do`; bản pilot có 5 phim và thêm cột `source_group`.
+Chi tiết nguồn, số lượng và giới hạn của đợt mới: [pilot nhóm phim](docs/FACEBOOK_GROUP_PILOT_20261110.md).
 Cột `text` bỏ tag tài khoản được nhận dạng từ node DOM, giữ emoji Unicode,
 phủ định và xuống dòng. Dữ liệu chưa gán nhãn; các run còn `partial`, chưa xác
 nhận đủ toàn bộ bình luận. `export_manifest.json` trong từng thư mục ghi nguồn,
@@ -46,6 +49,7 @@ Import từ thư mục gốc repo:
 ```powershell
 python scripts/prepare_data.py --config data/imports/facebook_fresh/import_config.json
 python scripts/prepare_data.py --config data/imports/facebook_group_1909400102999925/import_config.json
+python scripts/prepare_data.py --config data/imports/facebook_group_pilot_20261110/import_config.json
 ```
 
 ## Setup và test

@@ -14,6 +14,12 @@
 !/data/imports/facebook_group_1909400102999925/comments.xlsx
 !/data/imports/facebook_group_1909400102999925/import_config.json
 !/data/imports/facebook_group_1909400102999925/export_manifest.json
+!/data/imports/facebook_group_pilot_20261110/
+/data/imports/facebook_group_pilot_20261110/*
+!/data/imports/facebook_group_pilot_20261110/comments.csv
+!/data/imports/facebook_group_pilot_20261110/comments.xlsx
+!/data/imports/facebook_group_pilot_20261110/import_config.json
+!/data/imports/facebook_group_pilot_20261110/export_manifest.json
 /outputs/
 /crawl/*.csv
 # Retain protection for legacy local media; no media is present in this clone.

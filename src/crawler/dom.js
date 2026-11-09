@@ -134,21 +134,49 @@
         has_link:!!node.querySelector('a[href]'),has_button:!!node.querySelector('button,[role="button"]')}))}];
     const body = bodies[0].cloneNode(true);
     body.querySelectorAll('[role="button"],button').forEach(node => node.remove());
-    let text = '';
-    const walk = node => {
-      if (node.nodeType === Node.TEXT_NODE) text += node.textContent;
-      else if (node.nodeName === 'BR') text += '\n';
-      else if (node.nodeName === 'IMG') text += node.getAttribute('alt') || '';
-      else {
-        if (['DIV','P'].includes(node.nodeName) && text && !text.endsWith('\n')) text+='\n';
-        node.childNodes.forEach(walk);
-      }
+    // Only use an image alt as text when it is an actual Unicode emoji
+    // sequence. Never turn an attachment's generated caption into a comment.
+    const emojiAlt = value => /^(?:[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\p{Emoji_Modifier}\uFE0E\uFE0F\u200D\u{E0020}-\u{E007F}]|[0-9#*]\uFE0F?\u20E3)+$/u.test(value);
+    const accountLink = node => {
+      if (!node.matches?.('a[href],[role="link"][href]')) return false;
+      try {
+        const u=new URL(node.getAttribute('href'),document.baseURI);
+        if (u.protocol!=='https:' || !/(^|\.)facebook\.com$/i.test(u.hostname) ||
+            u.searchParams.has('comment_id') || u.searchParams.has('reply_comment_id')) return false;
+        if (u.pathname==='/profile.php') return /^\d+$/.test(u.searchParams.get('id')||'');
+        if (/\.php$/i.test(u.pathname)) return false;
+        if (/^\/people\/[^/]+\/\d+\/?$/.test(u.pathname)) return true;
+        // A Facebook identity link can refer to a person or page. Strip only
+        // that linked mention, never guess names from capitalized plain text.
+        return /^\/[A-Za-z0-9.]+\/?$/.test(u.pathname) &&
+          !/^\/(?:photo|photos|watch|reel|reels|groups|events|pages|hashtag|share|stories|login|help|marketplace)\/?$/i.test(u.pathname);
+      } catch { return false; }
     };
-    walk(body);
+    const renderText = removeMentions => {
+      let text='',mentions=0,media=0;
+      const walk=node=>{
+        if (node.nodeType===Node.TEXT_NODE) text+=node.textContent;
+        else if (node.nodeName==='BR') text+='\n';
+        else if (node.nodeName==='IMG') {
+          const alt=node.getAttribute('alt')||'';
+          if (emojiAlt(alt)) text+=alt; else media++;
+        } else if (removeMentions && accountLink(node)) mentions++;
+        else {
+          if (['DIV','P'].includes(node.nodeName) && text && !text.endsWith('\n')) text+='\n';
+          node.childNodes.forEach(walk);
+        }
+      };
+      walk(body);
+      if (removeMentions && mentions) text=text.replace(/^[\s,:;–—-]+/u,'').replace(/[ \t]{2,}/g,' ').trimEnd();
+      return {text,mentions,media};
+    };
+    const original=renderText(false),withoutMentions=renderText(true);
     if (!window.__cmtSeen.has(el)) window.__cmtSeen.set(el,String(++window.__cmtSeq));
     const parent = el.parentElement?.closest(boundary);
     const parentLink = commentSet.has(parent) ? own(parent,'a[href]').find(a => /[?&]comment_id=\d+/.test(a.href)) : null;
-    return [{text_raw:text,permalink:link?.href || null,observation_id:window.__cmtSeen.get(el),
+    return [{text_raw:original.text,text_without_mentions:withoutMentions.text,
+      mention_count:withoutMentions.mentions,non_text_media_count:original.media,text_extraction_version:'dom_text_v2',
+      permalink:link?.href || null,observation_id:window.__cmtSeen.get(el),
       is_reply:commentSet.has(parent) || /^(reply|phản hồi)/i.test(el.getAttribute('aria-label') || ''),
       parent_permalink:parentLink?.href || null,
       created_at:own(el,'time[datetime]')[0]?.getAttribute('datetime') || null,

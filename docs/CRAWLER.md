@@ -394,3 +394,34 @@ Tối ưu cuộn sau đó: **107 tests PASS, không skip**. Sau khi đọc mọi
 lặp lại phạm vi đó từng đoạn màn hình. Không nhảy thẳng tới scrollHeight qua
 spacer chưa render; fixture có spacer 10.000px xác minh điểm dừng ở tail comment
 đã tải và feed phía sau dialog không bị cuộn.
+
+### Tách tag tài khoản và giữ emoji khi cào mới (09/11/2026)
+
+`dom_text_v2` ghi thêm `text_without_mentions`, `mention_count`,
+`non_text_media_count`, `text_extraction_version` bên cạnh `text_raw` trong raw
+journal. Bản không tag loại đúng node link danh tính Facebook trong message
+(profile.php?id, people/.../ID hoặc username). Link này có thể trỏ tới người
+hoặc trang; không nhận dạng tên người bằng regex chữ hoa. Tên phim, diễn viên,
+nhân vật được viết bằng văn bản thường và link ngoài Facebook được giữ nguyên.
+Không thu header tên tác giả, URL profile của tác giả hay cookie.
+
+`text_raw` giữ text của message, gồm tag gốc để audit; file raw cũ không bị sửa.
+Khi emoji được render bằng IMG, chỉ alt là chuỗi emoji Unicode mới được nối vào
+text. Mô tả ảnh/sticker không được coi là câu của người bình luận; chỉ ghi số
+media bị bỏ alt. Emoji văn bản được giữ nguyên, không dịch thành từ cảm xúc hay
+nhãn POS/NEG/NEU. Message chỉ tag có bản không tag rỗng, cần review/loại trước
+huấn luyện, không mặc định NEU.
+
+Fields bổ sung là optional để đọc raw cũ. Nếu có thì phải đủ bộ, đúng version,
+text là string và counts là số nguyên không âm. Export chuẩn giữ cả raw và bản
+không tag để đối chiếu; bản xem dữ liệu mới dùng text_without_mentions làm cột
+text và vẫn liên kết theo comment_id/run_id về raw gốc. Không đoán lại tag từ
+CSV cũ đã mất node DOM.
+
+Collector chờ thay đổi số container trong đúng scope, kể cả aria-label không
+role article. Click nút không làm thay đổi dữ liệu/cuộn không được coi là tiến
+triển; comment tải bất đồng bộ trong settle phải được đọc trước khi dừng idle.
+Lỗi DOM đã gặp trước đó vẫn khiến kết quả partial khi scope hết tiến triển.
+Kiểm chứng: **115 tests PASS**, không skip, gồm tag đầu/giữa câu, tag-only,
+emoji IMG/Unicode/keycap/skin tone, loại caption ảnh, raw legacy, export mới,
+nút reply không tiến triển và comment tải muộn.

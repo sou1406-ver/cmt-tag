@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from .parser import facebook_url, comment_identity, post_id, created_at
+from .parser import facebook_url, comment_identity, post_id, created_at, TEXT_FIELDS, valid_text_metadata
 
 
 def now():
@@ -173,7 +173,7 @@ def validate(path):
     for line in (path/'raw_comments.jsonl').read_text(encoding='utf-8').splitlines():
         try:
             r = json.loads(line)
-            if any(k not in r for k in FIELDS) or not isinstance(r['text_raw'], str):
+            if any(k not in r for k in FIELDS) or not isinstance(r['text_raw'], str) or not valid_text_metadata(r):
                 raise ValueError()
             facebook_url(r['post_url'])
             if r['post_url'] not in sources or r['movie_id'] != sources[r['post_url']]:
@@ -248,7 +248,8 @@ def export_run(path, destination, *, allow_partial=False):
     destination.mkdir(parents=True, exist_ok=False)
     csv_path = destination/'comments.csv'
     with csv_path.open('x',encoding='utf-8-sig',newline='') as f:
-        writer=csv.DictWriter(f,fieldnames=list(FIELDS)+['comment_permalink','possible_duplicate'])
+        optional=list(TEXT_FIELDS) if any('text_extraction_version' in row for row in complete) else []
+        writer=csv.DictWriter(f,fieldnames=list(FIELDS)+['comment_permalink','possible_duplicate']+optional)
         writer.writeheader()
         writer.writerows(complete)
     config = {'schema_version':'1.0','inputs':[{'path':str(csv_path.resolve()),'format':'csv',

@@ -34,6 +34,7 @@ def collect(page, store, post):
     if start_count >= cfg['max_comments']:
         return 'partial', 'comment_limit', []
     trace, pending, idle = ['NAVIGATE'], {}, 0
+    parse_errors_seen=False
     page.set_page_load_timeout(cfg['wait_ms']/1000)
     page.get(post['post_url'])
     trace.append('WAIT')
@@ -98,6 +99,7 @@ def collect(page, store, post):
         candidates = dom(page,post['post_url'])
         parsed, errors = observations(candidates, post['post_url'])
         if errors:
+            parse_errors_seen=True
             store.append('errors.jsonl', {'code':'parse_error','count':errors,'post_url':post['post_url']})
         added = 0
         for row in parsed:
@@ -118,16 +120,20 @@ def collect(page, store, post):
         trace.append('SETTLE')
         # Explicit poll for DOM changes, bounded even for silent/no-comment pages.
         before = len(candidates)
+        settled_change=False
         try:
-            article_count=len(page.find_elements('css selector','[role="article"]'))
-            WebDriverWait(page,min(cfg['settle_ms']/1000,max(.001,deadline-time.monotonic())),poll_frequency=.1).until(
-                lambda driver:len(driver.find_elements('css selector','[role="article"]'))>article_count)
+            settled_change=bool(WebDriverWait(page,min(cfg['settle_ms']/1000,max(.001,deadline-time.monotonic())),poll_frequency=.1).until(
+                lambda driver:dom(driver,post['post_url'],'inspect').get('comment_containers',before)!=before)
+            )
         except Exception:
             pass
-        idle = idle+1 if not added and not clicked and not scrolled else 0
+        # Clicking the same unchanged reply button is not collection progress.
+        # A subsequent round will observe asynchronously loaded rows before
+        # deciding the bounded visible range has stopped changing.
+        idle = idle+1 if not added and not scrolled and not settled_change else 0
         if idle >= cfg['idle_rounds']:
-            status = 'success' if parsed and not pending and not errors else 'partial'
-            reason = 'visible_dom_exhausted' if parsed else 'no_recognized_comments'
+            status = 'success' if parsed and not pending and not parse_errors_seen else 'partial'
+            reason = ('unparsed_comments' if parse_errors_seen else 'visible_dom_exhausted') if parsed else 'no_recognized_comments'
             break
     for row in pending.values():
         if store.post_counts[post['post_url']] < cfg['max_comments']:

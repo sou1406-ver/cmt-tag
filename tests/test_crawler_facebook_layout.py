@@ -205,5 +205,81 @@ class FacebookLayoutTests(unittest.TestCase):
         self.assertLess(position,1600)
         self.assertEqual(self.driver.execute_script('return document.scrollingElement.scrollTop'),before)
 
+    def test_mention_free_text_keeps_original_and_plain_film_names(self):
+        html=self.fixture().replace('Phim hay 😍!<br>ko dở.',
+            '<a role="link" href="/fixture.a">Bạn A</a> '
+            '<a role="link" href="/profile.php?id=987">Bạn B</a>: '
+            'Phim Mưa Đỏ hay! ❤️<br>Không dở.')
+        self.load(html)
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,0)
+        row=rows[0]
+        self.assertEqual(row['text_raw'],'Bạn A Bạn B: Phim Mưa Đỏ hay! ❤️\nKhông dở.')
+        self.assertEqual(row['text_without_mentions'],'Phim Mưa Đỏ hay! ❤️\nKhông dở.')
+        self.assertEqual(row['mention_count'],2)
+        self.assertEqual(row['text_extraction_version'],'dom_text_v2')
+
+    def test_inline_mentions_removed_but_external_links_and_plain_names_kept(self):
+        html=self.fixture().replace('Phim hay 😍!<br>ko dở.',
+            'Diễn viên X diễn hay, <a href="/people/fixture-b/987">Bạn B</a> xem '
+            '<a href="https://example.org/review">review</a> chưa?')
+        self.load(html)
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,0)
+        self.assertEqual(rows[0]['text_without_mentions'],'Diễn viên X diễn hay, xem review chưa?')
+        self.assertEqual(rows[0]['mention_count'],1)
+
+    def test_emoji_alt_is_unicode_not_generated_image_caption(self):
+        html=self.fixture().replace('Phim hay 😍!<br>ko dở.',
+            'Phim hay <img alt="😂"><img alt="❤️"><img alt="👍🏽"><img alt="1️⃣">'
+            '<img alt="Có thể là hình ảnh của một người">!')
+        self.load(html)
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,0)
+        self.assertEqual(rows[0]['text_raw'],'Phim hay 😂❤️👍🏽1️⃣!')
+        self.assertEqual(rows[0]['text_without_mentions'],rows[0]['text_raw'])
+        self.assertEqual(rows[0]['non_text_media_count'],1)
+
+    def test_tag_only_text_has_no_invented_sentiment(self):
+        html=self.fixture().replace('Phim hay 😍!<br>ko dở.',
+            '<span dir="auto"><div dir="auto"><a href="/fixture.a">Bạn A</a></div></span>')
+        self.load(html)
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,0)
+        self.assertEqual(rows[0]['text_raw'],'Bạn A')
+        self.assertEqual(rows[0]['text_without_mentions'],'')
+        self.assertEqual(rows[0]['mention_count'],1)
+
+    def test_unchanged_reply_button_does_not_keep_run_alive(self):
+        html=self.fixture().replace("this.textContent='done'","void(0)")
+        original=self.driver.get
+        with tempfile.TemporaryDirectory() as tmp:
+            post={'post_url':GROUP,'movie_id':'mua_do'}
+            store=Store(tmp,dict(CONFIG,posts=[post],max_rounds=20,post_timeout=10))
+            fixture='data:text/html;charset=utf-8,'+quote('<meta charset="utf-8"><base href="https://www.facebook.com/">'+html)
+            with patch.object(self.driver,'get',side_effect=lambda url:original(fixture)):
+                status,reason,trace=collect(self.driver,store,post)
+            self.assertEqual((status,reason),('success','visible_dom_exhausted'))
+            self.assertLess(trace.count('EXPAND'),20)
+            self.assertEqual(len(store.rows),3)
+
+    def test_async_loaded_rows_are_read_before_idle_stop(self):
+        action=f'''this.dataset.clicks=Number(this.dataset.clicks||0)+1;
+            if(this.dataset.clicks==='2')setTimeout(()=>{{
+              const row=document.createElement('div');row.setAttribute('aria-label','Comment by Fixture');
+              row.innerHTML='&lt;div dir=auto&gt;Loaded later&lt;/div&gt;&lt;a href={GROUP}?comment_id=9999&gt;time&lt;/a&gt;';
+              this.before(row);
+            }},250)'''
+        html=self.fixture().replace("this.textContent='done'",action)
+        original=self.driver.get
+        with tempfile.TemporaryDirectory() as tmp:
+            post={'post_url':GROUP,'movie_id':'mua_do'}
+            store=Store(tmp,dict(CONFIG,posts=[post],max_rounds=10,post_timeout=10,idle_rounds=1,settle_ms=500))
+            fixture='data:text/html;charset=utf-8,'+quote('<meta charset="utf-8"><base href="https://www.facebook.com/">'+html)
+            with patch.object(self.driver,'get',side_effect=lambda url:original(fixture)):
+                status,reason,trace=collect(self.driver,store,post)
+            self.assertEqual((status,reason),('success','visible_dom_exhausted'))
+            self.assertTrue(any(row['comment_id']=='9999' for row in store.rows))
+
 
 if __name__=='__main__': unittest.main()

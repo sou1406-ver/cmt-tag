@@ -42,6 +42,14 @@ class ParserTests(unittest.TestCase):
         self.assertIsNone(rows[0]['comment_created_at'])
         self.assertEqual(observations([{'text_raw':None}],POST['post_url'])[1],1)
 
+    def test_incomplete_or_invalid_mention_metadata_rejected(self):
+        base={'text_raw':'Phim hay!','observation_id':'x','text_without_mentions':'Phim hay!'}
+        self.assertEqual(observations([base],POST['post_url'])[1],1)
+        row=dict(base,mention_count=True,non_text_media_count=0,text_extraction_version='dom_text_v2')
+        self.assertEqual(observations([row],POST['post_url'])[1],1)
+        row['mention_count']=0
+        self.assertEqual(observations([row],POST['post_url'])[1],0)
+
 
 class StoreTests(unittest.TestCase):
     def setUp(self):
@@ -202,6 +210,24 @@ class StoreTests(unittest.TestCase):
         self.assertIn('--allow-partial',strict.stdout)
         explicit=subprocess.run(command+['--allow-partial'],capture_output=True,text=True,encoding='utf-8')
         self.assertEqual(explicit.returncode,0,explicit.stdout+explicit.stderr)
+
+    def test_mention_metadata_export_and_validation_leave_legacy_raw_unchanged(self):
+        s=self.store
+        old=observation('1');s.add(old,POST,'page')
+        before=(s.path/'raw_comments.jsonl').read_bytes()
+        fresh=observation('2','Bạn A Phim hay!',text_without_mentions='Phim hay!',mention_count=1,
+            non_text_media_count=0,text_extraction_version='dom_text_v2')
+        s.add(fresh,POST,'page')
+        self.assertTrue((s.path/'raw_comments.jsonl').read_bytes().startswith(before))
+        self.assertEqual(validate(s.path)['raw_validation_errors'],0)
+        out=export_run(s.path,self.root/'mention_export')
+        with (out/'comments.csv').open(encoding='utf-8-sig',newline='') as handle:rows=list(csv.DictReader(handle))
+        self.assertEqual(rows[0]['text_without_mentions'],'')
+        self.assertEqual(rows[1]['text_raw'],'Bạn A Phim hay!')
+        self.assertEqual(rows[1]['text_without_mentions'],'Phim hay!')
+        bad=observation('3',text_without_mentions='x',mention_count=-1,non_text_media_count=0,text_extraction_version='dom_text_v2')
+        s.add(bad,POST,'page')
+        self.assertEqual(validate(s.path)['raw_validation_errors'],1)
 
     def test_missing_post_id_import_warns_and_keeps_null(self):
         post=dict(POST,post_url='https://www.facebook.com/share/p/unknown')

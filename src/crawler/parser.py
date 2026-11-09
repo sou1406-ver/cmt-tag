@@ -2,6 +2,15 @@
 import re
 from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
+TEXT_FIELDS=('text_without_mentions','mention_count','non_text_media_count','text_extraction_version')
+
+
+def valid_text_metadata(row):
+    if not any(key in row for key in TEXT_FIELDS): return True
+    return (all(key in row for key in TEXT_FIELDS) and isinstance(row['text_without_mentions'],str) and
+            row['text_extraction_version']=='dom_text_v2' and
+            all(type(row[key]) is int and row[key]>=0 for key in ('mention_count','non_text_media_count')))
+
 
 def facebook_url(url):
     if not isinstance(url, str):
@@ -53,7 +62,7 @@ def observations(candidates, source_url):
     """Candidates contain only a specific comment body, never whole article text."""
     rows, errors = [], 0
     for item in candidates:
-        if not isinstance(item.get('text_raw'), str):
+        if not isinstance(item.get('text_raw'), str) or not valid_text_metadata(item):
             errors += 1
             continue
         cid, parent, permalink = comment_identity(item.get('permalink', ''), source_url)
@@ -63,7 +72,7 @@ def observations(candidates, source_url):
         parent_id, _, _ = comment_identity(item.get('parent_permalink'), source_url)
         # aria-label comment/reply markers allow missing-ID comments; plain
         # post articles are not accepted by the DOM adapter.
-        rows.append({
+        row={
             'text_raw': item['text_raw'], 'comment_id': cid,
             'parent_comment_id': parent or parent_id,
             'comment_permalink': permalink, 'post_id': post_id(source_url),
@@ -71,7 +80,9 @@ def observations(candidates, source_url):
             'record_type': 'reply' if parent or item.get('is_reply') else 'comment',
             'extraction_status': 'truncated' if item.get('truncated') else 'complete',
             'dom_observation_id': item['observation_id'],
-        })
+        }
+        row.update({key:item[key] for key in TEXT_FIELDS if key in item})
+        rows.append(row)
     return rows, errors
 
 

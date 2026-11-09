@@ -425,3 +425,15 @@ Lỗi DOM đã gặp trước đó vẫn khiến kết quả partial khi scope h
 Kiểm chứng: **115 tests PASS**, không skip, gồm tag đầu/giữa câu, tag-only,
 emoji IMG/Unicode/keycap/skin tone, loại caption ảnh, raw legacy, export mới,
 nút reply không tiến triển và comment tải muộn.
+
+### Dialog nhóm có link dẫn sang bài khác trong comment
+
+Live trên bài nhóm người dùng cung cấp cho thấy hai dialog lồng nhau và một
+comment có link dẫn tới bài khác. Scope chỉ xét link nhận dạng bài nằm ngoài
+container comment đã xác minh; link dẫn trong body vẫn là nội dung của comment.
+Chọn dialog nguồn trong cùng để không lấy vùng comment của dialog cha. Header
+của nhiều bài chưa phân tách vẫn bị từ chối; permalink comment thuộc nguồn khác
+không được đọc hoặc tính vào số container dùng để chờ tải. Layout comment-only
+không dialog trước đây vẫn yêu cầu mọi ID bài nhận dạng được cùng thuộc nguồn.
+Kiểm chứng: **119 tests PASS**, không skip, gồm link dẫn bài trong comment,
+header nhiều nguồn, dialog lồng nhau, loại comment nguồn khác và fixture cũ.

@@ -1,0 +1,38 @@
+{
+  "run_id": "fb_be38ce3e04c64f35be89648403d1b811",
+  "source": "facebook",
+  "source_posts": [
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/permalink/1909400102999925",
+      "movie_id": "mua_do"
+    }
+  ],
+  "source_run_count": 1,
+  "merged": false,
+  "raw_records": 117,
+  "exported_text_records": 117,
+  "removed_account_mentions": 0,
+  "records_with_removed_mentions": 0,
+  "omitted_non_emoji_image_alts": 5,
+  "context_review_records": 0,
+  "record_types": {
+    "comment": 64,
+    "reply": 53
+  },
+  "raw_sha256": "ac078c49608700f006fa84a7a8bc3b7425af4e380186c3c5590a02ec0b8f1d2b",
+  "csv_sha256": "0ea4605beae46b53ed95f924bdbc2835a04dbb4db1f6b326501668a767351931",
+  "status": "partial",
+  "reason": "unparsed_comments",
+  "raw_validation_errors": 0,
+  "dom_parse_observations": 7,
+  "coverage_verified": false,
+  "labels_created": false,
+  "clean_text_field": "text",
+  "cleaning_policy": "dom_text_v2: remove Facebook account link nodes; preserve plain text names, negation, emoji and line breaks; omit non-emoji IMG captions.",
+  "input_note": "The clean input maps text to the data importer. Original tagged messages remain in the run raw journal, linked by comment_id.",
+  "xlsx_sha256": "752770b521f949574dcadbcbb22391cc1499495336c3ca43fadc8740889b4108",
+  "verified_xlsx_cells": 2124,
+  "artifact_validation": "passed",
+  "excluded_reason_counts": {},
+  "raw_storage": "local_only; original messages and browser profile are not published"
+}

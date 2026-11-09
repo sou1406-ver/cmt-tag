@@ -281,5 +281,41 @@ class FacebookLayoutTests(unittest.TestCase):
             self.assertEqual((status,reason),('success','visible_dom_exhausted'))
             self.assertTrue(any(row['comment_id']=='9999' for row in store.rows))
 
+    def test_comment_citing_another_post_does_not_invalidate_source_dialog(self):
+        html=self.fixture().replace('Phim hay 😍!<br>ko dở.',
+            'Phim hay! <a href="/reference/posts/777">Xem đối chiếu</a>')
+        self.load(html)
+        self.assertEqual(dom(self.driver,GROUP,'inspect')['status'],'ready')
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual((len(rows),errors),(3,0))
+        self.assertEqual(rows[0]['comment_id'],'101')
+        self.assertEqual(rows[0]['text_without_mentions'],'Phim hay! Xem đối chiếu')
+
+    def test_two_unseparated_post_headers_still_refused(self):
+        self.load(f'<div role="dialog"><a href="{GROUP}">source</a>'
+            '<a href="/other/posts/777">other source</a>'
+            f'<div aria-label="Comment by Fixture"><div dir="auto">Keep private to source</div>'
+            f'<a href="{GROUP}?comment_id=101">time</a></div></div>')
+        self.assertEqual(dom(self.driver,GROUP,'inspect')['status'],'missing_scope')
+        self.assertEqual(dom(self.driver,GROUP),[])
+
+    def test_innermost_source_dialog_excludes_outer_dialog_comments(self):
+        start=self.fixture().index('<div role="dialog">')
+        inner=self.fixture()[start:]
+        self.load(f'<div role="dialog"><a href="{GROUP}">source</a>'
+            f'<div aria-label="Comment by Outside"><div dir="auto">OUTER NOT TARGET</div>'
+            f'<a href="{GROUP}?comment_id=888">time</a></div>{inner}</div>')
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual((len(rows),errors),(3,0))
+        self.assertFalse(any(row['comment_id']=='888' for row in rows))
+
+    def test_foreign_comment_permalink_is_not_collected(self):
+        extra='<div aria-label="Comment by Other"><div dir="auto">FOREIGN COMMENT</div><a href="/other/posts/777?comment_id=999">time</a></div>'
+        self.load(self.fixture().replace('</article></div>',extra+'</article></div>'))
+        self.assertEqual(dom(self.driver,GROUP,'inspect')['comment_containers'],3)
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual((len(rows),errors),(3,0))
+        self.assertFalse(any(row['comment_id']=='999' for row in rows))
+
 
 if __name__=='__main__': unittest.main()

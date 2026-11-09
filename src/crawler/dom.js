@@ -18,27 +18,46 @@
     } catch { return null; }
   };
   const expected = identify(sourceUrl);
-  const ids = el => new Set([...el.querySelectorAll('a[href]')].map(a => identify(a.href)).filter(Boolean));
-  const matches = el => { const found = ids(el); return found.size === 1 && found.has(expected); };
-  const current = identify(location.href);
-  if (!expected || (current && current !== expected)) return action === 'read' ? [] : {status:'wrong_source'};
-  const dialogs = [...document.querySelectorAll('[role="dialog"]')].filter(visible);
-  let root = dialogs.find(matches);
-  if (!root) root = [...document.querySelectorAll('[role="article"]')].find(el => visible(el) &&
-    !el.parentElement?.closest('[role="article"]') && matches(el) && !/[?&](?:comment_id|reply_comment_id)=/.test(
-      [...el.querySelectorAll('a[href]')].find(a => identify(a.href))?.href || ''));
-  if (!root && dialogs.length === 1 && current === expected && ids(dialogs[0]).size === 0) root = dialogs[0];
-  if (!root && !dialogs.length && matches(document.body)) root = document.querySelector('[role="main"]') || document.body;
-  if (!root) return action === 'read' ? [] : {status:'missing_scope',
-    diagnostics:{current_matches:current===expected,visible_dialogs:dialogs.length,
-      dialog_source_counts:dialogs.map(el=>({distinct_post_ids:ids(el).size,has_expected:ids(el).has(expected)})),
-      visible_articles:[...document.querySelectorAll('[role="article"]')].filter(visible).length}};
   const boundary = '[role="article"],[aria-label^="Bình luận của"],[aria-label^="Comment by"],'+
     '[aria-label^="Comment from"],[aria-label^="Reply"],[aria-label^="Phản hồi"]';
   const own = (el, selector) => [...el.querySelectorAll(selector)].filter(node => node.closest(boundary) === el);
   const marked = el => /^(comment|reply|bình luận|phản hồi)(\s|:|$)/i.test(el.getAttribute('aria-label') || '');
-  const comments = [...root.querySelectorAll(boundary)].filter(el => visible(el) && (marked(el) ||
-    own(el, 'a[href]').some(a => /[?&](?:comment_id|reply_comment_id)=\d+/.test(a.href))));
+  const commentPermalink = a => /[?&](?:comment_id|reply_comment_id)=\d+/.test(a.href);
+  const commentContainer = el => marked(el) || own(el,'a[href]').some(a=>commentPermalink(a)&&identify(a.href)===expected);
+  const inComment = node => {
+    for(let p=node.closest(boundary);p;p=p.parentElement?.closest(boundary))
+      if(commentContainer(p)) return true;
+    return false;
+  };
+  // A comment can cite another post. Its embedded link is comment content,
+  // not a second post header that invalidates the surrounding source scope.
+  const allIDs = el => new Set([...el.querySelectorAll('a[href]')].map(a=>identify(a.href)).filter(Boolean));
+  const ids = el => new Set([...el.querySelectorAll('a[href]')].filter(a=>!inComment(a)).map(a => identify(a.href)).filter(Boolean));
+  const matches = el => { const found = ids(el); return found.size === 1 && found.has(expected); };
+  const current = identify(location.href);
+  if (!expected || (current && current !== expected)) return action === 'read' ? [] : {status:'wrong_source'};
+  const dialogs = [...document.querySelectorAll('[role="dialog"]')].filter(visible);
+  const sourceDialogs=dialogs.filter(matches);
+  let root = sourceDialogs.find(el=>!sourceDialogs.some(child=>child!==el&&el.contains(child)));
+  if (!root) root = [...document.querySelectorAll('[role="article"]')].find(el => visible(el) &&
+    !el.parentElement?.closest('[role="article"]') && matches(el) && !/[?&](?:comment_id|reply_comment_id)=/.test(
+      [...el.querySelectorAll('a[href]')].find(a => identify(a.href))?.href || ''));
+  if (!root && dialogs.length === 1 && current === expected && ids(dialogs[0]).size === 0) root = dialogs[0];
+  // Retain the legacy comment-only layout: no dialogs/competing post header,
+  // and every identifiable post link belongs to exactly the expected source.
+  if (!root && !dialogs.length && (matches(document.body) ||
+      (ids(document.body).size===0&&allIDs(document.body).size===1&&allIDs(document.body).has(expected))))
+    root = document.querySelector('[role="main"]') || document.body;
+  if (!root) return action === 'read' ? [] : {status:'missing_scope',
+    diagnostics:{current_matches:current===expected,visible_dialogs:dialogs.length,
+      dialog_source_counts:dialogs.map(el=>({distinct_post_ids:ids(el).size,has_expected:ids(el).has(expected)})),
+      visible_articles:[...document.querySelectorAll('[role="article"]')].filter(visible).length}};
+  const comments = [...root.querySelectorAll(boundary)].filter(el => {
+    if(!visible(el)) return false;
+    const permalinks=own(el,'a[href]').filter(commentPermalink);
+    if(permalinks.length&&!permalinks.some(a=>identify(a.href)===expected)) return false;
+    return marked(el)||permalinks.length>0;
+  });
   const commentSet = new Set(comments);
   const insideComment = node => {
     for (let p=node.closest(boundary);p;p=p.parentElement?.closest(boundary))
@@ -110,8 +129,9 @@
   };
   return comments.flatMap(el => {
     const links = own(el,'a[href]');
-    if (links.some(a => identify(a.href) && identify(a.href) !== expected)) return [];
-    const link = links.find(a => /[?&](?:comment_id|reply_comment_id)=\d+/.test(a.href));
+    const commentLinks=links.filter(commentPermalink);
+    const link=commentLinks.find(a=>identify(a.href)===expected);
+    if (commentLinks.length&&!link) return [];
     let bodies = own(el,'[data-comment-body],[data-ad-preview="message"],[data-ad-comet-preview="message"]').filter(visible);
     if (!bodies.length) bodies = own(el,'[dir="auto"]').filter(node => visible(node) &&
       !node.closest('a,[role="link"],button,[role="button"],time') && !node.querySelector('[dir="auto"]') &&

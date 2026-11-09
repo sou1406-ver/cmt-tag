@@ -30,18 +30,22 @@ observation đầy đủ vào CSV cùng `import_config.json` để chạy Phase 
 
 ### Bình luận đã thu thập và chia sẻ
 
-Bản [CSV](data/imports/facebook_fresh/comments.csv) và
-[Excel](data/imports/facebook_fresh/comments.xlsx) có **1.538 bình luận/phản hồi**
-từ một run Facebook mới, kèm nguồn, mã phim và ID. Cột `text` đã bỏ các tag tài
-khoản được nhận dạng từ node DOM, giữ emoji Unicode, phủ định và xuống dòng.
-Đây là dữ liệu chưa gán nhãn; run còn `partial`, chưa xác nhận đủ toàn bộ bình luận.
-[Manifest](data/imports/facebook_fresh/export_manifest.json) ghi nguồn, cách xử lý,
-số lượng và checksum. Raw và profile trình duyệt vẫn được giữ local.
+| Bài nguồn | Số comment/phản hồi | CSV | Excel |
+|---|---:|---|---|
+| Bài trang phim | 1.538 | [CSV](data/imports/facebook_fresh/comments.csv) | [Excel](data/imports/facebook_fresh/comments.xlsx) |
+| Bài nhóm `1909400102999925` | 117 | [CSV](data/imports/facebook_group_1909400102999925/comments.csv) | [Excel](data/imports/facebook_group_1909400102999925/comments.xlsx) |
+
+Mỗi bản thuộc một run riêng, kèm nguồn, mã phim `mua_do` theo đầu vào và ID.
+Cột `text` bỏ tag tài khoản được nhận dạng từ node DOM, giữ emoji Unicode,
+phủ định và xuống dòng. Dữ liệu chưa gán nhãn; các run còn `partial`, chưa xác
+nhận đủ toàn bộ bình luận. `export_manifest.json` trong từng thư mục ghi nguồn,
+cách xử lý, số lượng và checksum. Raw và profile trình duyệt vẫn giữ local.
 
 Import từ thư mục gốc repo:
 
 ```powershell
 python scripts/prepare_data.py --config data/imports/facebook_fresh/import_config.json
+python scripts/prepare_data.py --config data/imports/facebook_group_1909400102999925/import_config.json
 ```
 
 ## Setup và test

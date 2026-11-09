@@ -1,4 +1,4 @@
-# Local datasets, labels and research artifacts; only the approved clean export is shared.
+# Local datasets, labels and research artifacts; only approved clean exports are shared.
 /data/*
 !/data/imports/
 /data/imports/*
@@ -8,6 +8,12 @@
 !/data/imports/facebook_fresh/comments.xlsx
 !/data/imports/facebook_fresh/import_config.json
 !/data/imports/facebook_fresh/export_manifest.json
+!/data/imports/facebook_group_1909400102999925/
+/data/imports/facebook_group_1909400102999925/*
+!/data/imports/facebook_group_1909400102999925/comments.csv
+!/data/imports/facebook_group_1909400102999925/comments.xlsx
+!/data/imports/facebook_group_1909400102999925/import_config.json
+!/data/imports/facebook_group_1909400102999925/export_manifest.json
 /outputs/
 /crawl/*.csv
 # Retain protection for legacy local media; no media is present in this clone.

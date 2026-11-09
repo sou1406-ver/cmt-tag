@@ -215,6 +215,8 @@ def validate(path):
             'duplicate_source_ids_in_raw':duplicates,
             'duplicate_source_observations_skipped':sum(e['code']=='duplicate_source_id' for e in errors),
             'possible_duplicates_unresolved':sum(r.get('possible_duplicate',False) for r in rows),
+            'raw_validation_errors':parse_errors,
+            'dom_parse_observations':sum(e.get('count',1) for e in errors if e['code']=='parse_error'),
             'parse_errors':parse_errors+sum(e.get('count',1) for e in errors if e['code']=='parse_error'),
             'per_post':dict(Counter(r['post_url'] for r in rows)),
             'per_movie':dict(Counter(r['movie_id'] for r in rows)),
@@ -227,14 +229,16 @@ def validate(path):
             'raw_sha256':hashlib.sha256((path/'raw_comments.jsonl').read_bytes()).hexdigest()}
 
 
-def export_run(path, destination):
+def export_run(path, destination, *, allow_partial=False):
     path, destination = Path(path), Path(destination)
     from .locking import run_is_busy
     if run_is_busy(path/'.browser.lock'):
         raise ValueError('Cannot export while a browser may be writing this run')
     report = validate(path)
-    if report['parse_errors'] or report['duplicate_source_ids_in_raw']:
+    if report['raw_validation_errors'] or report['duplicate_source_ids_in_raw']:
         raise ValueError('Validation failed; inspect run report')
+    if report['dom_parse_observations'] and not allow_partial:
+        raise ValueError('Unparsed DOM observations; inspect report and use --allow-partial to export validated rows only')
     rows = load_lines(path/'raw_comments.jsonl')
     # Preserve raw. Phase B only receives complete observations. Excluded
     # truncated rows remain in the raw journal and export manifest.
@@ -258,5 +262,12 @@ def export_run(path, destination):
     write_json(destination/'export_manifest.json',{'run_id':report['run_id'],
         'raw_sha256':report['raw_sha256'],'exported':len(complete),
         'truncated_not_imported':len(rows)-len(complete),
+        'allow_partial':allow_partial,
+        'raw_validation_errors':report['raw_validation_errors'],
+        'dom_parse_observations':report['dom_parse_observations'],
+        'post_status_counts':report['post_status_counts'],
+        'coverage_verified':False,
+        'warnings':report['warnings']+(['DOM parse counts are repeated observations, not unique missing comments.']
+                                      if report['dom_parse_observations'] else []),
         'note':'No labels; Phase B keeps all records but marks text duplicates as non-independent.'},exclusive=True)
     return destination

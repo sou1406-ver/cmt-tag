@@ -49,7 +49,8 @@ def collect(page, store, post):
                      'scope_status':probe.get('status'),'diagnostics':probe.get('diagnostics',{})})
         return 'partial', 'post_scope_not_found', trace
     reason, status = 'round_limit', 'partial'
-    for _ in range(cfg['max_rounds']):
+    load_rounds,sort_rounds=0,0
+    while load_rounds < cfg['max_rounds'] and sort_rounds < 20:
         if time.monotonic() >= deadline:
             reason = 'time_limit'
             break
@@ -64,6 +65,7 @@ def collect(page, store, post):
         if sorting.get('status')=='failed':
             reason='comment_sort_failed'; break
         if sorting.get('status') in ('opening','selecting','waiting'):
+            sort_rounds+=1
             if sorting.get('element') is not None:
                 try: sorting['element'].click()
                 except Exception: pass
@@ -75,6 +77,7 @@ def collect(page, store, post):
             # being visible is not proof the selected filter changed.
             continue
         trace.append('SORT_'+sorting.get('status','unavailable').upper())
+        load_rounds+=1
         trace.append('EXPAND')
         clicked = 0
         # Never click arbitrary page links. Restrict to comment containers or
@@ -87,9 +90,10 @@ def collect(page, store, post):
                 if button.is_displayed() and button.is_enabled():
                     button.click()
                     clicked += 1
-            except Exception:
+            except Exception as exc:
                 # Fixed action budget; failure is reported via partial settle.
-                pass
+                store.append('errors.jsonl',{'code':'expand_click_failed','post_url':post['post_url'],
+                                           'error_type':type(exc).__name__})
         trace.append('EXTRACT')
         candidates = dom(page,post['post_url'])
         parsed, errors = observations(candidates, post['post_url'])
@@ -130,6 +134,7 @@ def collect(page, store, post):
             store.add(row,post,session)
     if pending and status=='success':
         status, reason = 'partial','truncated_comments'
+    if sort_rounds >= 20 and reason=='round_limit': reason='comment_sort_failed'
     return status, reason, trace + ['FINISH']
 
 

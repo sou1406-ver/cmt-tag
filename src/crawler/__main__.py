@@ -175,6 +175,7 @@ def main():
     p.add_argument('--format',choices=['csv'],default='csv')
     p.add_argument('--data-root',type=Path,default=Path('data'))
     p.add_argument('--output',type=Path,help='New directory; default data/imports/<run_id>')
+    p.add_argument('--allow-partial',action='store_true',help='Export validated complete rows despite skipped DOM observations; record coverage warnings')
     args = ap.parse_args()
     try:
         if args.command=='login':
@@ -193,7 +194,7 @@ def main():
                 report=validate(path)
                 print(json.dumps(report,ensure_ascii=False,indent=2))
                 return 2 if report['parse_errors'] or report['duplicate_source_ids_in_raw'] else 0
-            output=export_run(path,args.output or args.data_root/'imports'/args.run)
+            output=export_run(path,args.output or args.data_root/'imports'/args.run,allow_partial=args.allow_partial)
             print(json.dumps({'export':str(output)},ensure_ascii=False))
             return 0
         config = None
@@ -229,6 +230,9 @@ def main():
             if args.command=='interactive' and not store.config.get('interactive'):
                 raise ValueError('Use an interactive run ID with interactive --resume')
             print('Run: '+store.run_id,flush=True)
+            print(f"Giới hạn mỗi bài: {store.config['max_comments']} comment, "
+                  f"{store.config['max_rounds']} vòng tải, {store.config['post_timeout']} giây."
+                  + (' Resume dùng cấu hình đã lưu; muốn tăng giới hạn hãy tạo run mới.' if args.resume else ''),flush=True)
             if lock is None:
                 lock=store.path/'.browser.lock'
                 locks.enter_context(RunLock(lock))
@@ -251,7 +255,8 @@ def main():
     except (ValueError, FileNotFoundError, FileExistsError) as exc:
         # Safe local validation errors have no browser/page contents.
         print(json.dumps({'error_type':type(exc).__name__,
-                         'hint':str(exc) if str(exc).startswith(('Brave not found','Browser executable not found')) else
+                         'hint':str(exc) if str(exc).startswith(('Brave not found','Browser executable not found',
+                             'Unparsed DOM observations','Validation failed','No complete records')) else
                          'Invalid input or run path, completed run, existing export, or active/stale .browser.lock. See docs/CRAWLER.md.'}))
         return 2
     except Exception as exc:

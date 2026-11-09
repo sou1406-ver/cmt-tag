@@ -39,13 +39,19 @@
   const marked = el => /^(comment|reply|bình luận|phản hồi)(\s|:|$)/i.test(el.getAttribute('aria-label') || '');
   const comments = [...root.querySelectorAll(boundary)].filter(el => visible(el) && (marked(el) ||
     own(el, 'a[href]').some(a => /[?&](?:comment_id|reply_comment_id)=\d+/.test(a.href))));
+  const commentSet = new Set(comments);
+  const insideComment = node => {
+    for (let p=node.closest(boundary);p;p=p.parentElement?.closest(boundary))
+      if (commentSet.has(p)) return true;
+    return false;
+  };
   if (action === 'inspect') return {status:'ready',comment_containers:comments.length};
   const all = /^(?:Tất cả (?:các )?bình luận|All comments)$/i;
   const filtered = /^(?:Phù hợp nhất|Liên quan nhất|Mới nhất|Most relevant|Newest|Top comments)$/i;
   const label = el => clean(el.innerText || el.getAttribute('aria-label'));
   if (action === 'sort') {
     const controls = [...root.querySelectorAll('button,[role="button"]')].filter(el => visible(el) &&
-      !comments.some(c => c.contains(el)) && !el.closest('[role="menu"],[role="listbox"]'));
+      !insideComment(el) && !el.closest('[role="menu"],[role="listbox"]'));
     const trigger = controls.find(el => filtered.test(label(el)));
     if (!trigger) return {status:controls.some(el => all.test(label(el))) ? 'confirmed' : 'unavailable'};
     window.__cmtSort ??= new WeakMap();
@@ -67,7 +73,7 @@
   const moreText = /^(?:see more|xem thêm)$/i;
   if (action === 'buttons') return [...root.querySelectorAll('button,[role="button"]')].filter(el =>
     visible(el) && !el.matches('[disabled],[aria-disabled="true"]') &&
-    (expansion.test(label(el)) || (comments.some(c => c.contains(el)) && moreText.test(label(el)))));
+    (expansion.test(label(el)) || (insideComment(el) && moreText.test(label(el)))));
   if (action === 'scroll') {
     const canScroll = el => visible(el) && el.scrollHeight > el.clientHeight + 20 &&
       ['auto','scroll'].includes(getComputedStyle(el).overflowY) && !el.matches('input,textarea,[contenteditable="true"]');
@@ -88,6 +94,13 @@
     return {moved:false};
   }
   window.__cmtSeen ??= new WeakMap(); window.__cmtSeq ??= 0;
+  const messageWrapper = node => {
+    const wrapper=node.parentElement?.closest('[dir="auto"]');
+    return wrapper && wrapper !== node.closest(boundary) && wrapper.closest(boundary)===node.closest(boundary) &&
+      !wrapper.closest('a,[role="link"],button,[role="button"],time') &&
+      !wrapper.querySelector('time,'+boundary) &&
+      ![...wrapper.querySelectorAll('a[href]')].some(a=>/[?&](?:comment_id|reply_comment_id)=/.test(a.href)) ? wrapper : null;
+  };
   return comments.flatMap(el => {
     const links = own(el,'a[href]');
     if (links.some(a => identify(a.href) && identify(a.href) !== expected)) return [];
@@ -96,13 +109,17 @@
     if (!bodies.length) bodies = own(el,'[dir="auto"]').filter(node => visible(node) &&
       !node.closest('a,[role="link"],button,[role="button"],time') && !node.querySelector('[dir="auto"]') &&
       !node.matches('[role="button"]') && !moreText.test(label(node)) &&
-      !(node.querySelector('a[href]') && clean(node.textContent) === clean(node.querySelector('a[href]').textContent)));
+      // A message may consist entirely of a tagged name/link plus emoji.
+      // Accept that only inside its separate verified message wrapper.
+      (!(node.querySelector('a[href]') && clean(node.textContent) === clean(node.querySelector('a[href]').textContent)) ||
+        messageWrapper(node)));
     if (bodies.length > 1) {
       // Facebook renders one message as multiple paragraphs inside one dir=auto
       // span. Join only that verified message wrapper, never the whole article.
-      const wrapper=bodies[0].parentElement?.closest('[dir="auto"]');
+      const wrapper=messageWrapper(bodies[0]);
       if (wrapper && wrapper !== el && wrapper.closest(boundary)===el &&
-          bodies.every(node=>wrapper.contains(node)) && !wrapper.querySelector('a[href],[role="link"],time,'+boundary) &&
+          bodies.every(node=>wrapper.contains(node)) &&
+          [...wrapper.querySelectorAll('a[href],[role="link"]')].every(a=>bodies.some(node=>node.contains(a))) &&
           [...wrapper.querySelectorAll('button,[role="button"]')].every(b=>moreText.test(label(b)))) bodies=[wrapper];
     }
     if (bodies.length !== 1) return [{text_raw:null,parse_error_reason:bodies.length?'ambiguous_body':'missing_body',
@@ -123,9 +140,9 @@
     walk(body);
     if (!window.__cmtSeen.has(el)) window.__cmtSeen.set(el,String(++window.__cmtSeq));
     const parent = el.parentElement?.closest(boundary);
-    const parentLink = comments.includes(parent) ? own(parent,'a[href]').find(a => /[?&]comment_id=\d+/.test(a.href)) : null;
+    const parentLink = commentSet.has(parent) ? own(parent,'a[href]').find(a => /[?&]comment_id=\d+/.test(a.href)) : null;
     return [{text_raw:text,permalink:link?.href || null,observation_id:window.__cmtSeen.get(el),
-      is_reply:comments.includes(parent) || /^(reply|phản hồi)/i.test(el.getAttribute('aria-label') || ''),
+      is_reply:commentSet.has(parent) || /^(reply|phản hồi)/i.test(el.getAttribute('aria-label') || ''),
       parent_permalink:parentLink?.href || null,
       created_at:own(el,'time[datetime]')[0]?.getAttribute('datetime') || null,
       truncated:own(el,'[role="button"],button').some(b => visible(b) && moreText.test(label(b)))}];

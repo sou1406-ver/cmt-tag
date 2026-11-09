@@ -175,6 +175,33 @@ class StoreTests(unittest.TestCase):
         path.write_text(json.dumps(rows[0])+'\n',encoding='utf-8')
         self.assertEqual(validate(self.store.path)['parse_errors'],1)
         with self.assertRaises(ValueError): export_run(self.store.path,self.root/'bad_export')
+        with self.assertRaises(ValueError): export_run(self.store.path,self.root/'bad_partial_export',allow_partial=True)
+
+    def test_partial_export_requires_opt_in_and_keeps_dom_failures_visible(self):
+        s=self.store
+        s.add(observation(),POST,'page')
+        s.append('errors.jsonl',{'code':'parse_error','count':3,'post_url':POST['post_url']})
+        s.finish_post(POST,'partial','time_limit')
+        before=(s.path/'raw_comments.jsonl').read_bytes()
+        report=validate(s.path)
+        self.assertEqual(report['raw_validation_errors'],0)
+        self.assertEqual(report['dom_parse_observations'],3)
+        self.assertEqual(report['parse_errors'],3)
+        with self.assertRaisesRegex(ValueError,'allow-partial'):
+            export_run(s.path,self.root/'strict_export')
+        dest=export_run(s.path,self.root/'partial_export',allow_partial=True)
+        manifest=json.loads((dest/'export_manifest.json').read_text(encoding='utf-8'))
+        self.assertEqual(manifest['exported'],1)
+        self.assertEqual(manifest['dom_parse_observations'],3)
+        self.assertEqual(manifest['post_status_counts']['partial'],1)
+        self.assertFalse(manifest['coverage_verified'])
+        self.assertEqual((s.path/'raw_comments.jsonl').read_bytes(),before)
+        command=[sys.executable,'-m','src.crawler','export','--run',s.run_id,'--data-root',str(self.root)]
+        strict=subprocess.run(command,capture_output=True,text=True,encoding='utf-8')
+        self.assertEqual(strict.returncode,2)
+        self.assertIn('--allow-partial',strict.stdout)
+        explicit=subprocess.run(command+['--allow-partial'],capture_output=True,text=True,encoding='utf-8')
+        self.assertEqual(explicit.returncode,0,explicit.stdout+explicit.stderr)
 
     def test_missing_post_id_import_warns_and_keeps_null(self):
         post=dict(POST,post_url='https://www.facebook.com/share/p/unknown')

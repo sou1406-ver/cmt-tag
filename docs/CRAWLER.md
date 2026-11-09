@@ -63,7 +63,7 @@ filter, mở nội dung dài, parent reply và bảo toàn raw cũ thiếu post_
 Adapter cũ nhầm ID ảnh là ID bài thứ hai, khiến scope bị từ chối. Nay chỉ nhận
 query fbid/story_fbid trên đường dẫn permalink/story phù hợp; link ảnh không
 làm hỏng identity bài. Comment nhiều đoạn được gom từ wrapper dir=auto chung
-đã xác minh, không ghép toàn article hoặc lẫn link/author/UI. Diagnostics khi
+đã xác minh, không ghép toàn article hoặc tên/UI của tác giả. Diagnostics khi
 scope lỗi chỉ ghi counts/boolean, không lưu HTML, cookie, tên hoặc nội dung trang.
 
 Regression toàn bộ: **100 tests PASS**. Live smoke trên đúng bài người dùng
@@ -72,6 +72,44 @@ cung cấp bằng phiên Selenium đã đăng nhập: 10 comment thật, 0 lỗi
 run partial/round_limit không chứng minh đã lấy đủ bình luận. Dữ liệu live chỉ
 giữ local/gitignored, không đưa lên Git. Khởi động lại phiên Python cũ để dùng
 DOM adapter đã sửa; code đang chạy không tự reload khi file thay đổi.
+
+### Bài nhiều bình luận: tăng budget ở run mới
+
+Lệnh `--max-comments 30 --max-rounds 5 --post-timeout 60` chỉ dành cho smoke
+test. Nó có thể dừng khi mới thấy 10 comment vì hết vòng tải; không phải bài chỉ
+có 10 comment. Thao tác chọn bộ lọc nay có budget riêng (tối đa 20 bước), không
+trừ vào max-rounds. Lỗi click được ghi bằng error_type, không ghi exception text.
+
+Để thử bài khoảng 1.900 comment, tạo **run mới, bỏ --resume**:
+
+```powershell
+.\.venv-crawler\Scripts\python.exe -m src.crawler interactive --channel brave --profile data/browser_profile_brave_manual --max-comments 2000 --max-rounds 1000 --post-timeout 1800
+```
+
+Resume luôn dùng limits trong config.json ban đầu, kể cả khi truyền flag khác.
+CLI in limits thực tế khi mở run. Muốn tăng limits phải tạo run mới, không sửa
+config/raw của run cũ. Chỉ chạy một phiên với cùng browser profile tại một thời điểm.
+
+DOM thật còn có message nhiều đoạn chứa link và message chỉ tag kèm emoji.
+Adapter nhận chúng trong wrapper dir=auto riêng đã xác minh; không lấy author,
+UI hoặc gộp những body không cùng wrapper. Comment không nhận dạng được vẫn
+báo lỗi, không thay bằng text toàn article hay mô tả ảnh suy đoán.
+
+`validate` giữ parse_errors tổng để tương thích, đồng thời tách
+raw_validation_errors (dòng raw/metadata sai) và dom_parse_observations (lượt
+quan sát DOM chưa parse được). Lượt quan sát có thể lặp lại cùng comment qua
+nhiều vòng, không phải số comment thiếu độc lập.
+
+Export mặc định vẫn từ chối khi còn lỗi DOM. Sau khi xem report, có thể chủ động
+xuất riêng các dòng raw hợp lệ, complete từ một lượt còn thiếu:
+
+```powershell
+.\.venv-crawler\Scripts\python.exe -m src.crawler export --run fb_RUN_ID --allow-partial
+```
+
+Cờ này không cho qua raw sai, ID trùng hay run đang ghi. Manifest ghi rõ số lượt
+DOM chưa parse, trạng thái bài và coverage_verified=false. Không sửa hoặc xóa
+raw/errors để làm report sạch; CSV không được coi là toàn bộ bình luận của bài.
 
 ### Dùng Brave mở thủ công, giữ phiên đăng nhập
 
@@ -327,7 +365,8 @@ có mà browser/driver thiếu thì test lỗi để chỉ ra môi trường ch�
 không cần tài khoản. Test pandas legacy có thể skip trong venv tối thiểu; để
 chạy đủ như môi trường audit cần pandas (không phải dependency crawler).
 
-Chưa có smoke test Facebook thật được xác nhận. Dùng bài bạn có quyền xem,
+Đã có live smoke trên bài người dùng cung cấp; đây không phải cam kết phủ mọi bài.
+Khi kiểm tra bài mới, dùng bài bạn có quyền xem,
 chạy giới hạn `--max-comments 20 --max-rounds 5 --post-timeout 60`, tự đăng nhập,
 đối chiếu mẫu trong `crawl_report.json` với trang nguồn: body/emoji/xuống dòng,
 comment/reply, parent ID và truncated; kiểm tra không có nội dung bài/tên tác giả.
@@ -337,8 +376,15 @@ Nếu DOM khác fixture và không nhận dạng được, báo partial/parse er
 thành toàn bộ `innerText` của article để làm test pass.
 
 Giới hạn: chỉ selector vi/en và body xác định hẹp, chưa chứng minh phù hợp mọi
-DOM Facebook; comment không phải role article hoặc nhiều body ứng viên sẽ không
+DOM Facebook; body không xác minh được hoặc nhiều ứng viên không cùng wrapper sẽ không
 được tự nhận. Bài ở feed khác, virtualized comments, nút có nhãn khác, chế độ
 lọc comment và quyền truy cập có thể làm thiếu dữ liệu. Link share/permalink
 khác dạng và thời gian tương đối có thể không có metadata. Hãy kiểm tra mẫu và
 report trước khi coi run dùng được cho nghiên cứu.
+
+Kiểm chứng pagination/message/export ngày 09/11/2026: **106 tests PASS, không
+skip**, gồm fixture tải thêm 3 trang (33 comment), budget sort riêng, message
+chứa link/tag/emoji, loại tác giả, giữ lỗi DOM trong partial export và từ chối
+raw sai kể cả khi bật --allow-partial. Audit raw local xác nhận không có field
+author/username/profile/cookie/token; text_raw là nội dung message, không lấy
+header tên tác giả. Tên được tag trong nội dung comment vẫn thuộc text gốc.

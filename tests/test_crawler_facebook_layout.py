@@ -124,5 +124,70 @@ class FacebookLayoutTests(unittest.TestCase):
         self.assertEqual(errors,0)
         self.assertEqual(rows[0]['text_raw'],'Phim hay 😍!\nko dở.')
 
+    def test_sort_steps_do_not_consume_loading_budget(self):
+        original=self.driver.get
+        with tempfile.TemporaryDirectory() as tmp:
+            post={'post_url':GROUP,'movie_id':'mua_do'}
+            store=Store(tmp,dict(CONFIG,posts=[post],max_rounds=1))
+            html='data:text/html;charset=utf-8,'+quote('<meta charset="utf-8"><base href="https://www.facebook.com/">'+self.fixture())
+            with patch.object(self.driver,'get',side_effect=lambda url:original(html)):
+                status,reason,trace=collect(self.driver,store,post)
+            self.assertEqual(reason,'round_limit')
+            self.assertEqual(trace.count('EXPAND'),1)
+            self.assertEqual(len(store.rows),3)
+
+    def test_message_paragraphs_with_embedded_link(self):
+        html=self.fixture().replace('Phim hay 😍!<br>ko dở.',
+            '<span dir="auto"><div dir="auto">Phim <a href="/film">này</a> hay 😍!</div>'
+            '<div dir="auto">ko dở.</div></span>')
+        self.load(html)
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,0)
+        self.assertEqual(rows[0]['text_raw'],'Phim này hay 😍!\nko dở.')
+        self.assertFalse(any('AUTHOR' in r['text_raw'] for r in rows))
+
+    def test_tag_only_message_keeps_emoji_but_excludes_author(self):
+        html=self.fixture().replace('Phim hay 😍!<br>ko dở.',
+            '<span dir="auto"><div dir="auto"><a href="/tagged">Bạn được tag</a>'
+            '<img alt="😍"><img alt="👍"></div></span>')
+        self.load(html)
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,0)
+        self.assertEqual(rows[0]['text_raw'],'Bạn được tag😍👍')
+        self.assertFalse(any('AUTHOR' in r['text_raw'] for r in rows))
+
+    def test_separate_body_candidates_remain_ambiguous(self):
+        html=self.fixture().replace('Phim hay 😍!<br>ko dở.',
+            '<span dir="auto"><div dir="auto">Phim hay!</div></span>'
+            '<span dir="auto"><div dir="auto">Nội dung khác.</div></span>')
+        self.load(html)
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,1)
+        self.assertFalse(any(r['comment_id']=='101' for r in rows))
+
+    def test_collect_loads_multiple_comment_pages(self):
+        button=f'''<button data-page="0" onclick="
+            const page=Number(this.dataset.page);
+            for(let i=0;i&lt;10;i++){{
+                const id=500+page*10+i;
+                const row=document.createElement('div');
+                row.setAttribute('aria-label','Comment by Fixture');
+                row.innerHTML='&lt;div dir=auto&gt;Fixture '+id+'&lt;/div&gt;&lt;a href={GROUP}?comment_id='+id+'&gt;time&lt;/a&gt;';
+                this.before(row);
+            }}
+            this.dataset.page=page+1;
+            if(page===2)this.remove();">Xem thêm bình luận</button>'''
+        html=self.fixture().replace('</article></div>',button+'</article></div>')
+        original=self.driver.get
+        with tempfile.TemporaryDirectory() as tmp:
+            post={'post_url':GROUP,'movie_id':'mua_do'}
+            store=Store(tmp,dict(CONFIG,posts=[post],max_rounds=6,post_timeout=10))
+            fixture='data:text/html;charset=utf-8,'+quote('<meta charset="utf-8"><base href="https://www.facebook.com/">'+html)
+            with patch.object(self.driver,'get',side_effect=lambda url:original(fixture)):
+                status,reason,trace=collect(self.driver,store,post)
+            self.assertEqual((status,reason),('success','visible_dom_exhausted'))
+            self.assertEqual(len(store.rows),33)
+            self.assertEqual(len({r['comment_id'] for r in store.rows}),33)
+
 
 if __name__=='__main__': unittest.main()

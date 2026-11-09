@@ -65,10 +65,11 @@ class Store:
                 with path.open('r+b') as f:
                     f.truncate(len(data) - len(tail))
         self.rows = load_lines(self.path / 'raw_comments.jsonl')
+        self.post_counts = Counter(r['post_url'] for r in self.rows)
         self.posts = load_lines(self.path / 'posts.jsonl')
         self.keys = {self.key(r) for r in self.rows if self.key(r)}
         self.local_seen = set()
-        self.duplicates = 0
+        self.checkpoint_every = 25
         self.checkpoint('running')
 
     @staticmethod
@@ -102,9 +103,11 @@ class Store:
                    possible_duplicate=key is None)
         self.append('raw_comments.jsonl', row)
         self.rows.append(row)
+        self.post_counts[row['post_url']] += 1
         if key:
             self.keys.add(key)
-        self.checkpoint('running')
+        if len(self.rows) % self.checkpoint_every == 0:
+            self.checkpoint('running')
         return True
 
     def finish_post(self, post, status, reason, **extra):
@@ -120,7 +123,9 @@ class Store:
     def finish(self):
         report = validate(self.path)
         write_json(self.path / 'crawl_report.json', report)
-        self.checkpoint('complete')
+        complete = (not report['posts_without_result'] and
+                    report['post_status_counts']['success'] == report['requested_posts'])
+        self.checkpoint('complete' if complete else 'interrupted')
         return report
 
 

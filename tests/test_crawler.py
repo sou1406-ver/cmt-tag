@@ -69,6 +69,7 @@ class StoreTests(unittest.TestCase):
         self.assertFalse(resumed.add(observation(),POST,'second'))
         self.assertEqual(len(resumed.rows),1)
         self.assertTrue(resumed.add(observation('101'),POST,'second'))
+        resumed.finish_post(POST,'success','visible_dom_exhausted')
         resumed.finish()
         with self.assertRaisesRegex(ValueError,'immutable'):
             Store(self.root/'crawl_runs',resume=s.run_id)
@@ -80,6 +81,33 @@ class StoreTests(unittest.TestCase):
         resumed=Store(self.root/'crawl_runs',resume=s.run_id)
         self.assertEqual(len(resumed.rows),1)
         self.assertEqual(next(s.path.glob('*.tail_*')).read_bytes(),b'{"incomplete')
+
+    def test_counter_resume_and_checkpoint_lag_do_not_lose_rows(self):
+        s=self.store
+        s.add(observation('1'),POST,'page')
+        s.add(observation('2'),POST,'page')
+        self.assertFalse(s.add(observation('2'),POST,'page_again'))
+        self.assertEqual(s.post_counts[POST['post_url']],2)
+        self.assertEqual(json.loads((s.path/'checkpoint.json').read_text())['rows'],0)
+        # Simulate stop without calling checkpoint: fsynced raw is authoritative.
+        resumed=Store(self.root/'crawl_runs',resume=s.run_id)
+        self.assertEqual(resumed.post_counts[POST['post_url']],2)
+        self.assertEqual(len(resumed.rows),2)
+
+    def test_partial_failed_and_blocked_runs_resume_until_success(self):
+        for status in ('partial','failed','blocked'):
+            with self.subTest(status=status):
+                s=Store(self.root/status,CONFIG)
+                s.add(observation(),POST,'page')
+                s.finish_post(POST,status,'fixture_stop'); s.finish()
+                self.assertEqual(json.loads((s.path/'checkpoint.json').read_text())['status'],'interrupted')
+                resumed=Store(self.root/status,resume=s.run_id)
+                def success(page,store,post):
+                    self.assertFalse(store.add(observation(),post,'resumed'))
+                    return 'success','visible_dom_exhausted',[]
+                run_posts(resumed,None,success)
+                self.assertEqual(len(resumed.rows),1)
+                self.assertEqual(json.loads((s.path/'checkpoint.json').read_text())['status'],'complete')
 
     def test_retry_is_bounded_and_batch_continues(self):
         self.store.config['posts']=[POST,dict(POST,post_url=POST['post_url'].replace('123','456'))]

@@ -53,7 +53,8 @@ checkpoint/CAPTCHA hoặc hạn chế truy cập, dừng; không tự vượt qu
 
 `crawl-batch --resume` không cần CSV đầu vào. `crawl-post --resume` vẫn yêu cầu
 hai tham số URL/movie của argparse nhưng dùng config lưu trong run; nên dùng
-lệnh batch-resume thống nhất ở trên. Run hoàn tất không resume/ghi đè; tạo run mới.
+lệnh batch-resume thống nhất ở trên. Run tất cả bài success không resume/ghi đè;
+partial/failed/blocked hoặc còn bài chưa xử lý được giữ resumable.
 Các bài `success` được bỏ qua khi resume, bài partial/failed hoặc bị ngắt sẽ
 được thử lại. Nếu kill cứng để lại `.browser.lock`, chỉ gỡ file lock riêng của
 run sau khi xác minh không còn tiến trình crawler dùng run đó. Không xóa profile/raw.
@@ -129,6 +130,11 @@ Nếu Ctrl+C trước cuối bài, comment đầy đủ đã fsync vẫn còn; p
 trong run đó; muốn đọc lại bản đầy đủ, tạo run mới. Khi write bị ngắt giữa JSON,
 resume giữ tail chưa commit trong file `.tail_<id>` trước khi cắt tail để tiếp tục;
 mọi dòng đã commit nguyên vẹn. Dòng malformed kết thúc bằng newline không bị tự sửa.
+Raw vẫn flush/fsync từng dòng; checkpoint chỉ ghi mỗi 25 comment, tại kết thúc
+bài hoặc khi dừng/finish. Resume dựng lại ID và Counter từng bài từ raw, không
+tin số dòng checkpoint có thể chậm. Giữ raw fsync là lựa chọn bảo toàn dữ liệu,
+không đánh đổi thêm comment đã xác nhận để lấy throughput; giảm checkpoint
+giúp bớt atomic replace/fsync phụ mà không giảm durability journal.
 
 Validate báo từng field metadata, số comment/reply, truncated, duplicate ID,
 nghi trùng chưa xác nhận, lỗi parse, trạng thái bài, phân phối bài/phim và mẫu

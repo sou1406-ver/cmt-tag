@@ -29,7 +29,7 @@ def collect(page, store, post):
     cfg = store.config
     deadline = time.monotonic() + cfg['post_timeout']
     session = uuid4().hex
-    start_count = sum(r['post_url']==post['post_url'] for r in store.rows)
+    start_count = store.post_counts[post['post_url']]
     if start_count >= cfg['max_comments']:
         return 'partial', 'comment_limit', []
     trace, pending, idle = ['NAVIGATE'], {}, 0
@@ -72,7 +72,7 @@ def collect(page, store, post):
             store.append('errors.jsonl', {'code':'parse_error','count':errors,'post_url':post['post_url']})
         added = 0
         for row in parsed:
-            count = sum(r['post_url']==post['post_url'] for r in store.rows)
+            count = store.post_counts[post['post_url']]
             if count >= cfg['max_comments']:
                 reason = 'comment_limit'
                 break
@@ -107,7 +107,7 @@ def collect(page, store, post):
             reason = 'visible_dom_exhausted' if parsed else 'no_recognized_comments'
             break
     for row in pending.values():
-        if sum(r['post_url']==post['post_url'] for r in store.rows) < cfg['max_comments']:
+        if store.post_counts[post['post_url']] < cfg['max_comments']:
             store.add(row,post,session)
     if pending and status=='success':
         status, reason = 'partial','truncated_comments'

@@ -1,7 +1,8 @@
-# Local datasets, labels, model artifacts and existing animation outputs
+# Local datasets, labels and research artifacts (never delete based on ignore rules)
 /data/
 /outputs/
 /crawl/*.csv
+# Retain protection for legacy local media; no media is present in this clone.
 /media/
 .venv/
 .venv-*/
@@ -12,3 +13,10 @@ __pycache__/
 *.pkl
 *.model
 .pytest_cache/
+
+# Local secrets; keep example templates eligible for version control.
+.env
+.env.*
+!.env.example
+!.env.sample
+/.playwright-browsers/

@@ -5,6 +5,19 @@
 là comment về phim với ba sentiment `POS / NEG / NEU`.
 `REVIEW` và `EXCLUDE` là trạng thái, không phải lớp huấn luyện.
 
+Repository phục vụ pipeline Python CLI: thu thập → tiền xử lý → gán nhãn
+bán tự động → trích xuất đặc trưng → huấn luyện → đánh giá → báo cáo.
+Không xây web, dashboard hoặc giao diện ứng dụng. Hiện mới hoàn tất Phase B;
+các bước huấn luyện/đánh giá/báo cáo thực nghiệm chưa được triển khai.
+
+## Thu thập Facebook mới (Python CLI)
+
+Crawler Playwright mới: [hướng dẫn cài đặt, crawl, resume, validate và export](docs/CRAWLER.md).
+Chạy `python -m src.crawler --help`. Dùng URL bài do người dùng cung cấp,
+trình duyệt có giao diện để tự đăng nhập; không tự tìm phim hoặc đăng nhập mật khẩu.
+Raw JSONL theo run độc lập, không ghép dữ liệu/nhãn legacy. Chỉ export các
+observation đầy đủ vào CSV cùng `import_config.json` để chạy Phase B.
+
 ## Setup và test
 
 Phase B chỉ cần **Python 3.10+**, dùng standard library. Không cần cài package
@@ -27,15 +40,24 @@ $pythonExe = 'C:\Users\phuc1\.cache\codex-runtimes\codex-primary-runtime\depende
 ```
 
 Test tích hợp của `gan_nhan.py` dùng pandas nếu có, nếu thiếu sẽ ghi rõ skipped;
-các test nền tảng dữ liệu không cần pandas. sklearn/scipy/torch/pyvi/manim
-của scripts cũ chưa được cài/xác nhận, không thuộc dependency Phase B.
+các test nền tảng dữ liệu không cần pandas. Các script sentiment cũ có
+dependency riêng: `gan_nhan.py` và `crawl/tien_xu_ly.py` dùng pandas;
+`trich_dac_trung.py` dùng numpy, pandas, scipy và scikit-learn. Gensim chỉ
+cần cho helper Word2Vec/KeyedVectors, pyvi khi chọn tách từ. Đây không phải
+dependency Phase B; môi trường audit hiện thiếu scipy/scikit-learn/gensim/pyvi.
 
 ## Dữ liệu và chạy pipeline
 
-Kiểm kê ban đầu: `crawl/dataset.csv` có **3.471 dòng raw**;
+Kiểm kê lịch sử Phase A/B: `crawl/dataset.csv` có **3.471 dòng raw**;
 hai file derived có **3.430 dòng**. Toàn bộ `nhan_nguoi` trống. Không có file
-29k hoặc metadata bài/comment được xác nhận. CSV thật được giữ local và
-gitignore. Clone repo mới vẫn chạy được fixture CSV/JSON trong `tests/fixtures`.
+29k hoặc metadata bài/comment được xác nhận ở thời điểm đó. Những CSV này
+không có trong bản clone hiện tại. CSV thật được giữ local và gitignore.
+Clone repo mới vẫn chạy được fixture CSV/JSON trong `tests/fixtures`.
+
+Ngày 09/11/2026 đã thấy nguồn local `../data_module1.csv` có 29.688 dòng,
+cột `id,comment,overall`, nhãn `pos/neg/neu`. Chưa nhập nguồn này vào pipeline,
+chưa xác minh provenance hoặc coi nhãn có sẵn là gold. Config legacy chỉ dùng
+khi các file local được tham chiếu đã có đầy đủ.
 
 Với dữ liệu local hiện có:
 
@@ -160,8 +182,12 @@ Tiếp theo: **Phase C** guideline versioned, dry-run/pilot sampler, bảng gán
 độc lập, review queue, agreement/kappa; sau đó Phase D baseline trên fixture
 và gold thật khi có. Chưa có kết quả thực nghiệm sentiment được công bố.
 
-Không thay crawler trước Phase G. MMR và media cũ giữ nguyên, không nhập vào
-pipeline sentiment. Chỉ code/config/docs/fixture được đưa lên Git; không đưa
+Theo yêu cầu thu thập lại corpus, crawler Python mới được triển khai riêng;
+không sửa thuật toán Phase B. `crawl/crawl.js` là công cụ thu thập legacy
+chạy trong trình duyệt, được giữ để đối chiếu; không phải ứng dụng web của dự án.
+Demo MMR độc lập và script Hello World đã được loại bỏ sau khi audit tham chiếu;
+chi tiết: [báo cáo dọn repository](docs/REPO_CLEANUP_AUDIT.md).
+Chỉ code/config/docs/fixture được đưa lên Git; không đưa
 CSV comment thật, snapshot, annotation thật, model, media hoặc virtualenv.
 
 Audit và báo cáo phase: [Phase A](docs/REPO_AUDIT_PHASE_A.md),

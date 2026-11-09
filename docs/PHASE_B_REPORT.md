@@ -1,5 +1,8 @@
 # Phase B — Data foundation (hoàn tất 09/11/2026)
 
+> Báo cáo lịch sử của Phase B. Trạng thái repo sau khi loại demo MMR độc lập
+> được ghi riêng trong [audit dọn repo](REPO_CLEANUP_AUDIT.md); kết quả Phase B không bị sửa.
+
 ## Đã thực hiện
 
 Import CSV/JSON theo cấu hình; snapshot raw byte nguyên vẹn; schema và

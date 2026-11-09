@@ -1,5 +1,8 @@
 # Phase A — Repo audit (07/11/2026)
 
+> Báo cáo lịch sử, giữ nguyên kết quả tại thời điểm Phase A. Quyết định giữ
+> MMR/Hello World đã được thay thế bởi [audit dọn repo ngày 09/11/2026](REPO_CLEANUP_AUDIT.md).
+
 Đặc tả: `CODEX_HANDOFF_MOVIE_SENTIMENT.md` v1.0. Chỉ bắt đầu A → B;
 chưa huấn luyện, chỉnh mô hình, gán lại sentiment hay chạy crawler.
 

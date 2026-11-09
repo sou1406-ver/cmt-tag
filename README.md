@@ -5,6 +5,11 @@
 là comment về phim với ba sentiment `POS / NEG / NEU`.
 `REVIEW` và `EXCLUDE` là trạng thái, không phải lớp huấn luyện.
 
+Phase 0 đã audit nguồn local 29k: [quyết định dùng fixture trước](docs/PHASE_0_DATA_AUDIT.md).
+Phase C có workflow CLI blind annotation, agreement/Kappa, silver provider và
+annotation release: [hướng dẫn Phase C](docs/PHASE_C_REPORT.md). Chưa có gold
+hoặc Kappa người thật; nhãn `overall` chưa được xác minh, không được gọi là gold.
+
 Repository phục vụ pipeline Python CLI: thu thập → tiền xử lý → gán nhãn
 bán tự động → trích xuất đặc trưng → huấn luyện → đánh giá → báo cáo.
 Không xây web, dashboard hoặc giao diện ứng dụng. Hiện mới hoàn tất Phase B;

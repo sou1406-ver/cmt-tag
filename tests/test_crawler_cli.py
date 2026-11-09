@@ -4,8 +4,9 @@ import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
 import argparse
+import importlib.util
 
-from src.crawler.__main__ import browser_options, single_post, cdp_endpoint, browser_page
+from src.crawler.__main__ import browser_options, single_post, cdp_endpoint, browser_page, debugger_version, attached_driver_path
 
 
 class CrawlerCliTests(unittest.TestCase):
@@ -47,27 +48,61 @@ class CrawlerCliTests(unittest.TestCase):
                     'http://user:secret@localhost:9222','http://localhost:9222/?token=secret','http://localhost'):
             with self.subTest(bad=bad),self.assertRaises(argparse.ArgumentTypeError): cdp_endpoint(bad)
 
-    def test_attached_facebook_tab_kept_open_without_navigation(self):
-        pw=MagicMock(); context=pw.chromium.connect_over_cdp.return_value.contexts[0]
-        other=MagicMock(); other.url='https://example.com'
-        facebook=MagicMock(); facebook.url='https://www.facebook.com/groups/example'
-        context.pages=[other,facebook]
-        with browser_page(pw,Path('unused'),{},'http://127.0.0.1:9222') as page:
-            self.assertIs(page,facebook)
-        facebook.goto.assert_not_called()
-        facebook.close.assert_not_called()
-        context.close.assert_not_called()
-        pw.chromium.connect_over_cdp.return_value.close.assert_not_called()
-        pw.chromium.launch_persistent_context.assert_not_called()
+    def test_two_factor_page_is_an_access_barrier(self):
+        from src.crawler.browser import access_barrier
+        driver=MagicMock(); driver.current_url='https://www.facebook.com/two_step_verification/authentication/'
+        self.assertTrue(access_barrier(driver))
+        driver.find_elements.assert_not_called()
 
-    def test_attached_browser_stays_open_after_interrupt(self):
-        pw=MagicMock(); browser=pw.chromium.connect_over_cdp.return_value
-        context=MagicMock(); browser.contexts=[context]; context.pages=[]
-        with self.assertRaises(KeyboardInterrupt):
-            with browser_page(pw,Path('unused'),{},'http://127.0.0.1:9222'):
-                raise KeyboardInterrupt()
-        context.new_page.return_value.goto.assert_called_once()
-        context.close.assert_not_called(); browser.close.assert_not_called()
+    @unittest.skipUnless(importlib.util.find_spec('selenium'),'Selenium optional')
+    @patch('src.crawler.__main__.debugger_version',return_value='157.0.8103.39')
+    @patch('src.crawler.__main__.attached_driver_path',return_value=Path('chromedriver.exe'))
+    def test_attached_facebook_tab_kept_open_without_navigation(self,driver_path,version):
+        with patch('selenium.webdriver.Chrome') as chrome, patch('selenium.webdriver.chrome.service.Service') as service:
+            driver=chrome.return_value
+            driver.window_handles=['other','fb']
+            def switch(handle):
+                driver.current_url='https://www.facebook.com/groups/example' if handle=='fb' else 'https://example.com'
+            driver.switch_to.window.side_effect=switch
+            with browser_page(Path('unused'),{},'http://127.0.0.1:9222') as page:
+                self.assertIs(page,driver)
+            driver.get.assert_not_called(); driver.close.assert_not_called(); driver.quit.assert_not_called()
+            driver.command_executor.close.assert_called_once(); service.return_value.stop.assert_called_once()
+            self.assertEqual(chrome.call_args.kwargs['options'].debugger_address,'127.0.0.1:9222')
+            self.assertEqual(chrome.call_args.kwargs['options'].browser_version,'157.0.8103.39')
+            self.assertNotIn('detach',chrome.call_args.kwargs['options'].to_capabilities()['goog:chromeOptions'])
+
+    @unittest.skipUnless(importlib.util.find_spec('selenium'),'Selenium optional')
+    @patch('src.crawler.__main__.debugger_version',return_value='157.0.8103.39')
+    @patch('src.crawler.__main__.attached_driver_path',return_value=Path('chromedriver.exe'))
+    def test_attached_browser_stays_open_after_interrupt(self,driver_path,version):
+        with patch('selenium.webdriver.Chrome') as chrome, patch('selenium.webdriver.chrome.service.Service') as service:
+            driver=chrome.return_value; driver.window_handles=[]
+            with self.assertRaises(KeyboardInterrupt):
+                with browser_page(Path('unused'),{},'http://127.0.0.1:9222'):
+                    raise KeyboardInterrupt()
+            driver.switch_to.new_window.assert_called_once_with('tab')
+            driver.get.assert_called_once(); driver.quit.assert_not_called()
+            service.return_value.stop.assert_called_once()
+
+    @unittest.skipUnless(importlib.util.find_spec('selenium'),'Selenium optional')
+    def test_launched_driver_owns_cleanup(self):
+        with patch('selenium.webdriver.Chrome') as chrome, patch('selenium.webdriver.chrome.service.Service'):
+            with browser_page(Path('data/test_profile'),{'executable_path':'brave.exe'}):
+                pass
+            chrome.return_value.quit.assert_called_once()
+            options=chrome.call_args.kwargs['options']
+            self.assertEqual(options.binary_location,'brave.exe')
+            self.assertTrue(any(a.startswith('--user-data-dir=') for a in options.arguments))
+
+    def test_matching_driver_uses_attached_version(self):
+        import io
+        with patch('urllib.request.urlopen',return_value=io.BytesIO(b'{"Browser":"Chrome/157.0.8103.39"}')):
+            self.assertEqual(debugger_version('http://127.0.0.1:9222'),'157.0.8103.39')
+        if importlib.util.find_spec('selenium'):
+            with patch('selenium.webdriver.common.selenium_manager.SeleniumManager.binary_paths',return_value={'driver_path':'driver.exe'}) as manager:
+                self.assertEqual(attached_driver_path('157.0.8103.39'),Path('driver.exe'))
+                manager.assert_called_once_with(['--browser','chrome','--browser-version','157','--avoid-browser-download'])
 
 
 if __name__=='__main__': unittest.main()

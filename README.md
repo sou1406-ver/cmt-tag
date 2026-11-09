@@ -22,7 +22,7 @@ Dán nhiều link trong cùng run, dùng Brave:
 `python -m src.crawler interactive --channel brave`. Nhập mã phim một lần;
 dán link từng dòng, `movie <mã mới>` để đổi phim, Enter rỗng để kết thúc.
 
-Crawler Playwright mới: [hướng dẫn cài đặt, crawl, resume, validate và export](docs/CRAWLER.md).
+Crawler dùng Selenium: [hướng dẫn cài đặt, crawl, resume, validate và export](docs/CRAWLER.md).
 Chạy `python -m src.crawler --help`. Dùng URL bài do người dùng cung cấp,
 trình duyệt có giao diện để tự đăng nhập; không tự tìm phim hoặc đăng nhập mật khẩu.
 Raw JSONL theo run độc lập, không ghép dữ liệu/nhãn legacy. Chỉ export các

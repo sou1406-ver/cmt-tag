@@ -65,26 +65,71 @@ def cdp_endpoint(value):
     return value
 
 
+def debugger_version(endpoint):
+    import re
+    from urllib.request import urlopen
+    with urlopen(cdp_endpoint(endpoint).rstrip('/')+'/json/version',timeout=5) as response:
+        browser=json.load(response).get('Browser','')
+    match=re.search(r'(?:Chrome|Chromium)/(\d+\.\d+\.\d+\.\d+)',browser)
+    if not match: raise ValueError('Cannot determine attached Chromium version; use --driver-path')
+    return match[1]
+
+
+def attached_driver_path(version):
+    from selenium.webdriver.common.selenium_manager import SeleniumManager
+    # Brave's patch version need not exist as a Chrome-for-Testing binary.
+    # Only resolve a matching-major driver; the browser is already running.
+    result=SeleniumManager().binary_paths(['--browser','chrome','--browser-version',version.split('.')[0],
+                                          '--avoid-browser-download'])
+    return Path(result['driver_path'])
+
+
 @contextmanager
-def browser_page(pw,profile,launch_options,cdp_url=None):
+def browser_page(profile,launch_options,cdp_url=None,driver_path=None):
+    from selenium import webdriver
+    from selenium.webdriver.chrome.service import Service
+    if driver_path and not driver_path.is_file():
+        raise ValueError('ChromeDriver not found; check --driver-path')
+    options=webdriver.ChromeOptions()
+    options.page_load_strategy='eager'
+    if launch_options.get('executable_path'):
+        options.binary_location=launch_options['executable_path']
     if cdp_url:
-        # Ownership stays with the user. Playwright.stop disconnects the
-        # transport; never close this browser/context or its existing tabs.
-        browser=pw.chromium.connect_over_cdp(cdp_url,timeout=10000)
-        if not browser.contexts:
-            raise ValueError('Connected browser has no default context')
-        context=browser.contexts[0]
-        page=next((p for p in context.pages if urlsplit(p.url).hostname in
-                   ('facebook.com','www.facebook.com','m.facebook.com','web.facebook.com')),None)
-        if page is None:
-            page=context.new_page()
-            page.goto('https://www.facebook.com/',wait_until='domcontentloaded')
-        yield page
+        endpoint=urlsplit(cdp_url)
+        options.debugger_address=endpoint.netloc
+        if driver_path is None:
+            options.browser_version=debugger_version(cdp_url)
+        # Do not add launch-only options to a debuggerAddress connection.
     else:
-        with pw.chromium.launch_persistent_context(str(profile.resolve()),headless=False,**launch_options) as context:
-            page=context.new_page()
-            page.goto('https://www.facebook.com/',wait_until='domcontentloaded')
-            yield page
+        options.add_argument('--user-data-dir='+str(profile.resolve()))
+    os.environ.setdefault('SE_CACHE_PATH',str(Path('data/selenium_cache').resolve()))
+    if cdp_url and driver_path is None:
+        driver_path=attached_driver_path(options.browser_version)
+    service=Service(executable_path=str(driver_path.resolve()) if driver_path else None)
+    driver=webdriver.Chrome(service=service,options=options)
+    try:
+        driver.set_page_load_timeout(30)
+        if cdp_url:
+            found=False
+            for handle in driver.window_handles:
+                driver.switch_to.window(handle)
+                if urlsplit(driver.current_url).hostname in ('facebook.com','www.facebook.com','m.facebook.com','web.facebook.com'):
+                    found=True; break
+            if not found:
+                driver.switch_to.new_window('tab')
+                driver.get('https://www.facebook.com/')
+        else:
+            driver.get('https://www.facebook.com/')
+        yield driver
+    finally:
+        if cdp_url:
+            # Do not send WebDriver quit/close to an attached user browser.
+            try:
+                driver.command_executor.close()
+            finally:
+                service.stop()
+        else:
+            driver.quit()
 
 
 def main():
@@ -106,9 +151,10 @@ def main():
         p.add_argument('--data-root',type=Path,default=Path('data'),help='Local data directory')
         p.add_argument('--source-dataset',help='Batch provenance identifier; defaults to run ID')
         p.add_argument('--profile',type=Path,help='Dedicated profile; default data/browser_profile (Brave: data/browser_profile_brave)')
-        p.add_argument('--channel',choices=['chrome','chromium','brave'],default='chromium',help='Browser: installed Brave/Chrome or Playwright Chromium')
+        p.add_argument('--channel',choices=['chrome','chromium','brave'],default='chromium',help='Selenium browser: Brave or Chrome auto-discovery (chromium is a compatibility alias)')
         p.add_argument('--browser-path',type=Path,help='Optional browser executable path; overrides channel auto-detection')
         p.add_argument('--cdp-url',type=cdp_endpoint,help='Attach to a manually opened local browser, e.g. http://127.0.0.1:9222; do not close it on exit')
+        p.add_argument('--driver-path',type=Path,help='Optional matching chromedriver.exe; otherwise use Selenium Manager')
         for flag,default,help_text in [
             ('max-posts',100,'Maximum posts in this run'),('max-comments',5000,'Maximum stored observations per post'),
             ('post-timeout',300,'Seconds per post attempt'),('max-rounds',100,'Expansion/scroll rounds per post'),
@@ -157,7 +203,6 @@ def main():
             config.update(posts=posts,source_dataset=args.source_dataset)
             if args.command=='interactive': config['interactive']=True
         from .browser import run_posts
-        from playwright.sync_api import sync_playwright
         if args.cdp_url and (args.profile or args.browser_path):
             raise ValueError('--cdp-url uses the open browser; omit --profile and --browser-path')
         launch_options = {} if args.cdp_url else browser_options(args.channel,args.browser_path)
@@ -178,15 +223,14 @@ def main():
                 lock=store.path/'.browser.lock'
                 with lock.open('x'):
                     pass
-            with sync_playwright() as pw:
-                with browser_page(pw,profile,launch_options,args.cdp_url) as page:
-                    input('Log in manually in the browser, then press Enter here. Ctrl+C pauses the run. ')
-                    if args.command=='interactive':
-                        from .interactive import session
-                        return session(store,page,movie_id=args.movie_id,data_root=args.data_root)
-                    else:
-                        report=run_posts(store,page)
-                        print(json.dumps(report,ensure_ascii=False,indent=2))
+            with browser_page(profile,launch_options,args.cdp_url,args.driver_path) as page:
+                input('Log in manually in the browser, then press Enter here. Ctrl+C pauses the run. ')
+                if args.command=='interactive':
+                    from .interactive import session
+                    return session(store,page,movie_id=args.movie_id,data_root=args.data_root)
+                else:
+                    report=run_posts(store,page)
+                    print(json.dumps(report,ensure_ascii=False,indent=2))
         finally:
             if lock:
                 lock.unlink(missing_ok=True)

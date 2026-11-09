@@ -16,9 +16,9 @@ BLOCKED = re.compile(r'captcha|checkpoint|temporarily blocked|tạm thời bị 
 
 
 def access_barrier(page):
-    if any(part in page.url for part in ('/login','/checkpoint','/captcha')):
+    if any(part in page.current_url for part in ('/login','/checkpoint','/captcha','/two_step_verification')):
         return True
-    return any(BLOCKED.search(text) for text in page.locator('h1,h2,[role="alert"]').all_text_contents())
+    return any(BLOCKED.search(el.text) for el in page.find_elements('css selector','h1,h2,[role="alert"]'))
 
 
 def collect(page, store, post):
@@ -26,6 +26,7 @@ def collect(page, store, post):
 
     Success means bounded visible DOM exhausted, never all Facebook comments.
     """
+    from selenium.webdriver.support.ui import WebDriverWait
     cfg = store.config
     deadline = time.monotonic() + cfg['post_timeout']
     session = uuid4().hex
@@ -33,12 +34,14 @@ def collect(page, store, post):
     if start_count >= cfg['max_comments']:
         return 'partial', 'comment_limit', []
     trace, pending, idle = ['NAVIGATE'], {}, 0
-    page.goto(post['post_url'], wait_until='domcontentloaded', timeout=cfg['wait_ms'])
+    page.set_page_load_timeout(cfg['wait_ms']/1000)
+    page.get(post['post_url'])
     trace.append('WAIT')
     if access_barrier(page):
         return 'blocked', 'access_barrier', trace
     try:
-        page.locator('[role="article"]').first.wait_for(timeout=min(cfg['wait_ms'], max(1,int((deadline-time.monotonic())*1000))))
+        WebDriverWait(page,min(cfg['wait_ms']/1000,max(.001,deadline-time.monotonic())),poll_frequency=.1).until(
+            lambda driver:driver.find_elements('css selector','[role="article"]'))
     except Exception:
         return 'partial', 'comment_dom_not_found', trace
     reason, status = 'round_limit', 'partial'
@@ -53,20 +56,20 @@ def collect(page, store, post):
         clicked = 0
         # Never click arbitrary page links. Restrict to comment containers or
         # comment-list buttons, with exact localized action labels.
-        buttons = page.locator('[role="article"] [role="button"], [role="article"] button').filter(has_text=MORE)
-        for i in range(min(buttons.count(), cfg['max_actions'])):
+        buttons = page.find_elements('css selector','[role="article"] [role="button"], [role="article"] button')
+        buttons = [button for button in buttons if MORE.fullmatch(button.text.strip())]
+        for button in buttons[:cfg['max_actions']]:
             if time.monotonic() >= deadline:
                 break
             try:
-                button = buttons.nth(i)
-                if button.is_visible():
-                    button.click(timeout=min(cfg['wait_ms'], max(1,int((deadline-time.monotonic())*1000))))
+                if button.is_displayed() and button.is_enabled():
+                    button.click()
                     clicked += 1
             except Exception:
                 # Fixed action budget; failure is reported via partial settle.
                 pass
         trace.append('EXTRACT')
-        candidates = page.evaluate(EXTRACT)
+        candidates = page.execute_script('return ('+EXTRACT+')();')
         parsed, errors = observations(candidates, post['post_url'])
         if errors:
             store.append('errors.jsonl', {'code':'parse_error','count':errors,'post_url':post['post_url']})
@@ -85,20 +88,20 @@ def collect(page, store, post):
             break
         trace.append('SCROLL')
         # Scroll nested dialog/list viewport when Facebook uses one, then page.
-        page.evaluate("""() => {
+        page.execute_script("""
           const nodes=[...document.querySelectorAll('[role="dialog"] *')];
           const scroll=nodes.filter(n=>n.scrollHeight>n.clientHeight+50 &&
             ['auto','scroll'].includes(getComputedStyle(n).overflowY));
           scroll.forEach(n=>n.scrollBy(0,n.clientHeight));
           window.scrollBy(0,window.innerHeight);
-        }""")
+        """)
         trace.append('SETTLE')
         # Explicit poll for DOM changes, bounded even for silent/no-comment pages.
         before = len(candidates)
         try:
-            page.wait_for_function("n => document.querySelectorAll('[role=article]').length > n",
-                                   arg=page.locator('[role="article"]').count(),
-                                   timeout=min(cfg['settle_ms'], max(1,int((deadline-time.monotonic())*1000))))
+            article_count=len(page.find_elements('css selector','[role="article"]'))
+            WebDriverWait(page,min(cfg['settle_ms']/1000,max(.001,deadline-time.monotonic())),poll_frequency=.1).until(
+                lambda driver:len(driver.find_elements('css selector','[role="article"]'))>article_count)
         except Exception:
             pass
         idle = idle+1 if not added and not clicked else 0

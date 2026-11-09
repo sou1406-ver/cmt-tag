@@ -189,28 +189,38 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(validate(s.path)['metadata_completeness_rate']['post_id'],0)
 
 
-@unittest.skipUnless(importlib.util.find_spec('playwright'),'Install requirements-crawler.txt and Chromium for DOM tests')
+@unittest.skipUnless(importlib.util.find_spec('selenium'),'Install requirements-crawler.txt and a Chrome/Brave browser for DOM tests')
 class BrowserTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        from playwright.sync_api import sync_playwright
-        cls.pw=sync_playwright().start()
-        cls.browser=cls.pw.chromium.launch(headless=True)
+        import os
+        from selenium import webdriver
+        from selenium.webdriver.chrome.service import Service
+        options=webdriver.ChromeOptions()
+        options.add_argument('--headless=new')
+        if os.environ.get('CRAWLER_TEST_BROWSER'):
+            options.binary_location=os.environ['CRAWLER_TEST_BROWSER']
+        os.environ.setdefault('SE_CACHE_PATH',str(Path('data/selenium_cache').resolve()))
+        cls.driver=webdriver.Chrome(options=options,service=Service(os.environ.get('CRAWLER_TEST_DRIVER')))
 
     @classmethod
     def tearDownClass(cls):
-        cls.browser.close()
-        cls.pw.stop()
+        cls.driver.quit()
 
     def setUp(self):
-        self.page=self.browser.new_page()
-        self.addCleanup(self.page.close)
+        from unittest.mock import patch
+        from urllib.parse import quote
+        self.page=self.driver
         self.fixture=Path('tests/fixtures/facebook_comments.html').read_text(encoding='utf-8')
-        self.page.route('https://www.facebook.com/**',lambda route: route.fulfill(body=self.fixture,content_type='text/html'))
+        original_get=self.driver.get
+        def fixture_get(url):
+            original_get('data:text/html;charset=utf-8,'+quote('<base href="https://www.facebook.com/">'+self.fixture))
+        patcher=patch.object(self.driver,'get',side_effect=fixture_get)
+        patcher.start(); self.addCleanup(patcher.stop)
 
     def test_dom_bodies_replies_expansion_and_post_exclusion(self):
-        self.page.goto(POST['post_url'])
-        candidates=self.page.evaluate(EXTRACT)
+        self.page.get(POST['post_url'])
+        candidates=self.page.execute_script('return ('+EXTRACT+')();')
         rows,errors=observations(candidates,POST['post_url'])
         self.assertEqual(len(rows),8)
         self.assertEqual(errors,0)
@@ -218,8 +228,8 @@ class BrowserTests(unittest.TestCase):
         self.assertEqual(rows[1]['parent_comment_id'],'101')
         self.assertEqual(rows[1]['record_type'],'reply')
         self.assertFalse(any('NỘI DUNG' in r['text_raw'] or 'Tên không' in r['text_raw'] for r in rows))
-        self.page.locator('#long button').click()
-        rows,_=observations(self.page.evaluate(EXTRACT),POST['post_url'])
+        self.page.find_element('css selector','#long button').click()
+        rows,_=observations(self.page.execute_script('return ('+EXTRACT+')();'),POST['post_url'])
         self.assertEqual(next(r for r in rows if r['comment_id']=='105')['text_raw'],'Đầy đủ 😍! Không tệ.\nDòng thứ hai.')
         self.assertEqual(next(r for r in rows if r['comment_id']=='106')['extraction_status'],'truncated')
 

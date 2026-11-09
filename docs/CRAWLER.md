@@ -8,10 +8,12 @@ có thể lẫn UI, dedup prefix 50 ký tự và không giữ metadata. Không t
 toán đó. Giữ nguyên JS và preprocessing legacy để đối chiếu; không chạy chúng
 trên corpus mới. Không đưa CSV legacy hoặc nguồn 29k vào crawl mới.
 
-Playwright Python được chọn vì hỗ trợ locator, explicit waits và Chromium có
-giao diện, dễ kiểm thử cùng adapter DOM trên HTML fixture. Tham khảo chính thức:
-[locators](https://playwright.dev/python/docs/locators),
-[persistent context](https://playwright.dev/python/docs/api/class-browsertype#browser-type-launch-persistent-context).
+Backend hiện tại là **Selenium Python + ChromeDriver**, thay cho Playwright
+theo yêu cầu người dùng. Giữ nguyên CLI tương tác, Store, run_posts, parser DOM,
+raw/resume/export. Dùng WebDriverWait để chờ DOM và JavaScript DOM adapter hiện
+có để chỉ lấy body comment. Tham khảo chính thức:
+[Selenium Manager](https://www.selenium.dev/documentation/selenium_manager/),
+[Chrome options/debugger_address](https://www.selenium.dev/selenium/docs/api/py/selenium_webdriver_chromium/selenium.webdriver.chromium.options.html).
 Không có web app/API/dashboard, API Facebook riêng, chặn request để lấy token,
 mật khẩu tự động, proxy hay vượt CAPTCHA.
 
@@ -50,7 +52,7 @@ khi xong; không mở cổng điều khiển ra mạng.
 Profile mặc định của Chrome mới không hỗ trợ remote debugging như trước;
 dùng user-data-dir riêng cũng tránh tranh chấp profile Brave đang mở. Xem
 [remote debugging changes](https://developer.chrome.com/blog/remote-debugging-port),
-[Playwright connect_over_cdp](https://playwright.dev/python/docs/api/class-browsertype#browser-type-connect-over-cdp).
+[Selenium debugger_address](https://www.selenium.dev/selenium/docs/api/py/selenium_webdriver_chromium/selenium.webdriver.chromium.options.html).
 Không bảo đảm mọi phiên bản Brave có hành vi giống Chrome; CDP cần browser
 hỗ trợ. Thay đổi CDP kiểm thử 80 tests pass, gồm test giả không đóng browser/
 không thay tab và giới hạn endpoint local. Smoke test Brave thật với profile
@@ -93,9 +95,10 @@ Brave tự dò tại Program Files/Program Files (x86)/LocalAppData. Cài nơi k
 .\.venv-crawler\Scripts\python.exe -m src.crawler interactive --channel brave --browser-path "D:\Apps\Brave\Application\brave.exe"
 ```
 
-Profile mặc định Brave là data/browser_profile_brave; Chromium/Chrome vẫn dùng
-data/browser_profile. Brave dùng executable_path của Playwright, không phải
-browser channel chính thức; tương thích tùy phiên bản Brave/Playwright.
+Profile mặc định Brave là data/browser_profile_brave; Chrome vẫn dùng
+data/browser_profile. Brave dùng ChromeOptions.binary_location; Selenium Manager
+tìm ChromeDriver phù hợp. --channel chromium giữ làm alias auto-discovery Chrome
+để tương thích lệnh cũ; nếu dùng Chromium riêng, khai báo --browser-path.
 Đổi trình duyệt không tự sửa lỗi nhận dạng DOM/no_recognized_comments.
 
 Kiểm chứng thay đổi này: `python -m unittest discover -s tests` có 77 tests
@@ -109,14 +112,17 @@ Tại thư mục gốc repository, dùng Python 3.10+:
 ```powershell
 python -m venv .venv-crawler
 .\.venv-crawler\Scripts\python.exe -m pip install -r requirements-crawler.txt
-$env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\.playwright-browsers"
-.\.venv-crawler\Scripts\python.exe -m playwright install chromium
 .\.venv-crawler\Scripts\python.exe -m src.crawler --help
 ```
 
-Giữ biến `PLAYWRIGHT_BROWSERS_PATH` khi chạy trong terminal mới nếu đã cài
-Chromium ở đường dẫn trên. Có thể dùng `--channel chrome` với Chrome đã cài
-thay vì tải Chromium. Không dùng profile Chrome hằng ngày.
+Không cần cài Playwright hoặc đặt PLAYWRIGHT_BROWSERS_PATH nữa. Lần đầu Selenium
+Manager có thể cần mạng để lấy ChromeDriver, cache ở data/selenium_cache (hoặc
+SE_CACHE_PATH nếu bạn đã đặt). Có thể dùng --driver-path đường dẫn chromedriver.exe
+phù hợp major version Chromium bên trong Brave/Chrome nếu máy không tải được.
+Ở chế độ --cdp-url, đọc phiên bản từ endpoint local và chỉ tìm driver cùng major,
+không cố tải browser Chrome có patch-version giống Brave. Browser bạn tự mở
+được giữ nguyên khi crawler ngắt kết nối.
+Không dùng profile Chrome/Brave hằng ngày cho chế độ browser do script mở.
 
 ```powershell
 .\.venv-crawler\Scripts\python.exe -m src.crawler crawl-post --url "https://www.facebook.com/PAGE/posts/POST_ID" --movie-id ma_phim
@@ -159,6 +165,7 @@ Tất cả lệnh có `--help`; các giới hạn phải là số dương:
 | `--profile` | data/browser_profile | Profile trình duyệt riêng; không commit/chia sẻ |
 | `--channel` | chromium | chromium, chrome hoặc brave |
 | `--browser-path` | Tự dò | Đường dẫn browser executable nếu cài nơi khác |
+| `--driver-path` | Selenium Manager | ChromeDriver phù hợp, tùy chọn khi cài sẵn/offline |
 | `--resume` | Không | ID run chưa hoàn tất; dùng lại input/settings đã lưu |
 | `--max-posts` | 100 | Chỉ xử lý tối đa số bài này; phần còn lại báo posts_without_result |
 | `--max-comments` | 5000 | Giới hạn observation lưu trên mỗi bài, kể cả khi resume |
@@ -241,14 +248,20 @@ non-independent, không tự đưa vào gold/train. Không thay schema/thuật t
 
 ## Kiểm thử và smoke test thủ công
 
+Chuyển Selenium: **83 tests PASS, không skip**, với Brave 157.0.8103.39 và
+ChromeDriver 157.0.8103.38 trên fixture local. Smoke riêng xác minh attach/detach
+giữ Brave và tab do người dùng mở; không gọi Facebook hay đọc profile cá nhân.
+Các con số 77/80 ở phần mô tả thay đổi trước là mốc kiểm thử lịch sử.
+
 ```powershell
-$env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\.playwright-browsers"
 .\.venv-crawler\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-DOM tests thực sự dùng Playwright Chromium trên HTML fixture, route local không
-gửi request Facebook. Nếu thiếu package, 4 DOM tests skip có lý do; nếu package
-có mà browser thiếu thì test lỗi để chỉ ra môi trường chưa đủ. Các data tests
+DOM tests thực sự dùng Selenium/ChromeDriver trên HTML fixture qua data URL, không
+gửi request Facebook. Có thể đặt CRAWLER_TEST_BROWSER tới Brave/Chrome executable
+và CRAWLER_TEST_DRIVER tới ChromeDriver local để tránh auto-download trong test.
+Nếu thiếu Selenium thì DOM/browser lifecycle tests skip có lý do; nếu package
+có mà browser/driver thiếu thì test lỗi để chỉ ra môi trường chưa đủ. Các data tests
 không cần tài khoản. Test pandas legacy có thể skip trong venv tối thiểu; để
 chạy đủ như môi trường audit cần pandas (không phải dependency crawler).
 

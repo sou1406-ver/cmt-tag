@@ -187,8 +187,11 @@ checkpoint/CAPTCHA hoặc hạn chế truy cập, dừng; không tự vượt qu
 success không resume/ghi đè (interactive có cơ chế mở lại tường minh như trên);
 partial/failed/blocked hoặc còn bài chưa xử lý được giữ resumable.
 Các bài `success` được bỏ qua khi resume, bài partial/failed hoặc bị ngắt sẽ
-được thử lại. Nếu kill cứng để lại `.browser.lock`, chỉ gỡ file lock riêng của
-run sau khi xác minh không còn tiến trình crawler dùng run đó. Không xóa profile/raw.
+được thử lại. Khóa run mới dùng OS lock: tự nhả khi tiến trình thoát/VS Code bị
+đóng; file .browser.lock còn lại không có nghĩa run đang bị chiếm. Không tự xóa
+file khóa kiểu mới vì có thể ảnh hưởng phiên khác. LegacyRunLockError chỉ file
+khóa rỗng của bản cũ: chỉ gỡ đúng file đó sau khi xác minh crawler cũ không còn
+chạy. RunBusyError là phiên khác vẫn giữ khóa. Không xóa profile/raw để sửa lock.
 
 ## Tham số
 

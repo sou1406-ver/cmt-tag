@@ -229,7 +229,8 @@ def validate(path):
 
 def export_run(path, destination):
     path, destination = Path(path), Path(destination)
-    if (path/'.browser.lock').exists():
+    from .locking import run_is_busy
+    if run_is_busy(path/'.browser.lock'):
         raise ValueError('Cannot export while a browser may be writing this run')
     report = validate(path)
     if report['parse_errors'] or report['duplicate_source_ids_in_raw']:

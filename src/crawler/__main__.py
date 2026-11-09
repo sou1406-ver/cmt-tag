@@ -3,12 +3,13 @@ import argparse
 import csv
 import json
 import os
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from .parser import facebook_url
 from .store import Store, export_run, validate
+from .locking import RunLock, RunBusyError, LegacyRunLockError
 
 
 def positive(value):
@@ -222,18 +223,15 @@ def main():
         if args.resume and not re.fullmatch(r'[A-Za-z0-9_-]+',args.resume):
             raise ValueError('Invalid run ID')
         lock = args.data_root/'crawl_runs'/args.resume/'.browser.lock' if args.resume else None
-        if lock:
-            with lock.open('x'):
-                pass
-        try:
+        with ExitStack() as locks:
+            if lock: locks.enter_context(RunLock(lock))
             store=Store(args.data_root/'crawl_runs',config,resume=args.resume,interactive=args.command=='interactive')
             if args.command=='interactive' and not store.config.get('interactive'):
                 raise ValueError('Use an interactive run ID with interactive --resume')
             print('Run: '+store.run_id,flush=True)
             if lock is None:
                 lock=store.path/'.browser.lock'
-                with lock.open('x'):
-                    pass
+                locks.enter_context(RunLock(lock))
             with browser_page(profile,launch_options,args.cdp_url,args.driver_path) as page:
                 input('Log in manually in the browser, then press Enter here. Ctrl+C pauses the run. ')
                 if args.command=='interactive':
@@ -242,14 +240,14 @@ def main():
                 else:
                     report=run_posts(store,page)
                     print(json.dumps(report,ensure_ascii=False,indent=2))
-        finally:
-            if lock:
-                lock.unlink(missing_ok=True)
         return 0
     except (KeyboardInterrupt, EOFError):
         if 'store' in locals(): store.checkpoint('interrupted')
         print('Interrupted; raw data retained. Resume with the printed run ID.')
         return 130
+    except (RunBusyError,LegacyRunLockError) as exc:
+        print(json.dumps({'error_type':type(exc).__name__,'hint':str(exc)}))
+        return 2
     except (ValueError, FileNotFoundError, FileExistsError) as exc:
         # Safe local validation errors have no browser/page contents.
         print(json.dumps({'error_type':type(exc).__name__,

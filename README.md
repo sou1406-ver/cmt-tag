@@ -18,6 +18,10 @@ Baseline CLI và kết quả fixture: [Phase D](docs/PHASE_D_REPORT.md).
 
 ## Thu thập Facebook mới (Python CLI)
 
+Dán nhiều link trong cùng run, dùng Brave:
+`python -m src.crawler interactive --channel brave`. Nhập mã phim một lần;
+dán link từng dòng, `movie <mã mới>` để đổi phim, Enter rỗng để kết thúc.
+
 Crawler Playwright mới: [hướng dẫn cài đặt, crawl, resume, validate và export](docs/CRAWLER.md).
 Chạy `python -m src.crawler --help`. Dùng URL bài do người dùng cung cấp,
 trình duyệt có giao diện để tự đăng nhập; không tự tìm phim hoặc đăng nhập mật khẩu.

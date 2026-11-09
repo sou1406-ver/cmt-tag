@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import os
 from pathlib import Path
 
 from .parser import facebook_url
@@ -15,24 +16,62 @@ def positive(value):
     return value
 
 
+def single_post(url=None, movie_id=None, ask=None):
+    ask = ask or input
+    if url is None:
+        while True:
+            try:
+                url = facebook_url(ask('Link bai Facebook: ').strip())
+                break
+            except ValueError:
+                print('Link khong hop le. Hay dan link https://www.facebook.com/...')
+    else:
+        url = facebook_url(url)
+    if movie_id is None:
+        while not movie_id:
+            movie_id = ask('Ma phim (vi du: mua_do): ').strip()
+    if not movie_id.strip():
+        raise ValueError('Every post needs a movie_id')
+    return {'post_url':url, 'movie_id':movie_id.strip()}
+
+
+def browser_options(channel, browser_path=None):
+    if browser_path is not None:
+        if not browser_path.is_file():
+            raise ValueError('Browser executable not found; check --browser-path')
+        return {'executable_path':str(browser_path.resolve())}
+    if channel == 'brave':
+        for variable in ('PROGRAMFILES','PROGRAMFILES(X86)','LOCALAPPDATA'):
+            base = os.environ.get(variable)
+            if base:
+                path = Path(base)/'BraveSoftware/Brave-Browser/Application/brave.exe'
+                if path.is_file():
+                    return {'executable_path':str(path.resolve())}
+        raise ValueError('Brave not found. Use --channel brave --browser-path "PATH_TO_brave.exe"')
+    return {'channel':'chrome'} if channel == 'chrome' else {}
+
+
 def main():
     import sys
     if hasattr(sys.stdout,'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
     ap = argparse.ArgumentParser(description='Collect accessible Facebook movie comments; no labels or training.')
     sub = ap.add_subparsers(dest='command',required=True)
-    for cmd in ('crawl-post','crawl-batch'):
+    for cmd in ('crawl-post','crawl-batch','interactive'):
         p = sub.add_parser(cmd)
         if cmd=='crawl-post':
-            p.add_argument('--url',required=True,help='HTTPS Facebook post URL')
-            p.add_argument('--movie-id',required=True,help='Movie code supplied by you')
-        else:
+            p.add_argument('--url',help='HTTPS Facebook post URL; prompt if omitted for a new run')
+            p.add_argument('--movie-id',help='Movie code; prompt if omitted for a new run')
+        elif cmd=='crawl-batch':
             p.add_argument('--input',type=Path,help='UTF-8 CSV with movie_id,post_url; required for a new run')
+        else:
+            p.add_argument('--movie-id',help='Initial movie code; prompted once if omitted')
         p.add_argument('--resume',help='Resume an interrupted run; saved inputs/settings are authoritative')
         p.add_argument('--data-root',type=Path,default=Path('data'),help='Local data directory')
         p.add_argument('--source-dataset',help='Batch provenance identifier; defaults to run ID')
-        p.add_argument('--profile',type=Path,default=Path('data/browser_profile'),help='Dedicated private browser profile; never your everyday Chrome profile')
-        p.add_argument('--channel',choices=['chrome','chromium'],default='chromium',help='Use installed Chrome or Playwright Chromium')
+        p.add_argument('--profile',type=Path,help='Dedicated profile; default data/browser_profile (Brave: data/browser_profile_brave)')
+        p.add_argument('--channel',choices=['chrome','chromium','brave'],default='chromium',help='Browser: installed Brave/Chrome or Playwright Chromium')
+        p.add_argument('--browser-path',type=Path,help='Optional browser executable path; overrides channel auto-detection')
         for flag,default,help_text in [
             ('max-posts',100,'Maximum posts in this run'),('max-comments',5000,'Maximum stored observations per post'),
             ('post-timeout',300,'Seconds per post attempt'),('max-rounds',100,'Expansion/scroll rounds per post'),
@@ -64,21 +103,26 @@ def main():
             return 0
         config = None
         if not args.resume:
-            if args.command=='crawl-post':
-                posts=[{'post_url':facebook_url(args.url),'movie_id':args.movie_id}]
+            if args.command=='interactive':
+                posts=[]
+            elif args.command=='crawl-post':
+                posts=[single_post(args.url,args.movie_id)]
             else:
                 if not args.input:
                     raise ValueError('--input is required for a new batch')
                 with args.input.open(encoding='utf-8-sig',newline='') as f:
                     posts=[{'post_url':facebook_url(r['post_url']),'movie_id':r['movie_id']} for r in csv.DictReader(f)]
-            if not posts or any(not p['movie_id'].strip() for p in posts):
+            if args.command!='interactive' and (not posts or any(not p['movie_id'].strip() for p in posts)):
                 raise ValueError('Every post needs a movie_id')
             if len({p['post_url'] for p in posts}) != len(posts):
                 raise ValueError('Duplicate post URLs; provide each post once')
             config={k:getattr(args,k) for k in ('max_posts','max_comments','post_timeout','max_rounds','max_actions','wait_ms','settle_ms','idle_rounds','retries')}
             config.update(posts=posts,source_dataset=args.source_dataset)
+            if args.command=='interactive': config['interactive']=True
         from .browser import run_posts
         from playwright.sync_api import sync_playwright
+        launch_options = browser_options(args.channel,args.browser_path)
+        profile = args.profile or Path('data/browser_profile_brave' if args.channel=='brave' else 'data/browser_profile')
         import re
         if args.resume and not re.fullmatch(r'[A-Za-z0-9_-]+',args.resume):
             raise ValueError('Invalid run ID')
@@ -87,31 +131,39 @@ def main():
             with lock.open('x'):
                 pass
         try:
-            store=Store(args.data_root/'crawl_runs',config,resume=args.resume)
+            store=Store(args.data_root/'crawl_runs',config,resume=args.resume,interactive=args.command=='interactive')
+            if args.command=='interactive' and not store.config.get('interactive'):
+                raise ValueError('Use an interactive run ID with interactive --resume')
             print('Run: '+store.run_id,flush=True)
             if lock is None:
                 lock=store.path/'.browser.lock'
                 with lock.open('x'):
                     pass
             with sync_playwright() as pw:
-                with pw.chromium.launch_persistent_context(str(args.profile.resolve()),headless=False,
-                        channel='chrome' if args.channel=='chrome' else None) as context:
+                with pw.chromium.launch_persistent_context(str(profile.resolve()),headless=False,
+                        **launch_options) as context:
                     page=context.new_page()
                     page.goto('https://www.facebook.com/',wait_until='domcontentloaded')
                     input('Log in manually in the browser, then press Enter here. Ctrl+C pauses the run. ')
-                    report=run_posts(store,page)
-                    print(json.dumps(report,ensure_ascii=False,indent=2))
+                    if args.command=='interactive':
+                        from .interactive import session
+                        return session(store,page,movie_id=args.movie_id,data_root=args.data_root)
+                    else:
+                        report=run_posts(store,page)
+                        print(json.dumps(report,ensure_ascii=False,indent=2))
         finally:
             if lock:
                 lock.unlink(missing_ok=True)
         return 0
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
+        if 'store' in locals(): store.checkpoint('interrupted')
         print('Interrupted; raw data retained. Resume with the printed run ID.')
         return 130
     except (ValueError, FileNotFoundError, FileExistsError) as exc:
         # Safe local validation errors have no browser/page contents.
         print(json.dumps({'error_type':type(exc).__name__,
-                         'hint':'Invalid input or run path, completed run, existing export, or active/stale .browser.lock. See docs/CRAWLER.md.'}))
+                         'hint':str(exc) if str(exc).startswith(('Brave not found','Browser executable not found')) else
+                         'Invalid input or run path, completed run, existing export, or active/stale .browser.lock. See docs/CRAWLER.md.'}))
         return 2
     except Exception as exc:
         # Never print browser exceptions, credential-bearing URLs or page dumps.

@@ -35,16 +35,25 @@ def load_lines(path):
     return [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines() if line]
 
 
+def run_config(path):
+    config = json.loads((path/'config.json').read_text(encoding='utf-8'))
+    if (path/'interactive_mode.json').exists(): config['interactive']=True
+    if config.get('interactive') and (path/'interactive_inputs.jsonl').exists():
+        config['posts'] = config['posts'] + load_lines(path/'interactive_inputs.jsonl')
+    return config
+
+
 class Store:
-    def __init__(self, root, config=None, resume=None):
+    def __init__(self, root, config=None, resume=None, interactive=False):
         if resume and not re.fullmatch(r'[A-Za-z0-9_-]+', resume):
             raise ValueError('Invalid run ID')
         self.run_id = resume or ('fb_' + uuid4().hex)
         self.path = Path(root) / self.run_id
         if resume:
-            self.config = json.loads((self.path / 'config.json').read_text(encoding='utf-8'))
+            self.config = json.loads((self.path/'config.json').read_text(encoding='utf-8'))
+            if (self.path/'interactive_mode.json').exists(): self.config['interactive']=True
             checkpoint = json.loads((self.path / 'checkpoint.json').read_text(encoding='utf-8'))
-            if checkpoint['status'] == 'complete':
+            if checkpoint['status'] == 'complete' and not (self.config.get('interactive') or interactive):
                 raise ValueError('Completed runs are immutable; create a new run')
         else:
             self.path.mkdir(parents=True, exist_ok=False)
@@ -55,7 +64,10 @@ class Store:
                 (self.path / name).touch(exist_ok=False)
         # If a hard stop left an incomplete journal write, retain bytes in a
         # recovery file and truncate ONLY the uncommitted tail before appending.
-        for name in ('raw_comments.jsonl', 'posts.jsonl', 'errors.jsonl'):
+        journals = ['raw_comments.jsonl', 'posts.jsonl', 'errors.jsonl']
+        if (self.path/'interactive_inputs.jsonl').exists():
+            journals.append('interactive_inputs.jsonl')
+        for name in journals:
             path = self.path / name
             data = path.read_bytes()
             if data and not data.endswith(b'\n'):
@@ -64,6 +76,11 @@ class Store:
                 backup.write_bytes(tail)
                 with path.open('r+b') as f:
                     f.truncate(len(data) - len(tail))
+        if interactive and not self.config.get('interactive'):
+            write_json(self.path/'interactive_mode.json',{'interactive':True},exclusive=True)
+            self.config['interactive']=True
+        if self.config.get('interactive'):
+            self.config = run_config(self.path)
         self.rows = load_lines(self.path / 'raw_comments.jsonl')
         self.post_counts = Counter(r['post_url'] for r in self.rows)
         self.posts = load_lines(self.path / 'posts.jsonl')
@@ -79,6 +96,19 @@ class Store:
         if row.get('comment_permalink'):
             return ('facebook_permalink', row['comment_permalink'])
         return None
+
+    def add_post(self, post):
+        if not self.config.get('interactive'):
+            raise ValueError('Only interactive runs can append input posts')
+        existing = next((p for p in self.config['posts'] if p['post_url']==post['post_url']),None)
+        if existing:
+            if existing['movie_id'] != post['movie_id']:
+                raise ValueError('This post already belongs to another movie in this run')
+            return
+        if len(self.config['posts']) >= self.config['max_posts']:
+            raise ValueError('Run reached max_posts; start a new run')
+        self.append('interactive_inputs.jsonl',post)
+        self.config['posts'].append(post)
 
     def append(self, name, value):
         with (self.path / name).open('a', encoding='utf-8', newline='\n') as f:
@@ -136,7 +166,7 @@ FIELDS = ('text_raw', 'comment_id', 'post_id', 'post_url', 'parent_comment_id',
 
 def validate(path):
     path = Path(path)
-    config = json.loads((path/'config.json').read_text(encoding='utf-8'))
+    config = run_config(path)
     rows, parse_errors = [], 0
     internal_ids = set()
     sources = {p['post_url']:p['movie_id'] for p in config['posts']}

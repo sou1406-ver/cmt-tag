@@ -17,6 +17,53 @@ mật khẩu tự động, proxy hay vượt CAPTCHA.
 
 ## Bắt đầu trên Windows
 
+### Phiên tương tác: dán nhiều link, cùng một run
+
+```powershell
+.\.venv-crawler\Scripts\python.exe -m src.crawler interactive --channel brave --max-comments 30 --max-rounds 5 --post-timeout 60
+```
+
+Không cần đặt URL trong dòng lệnh. Script mở Brave riêng cho crawler để bạn
+tự đăng nhập; nhấn Enter ở terminal. Nhập mã phim một lần, sau đó dán nguyên
+link tại prompt `Dán link (Enter để kết thúc):`. URL có `&`/`?` được đọc qua
+input(), không qua shell. Khoảng trắng/dấu nháy ngoài link được bỏ trước validate.
+Link sai báo lý do và hỏi lại. Gõ `movie phim_b` để đổi mã cho những bài mới;
+bài đã có trong run giữ movie_id đã ghi. Bài đã success được bỏ qua.
+
+Sau mỗi bài in status/reason, số comment mới và tổng run. Enter rỗng kết thúc,
+ghi báo cáo, in run ID, thư mục và hai lệnh validate/export để copy. Giới hạn
+max_comments/rounds/time vẫn tính từng bài như crawl-post, max_posts cho cả run.
+
+```powershell
+.\.venv-crawler\Scripts\python.exe -m src.crawler interactive --channel brave --resume fb_RUN_ID
+```
+
+Ctrl+C checkpoint và thoát; resume nhớ movie gần nhất (Enter để giữ tại prompt
+mã phim). Có thể resume cả run crawl-post/batch trước đó để bổ sung link, kể cả
+run đã success: đây là thao tác mở lại được yêu cầu rõ bằng interactive, không
+sửa/xóa raw đã ghi. Chế độ thường vẫn từ chối mở lại run complete như trước.
+Inputs thêm được fsync trong interactive_inputs.jsonl, chế độ/mã phim lưu riêng;
+config.json ban đầu giữ nguyên. Validator/exporter dựng cấu hình hiệu lực từ
+config ban đầu + input journal, nên tất cả link export trong cùng một run.
+Browser profile vẫn riêng, không đọc hoặc nhập profile Brave cá nhân đang mở.
+
+Brave tự dò tại Program Files/Program Files (x86)/LocalAppData. Cài nơi khác:
+
+```powershell
+.\.venv-crawler\Scripts\python.exe -m src.crawler interactive --channel brave --browser-path "D:\Apps\Brave\Application\brave.exe"
+```
+
+Profile mặc định Brave là data/browser_profile_brave; Chromium/Chrome vẫn dùng
+data/browser_profile. Brave dùng executable_path của Playwright, không phải
+browser channel chính thức; tương thích tùy phiên bản Brave/Playwright.
+Đổi trình duyệt không tự sửa lỗi nhận dạng DOM/no_recognized_comments.
+
+Kiểm chứng thay đổi này: `python -m unittest discover -s tests` có 77 tests
+PASS, không skip. Tests interactive inject reader/collector giả, không mở browser;
+bao phủ URL có query `&`/`?`, link sai/trùng, đổi phim, Enter, Ctrl+C và resume/
+export cùng run. Smoke Brave chỉ mở HTML local bằng profile tạm, không truy cập
+Facebook hoặc profile cá nhân. Không sửa annotation/baseline/data hoặc artifacts Phase B.
+
 Tại thư mục gốc repository, dùng Python 3.10+:
 
 ```powershell
@@ -51,9 +98,9 @@ checkpoint/CAPTCHA hoặc hạn chế truy cập, dừng; không tự vượt qu
 .\.venv-crawler\Scripts\python.exe scripts/prepare_data.py --config data/imports/fb_RUN_ID/import_config.json
 ```
 
-`crawl-batch --resume` không cần CSV đầu vào. `crawl-post --resume` vẫn yêu cầu
-hai tham số URL/movie của argparse nhưng dùng config lưu trong run; nên dùng
-lệnh batch-resume thống nhất ở trên. Run tất cả bài success không resume/ghi đè;
+`crawl-batch --resume` không cần CSV đầu vào. `crawl-post` hỏi URL/movie khi thiếu
+ở run mới; resume không hỏi lại vì dùng config đã lưu. Run thường tất cả bài
+success không resume/ghi đè (interactive có cơ chế mở lại tường minh như trên);
 partial/failed/blocked hoặc còn bài chưa xử lý được giữ resumable.
 Các bài `success` được bỏ qua khi resume, bài partial/failed hoặc bị ngắt sẽ
 được thử lại. Nếu kill cứng để lại `.browser.lock`, chỉ gỡ file lock riêng của
@@ -65,12 +112,13 @@ Tất cả lệnh có `--help`; các giới hạn phải là số dương:
 
 | Tham số | Mặc định | Ý nghĩa |
 |---|---|---|
-| `--url`, `--movie-id` | Bắt buộc với crawl-post | Bài nguồn HTTPS và mã phim do bạn cung cấp |
+| `--url`, `--movie-id` | Hỏi khi thiếu | crawl-post hỏi link/mã; interactive chỉ hỏi mã một lần, URL luôn dán tại prompt |
 | `--input` | Bắt buộc với batch mới | CSV UTF-8 hoặc UTF-8-SIG, cột movie_id/post_url |
 | `--source-dataset` | Run ID | Provenance đợt thu thập, không phải tên phim suy đoán |
 | `--data-root` | data | Thư mục local chứa runs/imports |
 | `--profile` | data/browser_profile | Profile trình duyệt riêng; không commit/chia sẻ |
-| `--channel` | chromium | chromium hoặc chrome |
+| `--channel` | chromium | chromium, chrome hoặc brave |
+| `--browser-path` | Tự dò | Đường dẫn browser executable nếu cài nơi khác |
 | `--resume` | Không | ID run chưa hoàn tất; dùng lại input/settings đã lưu |
 | `--max-posts` | 100 | Chỉ xử lý tối đa số bài này; phần còn lại báo posts_without_result |
 | `--max-comments` | 5000 | Giới hạn observation lưu trên mỗi bài, kể cả khi resume |

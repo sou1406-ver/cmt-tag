@@ -114,10 +114,10 @@ def collect(page, store, post):
     return status, reason, trace + ['FINISH']
 
 
-def run_posts(store, page, collector=collect):
+def run_posts(store, page, collector=collect, posts=None, finalize=True):
     done = {p['post_url'] for p in store.posts if p['status']=='success'}
     try:
-        for post in store.config['posts'][:store.config['max_posts']]:
+        for post in (store.config['posts'] if posts is None else posts)[:store.config['max_posts']]:
             if post['post_url'] in done:
                 continue
             for attempt in range(store.config['retries']+1):
@@ -133,7 +133,7 @@ def run_posts(store, page, collector=collect):
                                  'post_url':post['post_url'],'attempt':attempt+1})
                     if attempt == store.config['retries']:
                         store.finish_post(post,'failed','retry_exhausted',attempt=attempt+1)
-        return store.finish()
+        return store.finish() if finalize else None
     except BaseException:
         store.checkpoint('interrupted')
         raise

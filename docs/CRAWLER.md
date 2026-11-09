@@ -57,6 +57,22 @@ trên fixture local. Test mới phủ URL nhóm, aria-label không role, body kh
 style text-align, bài nằm trong dialog, loại author/post/feed khác, xác nhận
 filter, mở nội dung dài, parent reply và bảo toàn raw cũ thiếu post_id.
 
+### Sửa scope từ DOM Facebook thật (09/11/2026)
+
+Đã xác minh một dialog bài đăng có cả permalink bài và link ảnh `photo/?fbid=...`.
+Adapter cũ nhầm ID ảnh là ID bài thứ hai, khiến scope bị từ chối. Nay chỉ nhận
+query fbid/story_fbid trên đường dẫn permalink/story phù hợp; link ảnh không
+làm hỏng identity bài. Comment nhiều đoạn được gom từ wrapper dir=auto chung
+đã xác minh, không ghép toàn article hoặc lẫn link/author/UI. Diagnostics khi
+scope lỗi chỉ ghi counts/boolean, không lưu HTML, cookie, tên hoặc nội dung trang.
+
+Regression toàn bộ: **100 tests PASS**. Live smoke trên đúng bài người dùng
+cung cấp bằng phiên Selenium đã đăng nhập: 10 comment thật, 0 lỗi parse,
+0 truncated; đã validate/export CSV. Giới hạn 30 comment, 5 vòng, 60 giây;
+run partial/round_limit không chứng minh đã lấy đủ bình luận. Dữ liệu live chỉ
+giữ local/gitignored, không đưa lên Git. Khởi động lại phiên Python cũ để dùng
+DOM adapter đã sửa; code đang chạy không tự reload khi file thay đổi.
+
 ### Dùng Brave mở thủ công, giữ phiên đăng nhập
 
 Crawler không thể tự gắn vào Brave đang mở bình thường khi chưa bật remote

@@ -109,5 +109,20 @@ class FacebookLayoutTests(unittest.TestCase):
         self.assertEqual(dom(self.driver,GROUP.replace('1909400102999925','777'),'inspect')['status'],'missing_scope')
         self.assertEqual(dom(self.driver,GROUP.replace('1909400102999925','777')),[])
 
+    def test_photo_fbid_does_not_poison_post_identity(self):
+        html=self.fixture().replace('post permalink</a>','post permalink</a><a href="https://www.facebook.com/photo/?fbid=555">Attached photo</a>')
+        self.load(html)
+        self.assertEqual(dom(self.driver,GROUP,'inspect')['status'],'ready')
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,0); self.assertEqual(len(rows),3)
+        self.assertTrue(all(r['post_id']=='1909400102999925' for r in rows))
+
+    def test_message_paragraphs_share_one_verified_wrapper(self):
+        html=self.fixture().replace('Phim hay 😍!<br>ko dở.','<span dir="auto"><div><div dir="auto">Phim hay 😍!</div></div><div><div dir="auto">ko dở.</div></div></span>')
+        self.load(html)
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,0)
+        self.assertEqual(rows[0]['text_raw'],'Phim hay 😍!\nko dở.')
+
 
 if __name__=='__main__': unittest.main()

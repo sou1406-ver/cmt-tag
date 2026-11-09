@@ -43,6 +43,10 @@ def collect(page, store, post):
         WebDriverWait(page,min(cfg['wait_ms']/1000,max(.001,deadline-time.monotonic())),poll_frequency=.1).until(
             lambda driver:dom(driver,post['post_url'],'inspect').get('status')=='ready')
     except Exception:
+        if access_barrier(page): return 'blocked','access_barrier',trace
+        probe=dom(page,post['post_url'],'inspect')
+        store.append('errors.jsonl',{'code':'scope_diagnostic','post_url':post['post_url'],
+                     'scope_status':probe.get('status'),'diagnostics':probe.get('diagnostics',{})})
         return 'partial', 'post_scope_not_found', trace
     reason, status = 'round_limit', 'partial'
     for _ in range(cfg['max_rounds']):

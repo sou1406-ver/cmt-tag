@@ -7,8 +7,14 @@
     try {
       const url = new URL(href, location.href);
       if (url.protocol !== 'https:' || !/(^|\.)facebook\.com$/i.test(url.hostname)) return null;
-      return url.pathname.match(/\/(?:posts|permalink|videos|reel)\/(\d+|pfbid[A-Za-z0-9]+)(?:\/|$)/)?.[1] ||
-        url.searchParams.get('story_fbid') || url.searchParams.get('fbid') || url.searchParams.get('v');
+      const pathID = url.pathname.match(/\/(?:posts|permalink|videos|reel)\/(\d+|pfbid[A-Za-z0-9]+)(?:\/|$)/)?.[1];
+      if (pathID) return pathID;
+      // fbid on /photo.php or /photo/ identifies an attached photo, not
+      // another source post. Do not let media links invalidate a post scope.
+      if (/^\/(?:story|permalink)\.php$/.test(url.pathname))
+        return url.searchParams.get('story_fbid') || url.searchParams.get('fbid');
+      if (/^\/watch\/?$/.test(url.pathname)) return url.searchParams.get('v');
+      return null;
     } catch { return null; }
   };
   const expected = identify(sourceUrl);
@@ -23,7 +29,10 @@
       [...el.querySelectorAll('a[href]')].find(a => identify(a.href))?.href || ''));
   if (!root && dialogs.length === 1 && current === expected && ids(dialogs[0]).size === 0) root = dialogs[0];
   if (!root && !dialogs.length && matches(document.body)) root = document.querySelector('[role="main"]') || document.body;
-  if (!root) return action === 'read' ? [] : {status:'missing_scope'};
+  if (!root) return action === 'read' ? [] : {status:'missing_scope',
+    diagnostics:{current_matches:current===expected,visible_dialogs:dialogs.length,
+      dialog_source_counts:dialogs.map(el=>({distinct_post_ids:ids(el).size,has_expected:ids(el).has(expected)})),
+      visible_articles:[...document.querySelectorAll('[role="article"]')].filter(visible).length}};
   const boundary = '[role="article"],[aria-label^="Bình luận của"],[aria-label^="Comment by"],'+
     '[aria-label^="Comment from"],[aria-label^="Reply"],[aria-label^="Phản hồi"]';
   const own = (el, selector) => [...el.querySelectorAll(selector)].filter(node => node.closest(boundary) === el);
@@ -85,10 +94,20 @@
     const link = links.find(a => /[?&](?:comment_id|reply_comment_id)=\d+/.test(a.href));
     let bodies = own(el,'[data-comment-body],[data-ad-preview="message"],[data-ad-comet-preview="message"]').filter(visible);
     if (!bodies.length) bodies = own(el,'[dir="auto"]').filter(node => visible(node) &&
-      !node.closest('a,button,[role="button"],time') && !node.querySelector('[dir="auto"]') &&
+      !node.closest('a,[role="link"],button,[role="button"],time') && !node.querySelector('[dir="auto"]') &&
       !node.matches('[role="button"]') && !moreText.test(label(node)) &&
       !(node.querySelector('a[href]') && clean(node.textContent) === clean(node.querySelector('a[href]').textContent)));
-    if (bodies.length !== 1) return [{text_raw:null}];
+    if (bodies.length > 1) {
+      // Facebook renders one message as multiple paragraphs inside one dir=auto
+      // span. Join only that verified message wrapper, never the whole article.
+      const wrapper=bodies[0].parentElement?.closest('[dir="auto"]');
+      if (wrapper && wrapper !== el && wrapper.closest(boundary)===el &&
+          bodies.every(node=>wrapper.contains(node)) && !wrapper.querySelector('a[href],[role="link"],time,'+boundary) &&
+          [...wrapper.querySelectorAll('button,[role="button"]')].every(b=>moreText.test(label(b)))) bodies=[wrapper];
+    }
+    if (bodies.length !== 1) return [{text_raw:null,parse_error_reason:bodies.length?'ambiguous_body':'missing_body',
+      candidate_shapes:bodies.map(node=>({tag:node.tagName,chars:node.textContent.length,
+        has_link:!!node.querySelector('a[href]'),has_button:!!node.querySelector('button,[role="button"]')}))}];
     const body = bodies[0].cloneNode(true);
     body.querySelectorAll('[role="button"],button').forEach(node => node.remove());
     let text = '';
@@ -96,7 +115,10 @@
       if (node.nodeType === Node.TEXT_NODE) text += node.textContent;
       else if (node.nodeName === 'BR') text += '\n';
       else if (node.nodeName === 'IMG') text += node.getAttribute('alt') || '';
-      else node.childNodes.forEach(walk);
+      else {
+        if (['DIV','P'].includes(node.nodeName) && text && !text.endsWith('\n')) text+='\n';
+        node.childNodes.forEach(walk);
+      }
     };
     walk(body);
     if (!window.__cmtSeen.has(el)) window.__cmtSeen.set(el,String(++window.__cmtSeq));

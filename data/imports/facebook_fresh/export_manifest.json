@@ -1,0 +1,41 @@
+{
+  "run_id": "fb_36332e12e6444f24874e10ac9cb057d2",
+  "source": "facebook",
+  "source_posts": [
+    {
+      "post_url": "https://www.facebook.com/cuongphimreview/posts/pfbid04Cm4nSb79ay2TpeptjCwLHXVdg1eCWJzxxXUMjjBKe5oU8DuyjFnJHYBmNKqf9LZl",
+      "movie_id": "mua_do"
+    }
+  ],
+  "source_run_count": 1,
+  "merged": false,
+  "raw_records": 1585,
+  "exported_text_records": 1538,
+  "removed_account_mentions": 892,
+  "records_with_removed_mentions": 870,
+  "omitted_non_emoji_image_alts": 5,
+  "context_review_records": 48,
+  "record_types": {
+    "comment": 887,
+    "reply": 651
+  },
+  "raw_sha256": "5d20a689eff0d5226984e7a63f0e9b94c864b722b8312995c88a4d13850c79a0",
+  "csv_sha256": "772d9e239a42c670c5da978c4f2218ff5545cc479e2cd928dd8e48393486013b",
+  "status": "partial",
+  "reason": "unparsed_comments",
+  "raw_validation_errors": 0,
+  "dom_parse_observations": 590,
+  "coverage_verified": false,
+  "labels_created": false,
+  "clean_text_field": "text",
+  "cleaning_policy": "dom_text_v2: remove Facebook account link nodes; preserve plain text names, negation, emoji and line breaks; omit non-emoji IMG captions.",
+  "input_note": "The clean input maps text to the data importer. Original tagged messages remain in the run raw journal, linked by comment_id.",
+  "xlsx_sha256": "eeb6f8754b76230ead9bcedc4f2f0f2d8cbab30f3f28c37eec61b4ab53ae4c4a",
+  "verified_xlsx_cells": 27702,
+  "artifact_validation": "passed",
+  "completed_at": "2026-11-09T21:54:58.627117+07:00",
+  "excluded_reason_counts": {
+    "NO_TEXT_AFTER_REMOVING_ACCOUNT_TAGS": 47
+  },
+  "raw_storage": "local_only; original tagged messages and browser profile are not published"
+}

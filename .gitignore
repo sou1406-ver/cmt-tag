@@ -1,5 +1,13 @@
-# Local datasets, labels and research artifacts (never delete based on ignore rules)
-/data/
+# Local datasets, labels and research artifacts; only the approved clean export is shared.
+/data/*
+!/data/imports/
+/data/imports/*
+!/data/imports/facebook_fresh/
+/data/imports/facebook_fresh/*
+!/data/imports/facebook_fresh/comments.csv
+!/data/imports/facebook_fresh/comments.xlsx
+!/data/imports/facebook_fresh/import_config.json
+!/data/imports/facebook_fresh/export_manifest.json
 /outputs/
 /crawl/*.csv
 # Retain protection for legacy local media; no media is present in this clone.

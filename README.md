@@ -28,6 +28,22 @@ trình duyệt có giao diện để tự đăng nhập; không tự tìm phim h
 Raw JSONL theo run độc lập, không ghép dữ liệu/nhãn legacy. Chỉ export các
 observation đầy đủ vào CSV cùng `import_config.json` để chạy Phase B.
 
+### Bình luận đã thu thập và chia sẻ
+
+Bản [CSV](data/imports/facebook_fresh/comments.csv) và
+[Excel](data/imports/facebook_fresh/comments.xlsx) có **1.538 bình luận/phản hồi**
+từ một run Facebook mới, kèm nguồn, mã phim và ID. Cột `text` đã bỏ các tag tài
+khoản được nhận dạng từ node DOM, giữ emoji Unicode, phủ định và xuống dòng.
+Đây là dữ liệu chưa gán nhãn; run còn `partial`, chưa xác nhận đủ toàn bộ bình luận.
+[Manifest](data/imports/facebook_fresh/export_manifest.json) ghi nguồn, cách xử lý,
+số lượng và checksum. Raw và profile trình duyệt vẫn được giữ local.
+
+Import từ thư mục gốc repo:
+
+```powershell
+python scripts/prepare_data.py --config data/imports/facebook_fresh/import_config.json
+```
+
 ## Setup và test
 
 Phase B chỉ cần **Python 3.10+**, dùng standard library. Không cần cài package
@@ -61,7 +77,8 @@ dependency Phase B; môi trường audit hiện thiếu scipy/scikit-learn/gensi
 Kiểm kê lịch sử Phase A/B: `crawl/dataset.csv` có **3.471 dòng raw**;
 hai file derived có **3.430 dòng**. Toàn bộ `nhan_nguoi` trống. Không có file
 29k hoặc metadata bài/comment được xác nhận ở thời điểm đó. Những CSV này
-không có trong bản clone hiện tại. CSV thật được giữ local và gitignore.
+không có trong bản clone hiện tại. CSV legacy được giữ local và gitignore;
+bản Facebook sạch được chia sẻ riêng như mục trên.
 Clone repo mới vẫn chạy được fixture CSV/JSON trong `tests/fixtures`.
 
 Ngày 09/11/2026 đã thấy nguồn local `../data_module1.csv` có 29.688 dòng,

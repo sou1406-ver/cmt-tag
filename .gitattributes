@@ -1,2 +1,4 @@
 # Preserve the supplied guideline byte-for-byte. Two trailing spaces are Markdown line breaks.
 docs/guidelines/MOVIE_SENTIMENT_V2_0.md -text whitespace=-blank-at-eol
+# Preserve CSV bytes and whitespace inside quoted comments for checksum/provenance.
+data/imports/facebook_fresh/comments.csv -text whitespace=-blank-at-eol

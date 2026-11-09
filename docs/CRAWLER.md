@@ -17,6 +17,46 @@ mật khẩu tự động, proxy hay vượt CAPTCHA.
 
 ## Bắt đầu trên Windows
 
+### Dùng Brave mở thủ công, giữ phiên đăng nhập
+
+Crawler không thể tự gắn vào Brave đang mở bình thường khi chưa bật remote
+debugging. Mở một cửa sổ Brave thủ công với profile dành cho thu thập:
+
+```powershell
+& "$env:ProgramFiles\BraveSoftware\Brave-Browser\Application\brave.exe" --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 "--user-data-dir=$PWD\data\brave_manual_profile" "https://www.facebook.com/"
+```
+
+Đăng nhập và hoàn tất 2FA thủ công trong cửa sổ này trước. Profile được giữ
+cho các lần sau, không phải ẩn danh, nhưng không có sẵn cookie từ profile Brave
+hằng ngày. Không copy cookie/profile đang dùng. Nếu vẫn kẹt trang 2FA, cần xử
+lý đăng nhập hợp lệ trên Facebook; CDP không phải cách vượt xác thực hay cam
+kết sửa trang trắng. Cửa sổ crawler cũ có thể đóng bằng tay nếu không dùng nữa.
+
+Trong terminal ở repo (có thể mở terminal thứ hai), chạy:
+
+```powershell
+.\.venv-crawler\Scripts\python.exe -m src.crawler interactive --cdp-url http://127.0.0.1:9222 --max-comments 30 --max-rounds 5 --post-timeout 60
+```
+
+Script dùng default context và tab Facebook đầu tiên, không điều hướng tab
+đã mở về trang chủ; nếu chưa có thì tạo tab Facebook. Sau lời nhắc, nhấn Enter
+để bắt đầu phiên. Kết thúc/Ctrl+C chỉ ngắt kết nối, không tự đóng browser/tab.
+Trong lúc crawl tab Facebook đó sẽ được điều hướng đến link bạn nhập; không
+dùng tab ấy để làm việc khác đồng thời. --cdp-url bỏ qua --channel và không đi
+kèm --profile/--browser-path. Chỉ chấp nhận HTTP localhost/127.0.0.1/::1 có port,
+không endpoint ngoài máy, token hay credential trong URL. Đóng browser thủ công
+khi xong; không mở cổng điều khiển ra mạng.
+
+Profile mặc định của Chrome mới không hỗ trợ remote debugging như trước;
+dùng user-data-dir riêng cũng tránh tranh chấp profile Brave đang mở. Xem
+[remote debugging changes](https://developer.chrome.com/blog/remote-debugging-port),
+[Playwright connect_over_cdp](https://playwright.dev/python/docs/api/class-browsertype#browser-type-connect-over-cdp).
+Không bảo đảm mọi phiên bản Brave có hành vi giống Chrome; CDP cần browser
+hỗ trợ. Thay đổi CDP kiểm thử 80 tests pass, gồm test giả không đóng browser/
+không thay tab và giới hạn endpoint local. Smoke test Brave thật với profile
+tạm/HTML local xác nhận tab còn mở sau ngắt kết nối; chưa xác nhận live login
+Facebook. Không dùng profile/tài khoản cá nhân trong smoke test.
+
 ### Phiên tương tác: dán nhiều link, cùng một run
 
 ```powershell

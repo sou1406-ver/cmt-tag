@@ -3,7 +3,9 @@ import argparse
 import csv
 import json
 import os
+from contextlib import contextmanager
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from .parser import facebook_url
 from .store import Store, export_run, validate
@@ -51,6 +53,40 @@ def browser_options(channel, browser_path=None):
     return {'channel':'chrome'} if channel == 'chrome' else {}
 
 
+def cdp_endpoint(value):
+    parts=urlsplit(value)
+    if (parts.scheme!='http' or parts.hostname not in ('127.0.0.1','localhost','::1') or
+            parts.username or parts.password or parts.path not in ('','/') or parts.query or parts.fragment):
+        raise argparse.ArgumentTypeError('CDP must be a local HTTP endpoint, e.g. http://127.0.0.1:9222')
+    try:
+        if not parts.port: raise ValueError()
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError('CDP needs a valid local port') from exc
+    return value
+
+
+@contextmanager
+def browser_page(pw,profile,launch_options,cdp_url=None):
+    if cdp_url:
+        # Ownership stays with the user. Playwright.stop disconnects the
+        # transport; never close this browser/context or its existing tabs.
+        browser=pw.chromium.connect_over_cdp(cdp_url,timeout=10000)
+        if not browser.contexts:
+            raise ValueError('Connected browser has no default context')
+        context=browser.contexts[0]
+        page=next((p for p in context.pages if urlsplit(p.url).hostname in
+                   ('facebook.com','www.facebook.com','m.facebook.com','web.facebook.com')),None)
+        if page is None:
+            page=context.new_page()
+            page.goto('https://www.facebook.com/',wait_until='domcontentloaded')
+        yield page
+    else:
+        with pw.chromium.launch_persistent_context(str(profile.resolve()),headless=False,**launch_options) as context:
+            page=context.new_page()
+            page.goto('https://www.facebook.com/',wait_until='domcontentloaded')
+            yield page
+
+
 def main():
     import sys
     if hasattr(sys.stdout,'reconfigure'):
@@ -72,6 +108,7 @@ def main():
         p.add_argument('--profile',type=Path,help='Dedicated profile; default data/browser_profile (Brave: data/browser_profile_brave)')
         p.add_argument('--channel',choices=['chrome','chromium','brave'],default='chromium',help='Browser: installed Brave/Chrome or Playwright Chromium')
         p.add_argument('--browser-path',type=Path,help='Optional browser executable path; overrides channel auto-detection')
+        p.add_argument('--cdp-url',type=cdp_endpoint,help='Attach to a manually opened local browser, e.g. http://127.0.0.1:9222; do not close it on exit')
         for flag,default,help_text in [
             ('max-posts',100,'Maximum posts in this run'),('max-comments',5000,'Maximum stored observations per post'),
             ('post-timeout',300,'Seconds per post attempt'),('max-rounds',100,'Expansion/scroll rounds per post'),
@@ -121,7 +158,9 @@ def main():
             if args.command=='interactive': config['interactive']=True
         from .browser import run_posts
         from playwright.sync_api import sync_playwright
-        launch_options = browser_options(args.channel,args.browser_path)
+        if args.cdp_url and (args.profile or args.browser_path):
+            raise ValueError('--cdp-url uses the open browser; omit --profile and --browser-path')
+        launch_options = {} if args.cdp_url else browser_options(args.channel,args.browser_path)
         profile = args.profile or Path('data/browser_profile_brave' if args.channel=='brave' else 'data/browser_profile')
         import re
         if args.resume and not re.fullmatch(r'[A-Za-z0-9_-]+',args.resume):
@@ -140,10 +179,7 @@ def main():
                 with lock.open('x'):
                     pass
             with sync_playwright() as pw:
-                with pw.chromium.launch_persistent_context(str(profile.resolve()),headless=False,
-                        **launch_options) as context:
-                    page=context.new_page()
-                    page.goto('https://www.facebook.com/',wait_until='domcontentloaded')
+                with browser_page(pw,profile,launch_options,args.cdp_url) as page:
                     input('Log in manually in the browser, then press Enter here. Ctrl+C pauses the run. ')
                     if args.command=='interactive':
                         from .interactive import session

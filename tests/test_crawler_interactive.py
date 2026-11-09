@@ -100,5 +100,24 @@ class InteractiveTests(unittest.TestCase):
         self.assertEqual((old.path/'config.json').read_bytes(),before)
         self.assertEqual(validate(old.path)['total_records'],1)
 
+    def test_link_pasted_at_movie_prompt_is_not_saved_as_movie(self):
+        self.run_session([URL,'mua_do',''])
+        self.assertEqual(len(self.calls),1)
+        self.assertEqual(self.calls[0],{'post_url':URL,'movie_id':'mua_do'})
+        self.assertEqual(json.loads((self.store.path/'interactive_state.json').read_text())['movie_id'],'mua_do')
+
+    def test_invalid_saved_movie_is_not_offered_as_default(self):
+        (self.store.path/'interactive_state.json').write_text(json.dumps({'movie_id':URL}))
+        prompts=[]; answers=iter(['mua_do',''])
+        def read(prompt): prompts.append(prompt); return next(answers)
+        session(self.store,None,read_line=read,collector=self.collector,emit=self.messages.append)
+        self.assertNotIn(URL,prompts[0])
+        self.assertEqual(json.loads((self.store.path/'interactive_state.json').read_text())['movie_id'],'mua_do')
+
+    def test_movie_command_cannot_replace_movie_with_url(self):
+        self.run_session(['mua_do','movie '+URL,OTHER,''])
+        self.assertEqual(self.calls[0]['movie_id'],'mua_do')
+        self.assertEqual(json.loads((self.store.path/'interactive_state.json').read_text())['movie_id'],'mua_do')
+
 
 if __name__=='__main__': unittest.main()

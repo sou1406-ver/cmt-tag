@@ -1,9 +1,14 @@
 """Terminal input loop using the existing Store and run_posts collector."""
 import json
+import re
 
 from .browser import collect, run_posts
 from .parser import facebook_url
 from .store import write_json
+
+
+def valid_movie_id(value):
+    return isinstance(value,str) and re.fullmatch(r'[\w-]{1,80}',value) is not None
 
 
 def session(store,page,read_line=input,collector=collect,movie_id=None,emit=print,data_root='data'):
@@ -12,18 +17,39 @@ def session(store,page,read_line=input,collector=collect,movie_id=None,emit=prin
     state=store.path/'interactive_state.json'
     try:
         saved=json.loads(state.read_text(encoding='utf-8')).get('movie_id') if state.exists() else None
-        if movie_id is None or not movie_id.strip():
-            while not movie_id:
-                movie_id=read_line(f'Mã phim{f" [{saved}]" if saved else ""}: ').strip() or saved
+        if saved is not None and not valid_movie_id(saved):
+            saved=None
+            emit('Mã phim đã lưu không hợp lệ; nhập mã như mua_do, không dùng URL.')
+        movie_id=movie_id.strip() if isinstance(movie_id,str) else None
+        pending_url=None
+        if not valid_movie_id(movie_id):
+            movie_id=None
+            while movie_id is None:
+                answer=read_line(f'Mã phim (ví dụ mua_do, chưa dán link){f" [{saved}]" if saved else ""}: ').strip().strip('\'"').strip()
+                if not answer and saved:
+                    movie_id=saved
+                elif valid_movie_id(answer):
+                    movie_id=answer
+                else:
+                    try: pending_url=facebook_url(answer)
+                    except ValueError:
+                        emit('Mã phim chỉ gồm chữ/số, _ hoặc -; ví dụ mua_do.')
+                    else:
+                        emit('Bạn vừa dán link vào bước mã phim. Đã giữ link; nhập mã phim tiếp, không cần dán lại link.')
         write_json(state,{'movie_id':movie_id})
         while True:
-            line=read_line('Dán link (Enter để kết thúc):').strip().strip('\'"').strip()
+            if pending_url:
+                line=pending_url; pending_url=None
+                emit('Đang dùng link vừa dán với mã phim: '+movie_id)
+            else:
+                line=read_line('Dán link (Enter để kết thúc): ').strip().strip('\'"').strip()
             if not line:
                 store.finish()
                 break
             if line.casefold()=='movie' or line.casefold().startswith('movie '):
                 value=line[5:].strip()
-                if not value: emit('Dùng movie <mã mới>.'); continue
+                if not valid_movie_id(value):
+                    emit('Dùng movie <mã mới>, ví dụ movie mua_do; không nhập URL làm mã phim.'); continue
                 movie_id=value; write_json(state,{'movie_id':movie_id})
                 emit('Mã phim: '+movie_id); continue
             try:

@@ -110,6 +110,11 @@ input(), không qua shell. Khoảng trắng/dấu nháy ngoài link được b�
 Link sai báo lý do và hỏi lại. Gõ `movie phim_b` để đổi mã cho những bài mới;
 bài đã có trong run giữ movie_id đã ghi. Bài đã success được bỏ qua.
 
+Ở bước **Mã phim**, nhập `mua_do` hoặc mã tương tự, không nhập link. Chỉ dán URL
+ở bước **Dán link**. Nếu lỡ dán URL vào mã phim, script giữ link trong phiên rồi
+hỏi lại mã; không lưu URL làm movie_id. Giá trị mặc định sai do bản cũ lưu được
+bỏ qua khi resume. Lệnh `movie` cũng không chấp nhận URL làm mã phim.
+
 Sau mỗi bài in status/reason, số comment mới và tổng run. Enter rỗng kết thúc,
 ghi báo cáo, in run ID, thư mục và hai lệnh validate/export để copy. Giới hạn
 max_comments/rounds/time vẫn tính từng bài như crawl-post, max_posts cho cả run.

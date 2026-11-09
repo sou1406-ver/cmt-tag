@@ -183,7 +183,7 @@ def validate(path):
             if r['internal_record_id'] in internal_ids:
                 raise ValueError('Duplicate internal ID')
             internal_ids.add(r['internal_record_id'])
-            if r['post_id'] != post_id(r['post_url']):
+            if r['post_id'] is not None and r['post_id'] != post_id(r['post_url']):
                 raise ValueError('Post ID mismatch')
             if r['comment_id'] and comment_identity(r.get('comment_permalink'), r['post_url'])[0] != r['comment_id']:
                 raise ValueError('Unverified comment ID')

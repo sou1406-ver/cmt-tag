@@ -22,7 +22,7 @@ def post_id(url):
     url = facebook_url(url)
     parts = urlsplit(url)
     query = parse_qs(parts.query)
-    found = re.search(r'/(?:posts|videos|reel)/(\d+|pfbid[A-Za-z0-9]+)(?:/|$)', parts.path)
+    found = re.search(r'/(?:posts|permalink|videos|reel)/(\d+|pfbid[A-Za-z0-9]+)(?:/|$)', parts.path)
     return found[1] if found else next((query[k][0] for k in ('story_fbid', 'fbid', 'v')
                                         if k in query), None)
 

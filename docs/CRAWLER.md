@@ -19,6 +19,44 @@ mật khẩu tự động, proxy hay vượt CAPTCHA.
 
 ## Bắt đầu trên Windows
 
+### Đăng nhập bình thường trước, Selenium dùng lại profile
+
+```powershell
+.\.venv-crawler\Scripts\python.exe -m src.crawler login --channel brave --profile data/browser_profile_brave_manual
+```
+
+Đóng cửa sổ crawler cũ nếu nó đang dùng profile này. Lệnh login chỉ chạy Brave
+thường, không Selenium, không remote debugging, không đọc cookie/mật khẩu. Bạn
+tự đăng nhập và hoàn tất xác thực Facebook, sau đó **đóng cửa sổ Brave này** để
+nhả profile trước khi chạy:
+
+```powershell
+.\.venv-crawler\Scripts\python.exe -m src.crawler interactive --channel brave --profile data/browser_profile_brave_manual --max-comments 30 --max-rounds 5 --post-timeout 60
+```
+
+Selenium mở lại đúng profile đã đăng nhập; tại lời nhắc đăng nhập trong terminal,
+chỉ nhấn Enter khi Facebook đã dùng được. Các lần sau vẫn giữ profile này. Không
+cần sao chép session từ Brave cá nhân; không tự xử lý 2FA/CAPTCHA.
+
+Parser hiện nhận /groups/.../permalink/ và /groups/.../posts/ cùng ID; DOM adapter
+khoanh dialog/article theo bài, hỗ trợ comment aria-label không có role article
+và body dir=auto không phụ thuộc style text-align. Nó thử chọn và xác nhận
+“Tất cả bình luận”, click thêm bình luận/phản hồi trong đúng vùng, cuộn dialog
+thay vì feed phía sau. Khi không xác minh được scope/body, vẫn báo partial hoặc
+parse error, không lấy toàn trang để thay thế. Chưa đủ để khẳng định tương thích
+mọi DOM Facebook thật; sort unavailable được ghi trong state_trace.
+
+Tham khảo cách tổ chức login/scope của
+[repo PTIT tại commit 020fd25](https://github.com/namPh06/Toxic_Detection_PTIT_Student_Comments/tree/020fd25b2c3fbde81c487711060ac87d0d48b793).
+Không đưa web app, nhãn toxic, dữ liệu, hash tác giả hoặc cơ chế sửa raw của repo
+đó vào cmt-tag. ID thiếu vẫn null, text không bị clean/collapse whitespace trong
+raw. Các dòng cũ có post_id null vẫn validate được, không sửa raw để bổ sung ID.
+
+Kiểm chứng patch login/DOM: **90 tests PASS, không skip** bằng Selenium/Brave
+trên fixture local. Test mới phủ URL nhóm, aria-label không role, body không
+style text-align, bài nằm trong dialog, loại author/post/feed khác, xác nhận
+filter, mở nội dung dài, parent reply và bảo toàn raw cũ thiếu post_id.
+
 ### Dùng Brave mở thủ công, giữ phiên đăng nhập
 
 Crawler không thể tự gắn vào Brave đang mở bình thường khi chưa bật remote

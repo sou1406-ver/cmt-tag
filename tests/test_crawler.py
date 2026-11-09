@@ -220,7 +220,7 @@ class BrowserTests(unittest.TestCase):
 
     def test_dom_bodies_replies_expansion_and_post_exclusion(self):
         self.page.get(POST['post_url'])
-        candidates=self.page.execute_script('return ('+EXTRACT+')();')
+        candidates=self.page.execute_script('return ('+EXTRACT+')(arguments[0]);',POST['post_url'])
         rows,errors=observations(candidates,POST['post_url'])
         self.assertEqual(len(rows),8)
         self.assertEqual(errors,0)
@@ -229,7 +229,7 @@ class BrowserTests(unittest.TestCase):
         self.assertEqual(rows[1]['record_type'],'reply')
         self.assertFalse(any('NỘI DUNG' in r['text_raw'] or 'Tên không' in r['text_raw'] for r in rows))
         self.page.find_element('css selector','#long button').click()
-        rows,_=observations(self.page.execute_script('return ('+EXTRACT+')();'),POST['post_url'])
+        rows,_=observations(self.page.execute_script('return ('+EXTRACT+')(arguments[0]);',POST['post_url']),POST['post_url'])
         self.assertEqual(next(r for r in rows if r['comment_id']=='105')['text_raw'],'Đầy đủ 😍! Không tệ.\nDòng thứ hai.')
         self.assertEqual(next(r for r in rows if r['comment_id']=='106')['extraction_status'],'truncated')
 

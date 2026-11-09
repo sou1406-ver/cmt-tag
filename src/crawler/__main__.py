@@ -138,6 +138,10 @@ def main():
         sys.stdout.reconfigure(encoding='utf-8')
     ap = argparse.ArgumentParser(description='Collect accessible Facebook movie comments; no labels or training.')
     sub = ap.add_subparsers(dest='command',required=True)
+    login=sub.add_parser('login',help='Open normal browser for manual login; close it before crawling with the same profile')
+    login.add_argument('--channel',choices=['chrome','chromium','brave'],default='brave')
+    login.add_argument('--profile',type=Path)
+    login.add_argument('--browser-path',type=Path)
     for cmd in ('crawl-post','crawl-batch','interactive'):
         p = sub.add_parser(cmd)
         if cmd=='crawl-post':
@@ -172,6 +176,13 @@ def main():
     p.add_argument('--output',type=Path,help='New directory; default data/imports/<run_id>')
     args = ap.parse_args()
     try:
+        if args.command=='login':
+            from .login import open_login
+            profile=args.profile or Path('data/browser_profile_brave' if args.channel=='brave' else 'data/browser_profile')
+            profile=open_login(profile,args.channel,args.browser_path)
+            print('Đã mở trình duyệt thường với profile: '+str(profile))
+            print('Tự đăng nhập và hoàn tất xác thực. Đăng nhập xong ĐÓNG cửa sổ này trước khi chạy interactive với cùng --channel/--profile.')
+            return 0
         if args.command in ('validate','export'):
             import re
             if not re.fullmatch(r'[A-Za-z0-9_-]+',args.run):

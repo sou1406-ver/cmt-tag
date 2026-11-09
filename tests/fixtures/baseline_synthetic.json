@@ -1,0 +1,1052 @@
+[
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu0",
+    "pid": "synthetic_post_0",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu1",
+    "pid": "synthetic_post_1",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu2",
+    "pid": "synthetic_post_2",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu3",
+    "pid": "synthetic_post_3",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu4",
+    "pid": "synthetic_post_4",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu5",
+    "pid": "synthetic_post_5",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu6",
+    "pid": "synthetic_post_6",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu7",
+    "pid": "synthetic_post_7",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu8",
+    "pid": "synthetic_post_8",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu9",
+    "pid": "synthetic_post_9",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu10",
+    "pid": "synthetic_post_10",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu11",
+    "pid": "synthetic_post_11",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu12",
+    "pid": "synthetic_post_12",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu13",
+    "pid": "synthetic_post_13",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu14",
+    "pid": "synthetic_post_14",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu15",
+    "pid": "synthetic_post_15",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu16",
+    "pid": "synthetic_post_16",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu17",
+    "pid": "synthetic_post_17",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu18",
+    "pid": "synthetic_post_18",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu19",
+    "pid": "synthetic_post_19",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu20",
+    "pid": "synthetic_post_20",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu21",
+    "pid": "synthetic_post_21",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu22",
+    "pid": "synthetic_post_22",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu23",
+    "pid": "synthetic_post_23",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu24",
+    "pid": "synthetic_post_24",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu25",
+    "pid": "synthetic_post_25",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu26",
+    "pid": "synthetic_post_26",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu27",
+    "pid": "synthetic_post_27",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu28",
+    "pid": "synthetic_post_28",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu29",
+    "pid": "synthetic_post_29",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu30",
+    "pid": "synthetic_post_30",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu31",
+    "pid": "synthetic_post_31",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu32",
+    "pid": "synthetic_post_32",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu33",
+    "pid": "synthetic_post_33",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu34",
+    "pid": "synthetic_post_34",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu35",
+    "pid": "synthetic_post_35",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu36",
+    "pid": "synthetic_post_36",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu37",
+    "pid": "synthetic_post_37",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu38",
+    "pid": "synthetic_post_38",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu39",
+    "pid": "synthetic_post_39",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu40",
+    "pid": "synthetic_post_40",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu41",
+    "pid": "synthetic_post_41",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu42",
+    "pid": "synthetic_post_42",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu43",
+    "pid": "synthetic_post_43",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu44",
+    "pid": "synthetic_post_44",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu45",
+    "pid": "synthetic_post_45",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu46",
+    "pid": "synthetic_post_46",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu47",
+    "pid": "synthetic_post_47",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu48",
+    "pid": "synthetic_post_48",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu49",
+    "pid": "synthetic_post_49",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu50",
+    "pid": "synthetic_post_50",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu51",
+    "pid": "synthetic_post_51",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu52",
+    "pid": "synthetic_post_52",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu53",
+    "pid": "synthetic_post_53",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu54",
+    "pid": "synthetic_post_54",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu55",
+    "pid": "synthetic_post_55",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu56",
+    "pid": "synthetic_post_56",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu57",
+    "pid": "synthetic_post_57",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu58",
+    "pid": "synthetic_post_58",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu59",
+    "pid": "synthetic_post_59",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu60",
+    "pid": "synthetic_post_60",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu61",
+    "pid": "synthetic_post_61",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu62",
+    "pid": "synthetic_post_62",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu63",
+    "pid": "synthetic_post_63",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu64",
+    "pid": "synthetic_post_64",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu65",
+    "pid": "synthetic_post_65",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu66",
+    "pid": "synthetic_post_66",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu67",
+    "pid": "synthetic_post_67",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu68",
+    "pid": "synthetic_post_68",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu69",
+    "pid": "synthetic_post_69",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu70",
+    "pid": "synthetic_post_70",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu71",
+    "pid": "synthetic_post_71",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu72",
+    "pid": "synthetic_post_72",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu73",
+    "pid": "synthetic_post_73",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu74",
+    "pid": "synthetic_post_74",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu75",
+    "pid": "synthetic_post_75",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu76",
+    "pid": "synthetic_post_76",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu77",
+    "pid": "synthetic_post_77",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu78",
+    "pid": "synthetic_post_78",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu79",
+    "pid": "synthetic_post_79",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu80",
+    "pid": "synthetic_post_80",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu81",
+    "pid": "synthetic_post_81",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu82",
+    "pid": "synthetic_post_82",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu83",
+    "pid": "synthetic_post_83",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu84",
+    "pid": "synthetic_post_84",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu85",
+    "pid": "synthetic_post_85",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu86",
+    "pid": "synthetic_post_86",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu87",
+    "pid": "synthetic_post_87",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu88",
+    "pid": "synthetic_post_88",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu89",
+    "pid": "synthetic_post_89",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu90",
+    "pid": "synthetic_post_90",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu91",
+    "pid": "synthetic_post_91",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu92",
+    "pid": "synthetic_post_92",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu93",
+    "pid": "synthetic_post_93",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu94",
+    "pid": "synthetic_post_94",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu95",
+    "pid": "synthetic_post_95",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu96",
+    "pid": "synthetic_post_96",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu97",
+    "pid": "synthetic_post_97",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu98",
+    "pid": "synthetic_post_98",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu99",
+    "pid": "synthetic_post_99",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu100",
+    "pid": "synthetic_post_100",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu101",
+    "pid": "synthetic_post_101",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu102",
+    "pid": "synthetic_post_102",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu103",
+    "pid": "synthetic_post_103",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu104",
+    "pid": "synthetic_post_104",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu105",
+    "pid": "synthetic_post_105",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu106",
+    "pid": "synthetic_post_106",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu107",
+    "pid": "synthetic_post_107",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu108",
+    "pid": "synthetic_post_108",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu109",
+    "pid": "synthetic_post_109",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu110",
+    "pid": "synthetic_post_110",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu111",
+    "pid": "synthetic_post_111",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu112",
+    "pid": "synthetic_post_112",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu113",
+    "pid": "synthetic_post_113",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu114",
+    "pid": "synthetic_post_114",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu115",
+    "pid": "synthetic_post_115",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu116",
+    "pid": "synthetic_post_116",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu117",
+    "pid": "synthetic_post_117",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu118",
+    "pid": "synthetic_post_118",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu119",
+    "pid": "synthetic_post_119",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu120",
+    "pid": "synthetic_post_120",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu121",
+    "pid": "synthetic_post_121",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu122",
+    "pid": "synthetic_post_122",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu123",
+    "pid": "synthetic_post_123",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu124",
+    "pid": "synthetic_post_124",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu125",
+    "pid": "synthetic_post_125",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu126",
+    "pid": "synthetic_post_126",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu127",
+    "pid": "synthetic_post_127",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu128",
+    "pid": "synthetic_post_128",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu129",
+    "pid": "synthetic_post_129",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu130",
+    "pid": "synthetic_post_130",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu131",
+    "pid": "synthetic_post_131",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu132",
+    "pid": "synthetic_post_132",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu133",
+    "pid": "synthetic_post_133",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu134",
+    "pid": "synthetic_post_134",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu135",
+    "pid": "synthetic_post_135",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu136",
+    "pid": "synthetic_post_136",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu137",
+    "pid": "synthetic_post_137",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu138",
+    "pid": "synthetic_post_138",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu139",
+    "pid": "synthetic_post_139",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu140",
+    "pid": "synthetic_post_140",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu141",
+    "pid": "synthetic_post_141",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu142",
+    "pid": "synthetic_post_142",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu143",
+    "pid": "synthetic_post_143",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu144",
+    "pid": "synthetic_post_144",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu145",
+    "pid": "synthetic_post_145",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu146",
+    "pid": "synthetic_post_146",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu147",
+    "pid": "synthetic_post_147",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu148",
+    "pid": "synthetic_post_148",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu149",
+    "pid": "synthetic_post_149",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu150",
+    "pid": "synthetic_post_150",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu151",
+    "pid": "synthetic_post_151",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu152",
+    "pid": "synthetic_post_152",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu153",
+    "pid": "synthetic_post_153",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu154",
+    "pid": "synthetic_post_154",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu155",
+    "pid": "synthetic_post_155",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu156",
+    "pid": "synthetic_post_156",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu157",
+    "pid": "synthetic_post_157",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu158",
+    "pid": "synthetic_post_158",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu159",
+    "pid": "synthetic_post_159",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu160",
+    "pid": "synthetic_post_160",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu161",
+    "pid": "synthetic_post_161",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu162",
+    "pid": "synthetic_post_162",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu163",
+    "pid": "synthetic_post_163",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu164",
+    "pid": "synthetic_post_164",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu165",
+    "pid": "synthetic_post_165",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu166",
+    "pid": "synthetic_post_166",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu167",
+    "pid": "synthetic_post_167",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu168",
+    "pid": "synthetic_post_168",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu169",
+    "pid": "synthetic_post_169",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu170",
+    "pid": "synthetic_post_170",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu171",
+    "pid": "synthetic_post_171",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu172",
+    "pid": "synthetic_post_172",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu173",
+    "pid": "synthetic_post_173",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu174",
+    "pid": "synthetic_post_174",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu175",
+    "pid": "synthetic_post_175",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu176",
+    "pid": "synthetic_post_176",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu177",
+    "pid": "synthetic_post_177",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu178",
+    "pid": "synthetic_post_178",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu179",
+    "pid": "synthetic_post_179",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu180",
+    "pid": "synthetic_post_180",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu181",
+    "pid": "synthetic_post_181",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu182",
+    "pid": "synthetic_post_182",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu183",
+    "pid": "synthetic_post_183",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu184",
+    "pid": "synthetic_post_184",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu185",
+    "pid": "synthetic_post_185",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu186",
+    "pid": "synthetic_post_186",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu187",
+    "pid": "synthetic_post_187",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu188",
+    "pid": "synthetic_post_188",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu189",
+    "pid": "synthetic_post_189",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu190",
+    "pid": "synthetic_post_190",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu191",
+    "pid": "synthetic_post_191",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu192",
+    "pid": "synthetic_post_192",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu193",
+    "pid": "synthetic_post_193",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu194",
+    "pid": "synthetic_post_194",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu195",
+    "pid": "synthetic_post_195",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu196",
+    "pid": "synthetic_post_196",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu197",
+    "pid": "synthetic_post_197",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu198",
+    "pid": "synthetic_post_198",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu199",
+    "pid": "synthetic_post_199",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu200",
+    "pid": "synthetic_post_200",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu201",
+    "pid": "synthetic_post_201",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu202",
+    "pid": "synthetic_post_202",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu203",
+    "pid": "synthetic_post_203",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu204",
+    "pid": "synthetic_post_204",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu205",
+    "pid": "synthetic_post_205",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu206",
+    "pid": "synthetic_post_206",
+    "expected_label": "NEU"
+  },
+  {
+    "body": "Phim hay và diễn xuất tốt, rất đáng xem! mãmẫu207",
+    "pid": "synthetic_post_207",
+    "expected_label": "POS"
+  },
+  {
+    "body": "Phim dở, kịch bản tệ và không đáng xem. mãmẫu208",
+    "pid": "synthetic_post_208",
+    "expected_label": "NEG"
+  },
+  {
+    "body": "Phim chiếu lúc mấy giờ và có phụ đề không? mãmẫu209",
+    "pid": "synthetic_post_209",
+    "expected_label": "NEU"
+  }
+]

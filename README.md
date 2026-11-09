@@ -1,7 +1,7 @@
 # Phân loại sắc thái bình luận phim tiếng Việt
 
 Đặc tả chính thức: [CODEX_HANDOFF_MOVIE_SENTIMENT.md](CODEX_HANDOFF_MOVIE_SENTIMENT.md).
-Đã triển khai **Phase A (audit)** và **Phase B (data foundation)**. Phạm vi chỉ
+Đã triển khai **Phase A/B**, **Phase C tooling** và **Phase D baseline trên fixture**. Phạm vi chỉ
 là comment về phim với ba sentiment `POS / NEG / NEU`.
 `REVIEW` và `EXCLUDE` là trạng thái, không phải lớp huấn luyện.
 
@@ -12,8 +12,9 @@ hoặc Kappa người thật; nhãn `overall` chưa được xác minh, không �
 
 Repository phục vụ pipeline Python CLI: thu thập → tiền xử lý → gán nhãn
 bán tự động → trích xuất đặc trưng → huấn luyện → đánh giá → báo cáo.
-Không xây web, dashboard hoặc giao diện ứng dụng. Hiện mới hoàn tất Phase B;
-các bước huấn luyện/đánh giá/báo cáo thực nghiệm chưa được triển khai.
+Không xây web, dashboard hoặc giao diện ứng dụng. Tooling C/D đã kiểm thử bằng fixture;
+các bước huấn luyện/đánh giá/báo cáo trên dữ liệu thật chưa có gold để chạy.
+Baseline CLI và kết quả fixture: [Phase D](docs/PHASE_D_REPORT.md).
 
 ## Thu thập Facebook mới (Python CLI)
 
@@ -180,12 +181,12 @@ Chưa chạy numerical feature extraction vì môi trường thiếu sklearn/sci
 Không dùng `X_*.npz` cũ đã fit toàn corpus cho thực nghiệm. Phase D sẽ nối
 gold labels, train-only vectorization, transform dev/test và test vocabulary.
 
-Chưa triển khai `sample-annotation`, train/evaluate, active learning,
-pseudo-labeling hay Transformer. Các trường provenance/pseudo trong schema
+Annotation sampling và train/evaluate đã có CLI ở `src.annotation`/`src.baseline`;
+chưa triển khai active learning, pseudo-labeling hay Transformer. Các trường provenance/pseudo trong schema
 chỉ là ràng buộc dữ liệu, không phải một thuật toán pseudo đã được kiểm định.
-Tiếp theo: **Phase C** guideline versioned, dry-run/pilot sampler, bảng gán
-độc lập, review queue, agreement/kappa; sau đó Phase D baseline trên fixture
-và gold thật khi có. Chưa có kết quả thực nghiệm sentiment được công bố.
+Tiếp theo: xác minh nguồn dữ liệu thật, chạy pilot người gán độc lập và xây gold
+dev/test; chỉ sau đó dùng baseline cho kết luận nghiên cứu. Chưa có metric sentiment
+trên dữ liệu thật được công bố; Kappa/gold thật vẫn cần người gán.
 
 Theo yêu cầu thu thập lại corpus, crawler Python mới được triển khai riêng;
 không sửa thuật toán Phase B. `crawl/crawl.js` là công cụ thu thập legacy

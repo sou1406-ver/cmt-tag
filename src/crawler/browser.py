@@ -18,7 +18,12 @@ def dom(page,source,action='read'):
 def access_barrier(page):
     if any(part in page.current_url for part in ('/login','/checkpoint','/captcha','/two_step_verification')):
         return True
-    return any(BLOCKED.search(el.text) for el in page.find_elements('css selector','h1,h2,[role="alert"]'))
+    # Facebook can replace a heading between find_elements() and .text.
+    # Read strings in one DOM snapshot, retaining visible access warnings.
+    texts = page.execute_script('''return [...document.querySelectorAll('h1,h2,[role="alert"]')]
+        .filter(el => el.getClientRects().length && getComputedStyle(el).visibility === 'visible')
+        .map(el => el.innerText || '');''')
+    return any(BLOCKED.search(text) for text in texts)
 
 
 def collect(page, store, post):

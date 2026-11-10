@@ -6,7 +6,7 @@ from unittest.mock import patch
 from urllib.parse import quote
 
 from src.crawler.parser import post_id, comment_identity, observations
-from src.crawler.browser import EXTRACT, collect, dom
+from src.crawler.browser import EXTRACT, collect, dom, access_barrier
 from src.crawler.login import open_login
 from src.crawler.store import Store
 from tests import test_crawler as crawler_tests
@@ -56,6 +56,24 @@ class FacebookLayoutTests(unittest.TestCase):
 
     def load(self,html):
         self.driver.get('data:text/html;charset=utf-8,'+quote('<meta charset="utf-8"><base href="https://www.facebook.com/">'+html))
+
+    def test_access_barrier_survives_replaced_heading(self):
+        self.load('<h2>Loading</h2>')
+        stale = self.driver.find_element('css selector', 'h2')
+        self.driver.execute_script("document.querySelector('h2').outerHTML='<h2>Temporarily blocked</h2>'")
+        # Emulate the heading replacement observed between WebDriver lookup
+        # and text retrieval; the current visible warning must still block.
+        with patch.object(self.driver, 'find_elements', return_value=[stale]):
+            self.assertTrue(access_barrier(self.driver))
+        self.driver.execute_script("document.querySelector('h2').outerHTML='<h2>Comments</h2>'")
+        with patch.object(self.driver, 'find_elements', return_value=[stale]):
+            self.assertFalse(access_barrier(self.driver))
+
+    def test_access_barrier_hidden_alert_and_visible_warning(self):
+        self.load('<h1>Comments</h1><h2 hidden>captcha</h2><div role="alert" style="display:none">Temporarily blocked</div>')
+        self.assertFalse(access_barrier(self.driver))
+        self.driver.execute_script("document.querySelector('[role=alert]').style.display='block'")
+        self.assertTrue(access_barrier(self.driver))
 
     def fixture(self):
         return f'''<div role="article"><a href="/x/posts/999">other post</a>

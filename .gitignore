@@ -32,6 +32,13 @@
 !/data/imports/facebook_diverse_sources_20261110/comments.xlsx
 !/data/imports/facebook_diverse_sources_20261110/import_config.json
 !/data/imports/facebook_diverse_sources_20261110/export_manifest.json
+!/data/imports/facebook_diversity_batch_20261110/
+/data/imports/facebook_diversity_batch_20261110/*
+!/data/imports/facebook_diversity_batch_20261110/comments.csv
+!/data/imports/facebook_diversity_batch_20261110/comments.xlsx
+!/data/imports/facebook_diversity_batch_20261110/import_config.json
+!/data/imports/facebook_diversity_batch_20261110/export_manifest.json
+!/data/imports/facebook_diversity_batch_20261110/source_list.csv
 !/data/tasks/
 /data/tasks/*
 !/data/tasks/source_quality_pilot_20261110/

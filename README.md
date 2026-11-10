@@ -37,6 +37,7 @@ observation đầy đủ vào CSV cùng `import_config.json` để chạy Phase 
 | Pilot 7 bài nhóm, 5 phim — 10/11/2026 | 504 | [CSV](data/imports/facebook_group_pilot_20261110/comments.csv) | [Excel](data/imports/facebook_group_pilot_20261110/comments.xlsx) |
 | Bài nhiều bình luận, sau sửa mention — ID mới | 2.277 | [CSV](data/imports/facebook_high_activity_20261110/comments.csv) | [Excel](data/imports/facebook_high_activity_20261110/comments.xlsx) |
 | Bổ sung 3 phim, 2 nhóm công khai — ID mới | 143 | [CSV](data/imports/facebook_diverse_sources_20261110/comments.csv) | [Excel](data/imports/facebook_diverse_sources_20261110/comments.xlsx) |
+| Đợt đa dạng: 9 bài, 8 phim, 3 nhóm — ID mới | 252 | [CSV](data/imports/facebook_diversity_batch_20261110/comments.csv) | [Excel](data/imports/facebook_diversity_batch_20261110/comments.xlsx) |
 
 Mỗi bản thuộc một run riêng, kèm nguồn, mã phim theo đầu vào và ID.
 Hai bản đầu là `mua_do`; bản pilot có 5 phim và thêm cột `source_group`.
@@ -48,6 +49,8 @@ Chưa có kết quả người gán, agreement/Kappa hoặc tỷ lệ usable th�
 ID ba bản trước: [nguồn, sửa lỗi href và đối soát](docs/FACEBOOK_HIGH_ACTIVITY_20261110.md).
 Đợt tiếp thêm Interstellar, The Dark Knight và Nhà Bà Nữ, có nhóm Chê Phim Review
 256,7K thành viên: [nguồn và giới hạn truy cập](docs/FACEBOOK_DIVERSE_SOURCES_20261110.md).
+Đợt đa dạng tiếp theo xác minh 12 bài, kiểm mẫu trước khi crawl sâu 9 bài;
+chưa đạt mục tiêu 20–30 bài. Có [danh sách nguồn, thời gian và báo cáo chất lượng sơ bộ](docs/FACEBOOK_DIVERSITY_BATCH_20261110.md).
 Cột `text` bỏ tag tài khoản được nhận dạng từ node DOM, giữ emoji Unicode,
 phủ định và xuống dòng. Dữ liệu chưa gán nhãn; các run còn `partial`, chưa xác
 nhận đủ toàn bộ bình luận. `export_manifest.json` trong từng thư mục ghi nguồn,
@@ -61,6 +64,7 @@ python scripts/prepare_data.py --config data/imports/facebook_group_190940010299
 python scripts/prepare_data.py --config data/imports/facebook_group_pilot_20261110/import_config.json
 python scripts/prepare_data.py --config data/imports/facebook_high_activity_20261110/import_config.json
 python scripts/prepare_data.py --config data/imports/facebook_diverse_sources_20261110/import_config.json
+python scripts/prepare_data.py --config data/imports/facebook_diversity_batch_20261110/import_config.json
 ```
 
 ## Setup và test

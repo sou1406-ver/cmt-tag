@@ -1,0 +1,11 @@
+{
+  "dataset_version": "facebook_master_20261111_v1",
+  "inventory_roots": ["G:/dlvb"],
+  "reviewed_root": "outputs/development/reviewed",
+  "reviewed_manifest_sha256": "a4dba6c15c28455661ea84992ad4a19478e90b5dde62abe8acbe5533d2f91d64",
+  "expected_development_rows": 400,
+  "expected_optional_sources": ["crawl/dataset.csv", "crawl/dataset_daxuly_gannhan.csv"],
+  "exposure_ledger": "configs/blind_test_exposure.json",
+  "protect_paths": ["docs/guidelines/MOVIE_SENTIMENT_V2_0.md", "docs/guidelines/MOVIE_SENTIMENT_V2_1.md", "outputs/development", "outputs/phase_e", "outputs/phase_e1", "outputs/phase_e2"],
+  "near_duplicate": {"threshold": 0.9, "min_chars": 40, "shingle_size": 3}
+}

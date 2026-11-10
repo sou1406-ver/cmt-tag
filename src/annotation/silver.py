@@ -24,6 +24,8 @@ def annotate(root,version,provider_config,output,allow_external=False,retries=2)
         raise ValueError('Provider needs model and kind=replay/command')
     records,_,manifest=prepared(root,version)
     ids={e['id'] for e in manifest['entries'] if e['split']=='train' and e['eligible_for_annotation']}
+    from src.dataset.blind import assert_allowed
+    assert_allowed([r for r in records if r['id'] in ids], 'pseudo_labeling')
     prompt_hash=digest(PROMPT+GUIDELINE.read_text(encoding='utf-8'))
     contract={'dataset_version':version,'guideline_sha256':digest(GUIDELINE.read_bytes()),
               'prompt_version':PROMPT_VERSION,'prompt_hash':prompt_hash,'model':cfg['model'],

@@ -144,6 +144,56 @@ NEG Mưa Đỏ chỉ 10 câu; AP NEG chiều ngược 0,864 cần so prevalence 
 Output mới `outputs/phase_e2/`, không ghi đè E/E.1. Không target calibration,
 threshold tuning, AI labeling hoặc Transformer trong bước này.
 
+## Phase G: master dataset và chuẩn bị test mù
+
+**PARTIAL, chưa có independent test.** Đã kiểm kê nguồn local và tạo master
+`outputs/phase_g/master/`: 60.627 quan sát nguồn → 39.842 bản ghi bảo thủ,
+trong đó 7.205 identity Facebook đủ metadata. Phần còn lại gồm 29.688 dòng
+external chưa xác minh và 2.949 bản chiếu archive text-only chưa nối chắc ID;
+không gọi tổng master là số comment Facebook độc nhất.
+Giữ nguyên 400 quyết định người gán, 19 review events và kết quả E/E.1/E.2.
+
+**0/180 mẫu đủ bằng chứng độc lập**; có 8 bài cần rà exposure, tối đa 80 mẫu
+với quota 10/bài ngay cả nếu tất cả được xác nhận. Không tạo Excel gán thật,
+không crawl thêm/train/gọi AI. [Báo cáo, nguồn và blockers](docs/PHASE_G_REPORT.md).
+
+Các CLI chỉ tạo output mới; file chứa comment/mapping luôn giữ local:
+
+```powershell
+python scripts/build_master_dataset.py --config configs/master_dataset.json --output outputs/phase_g/master
+python scripts/prepare_blind_test.py --config configs/blind_test.json --output outputs/phase_g/blind_test
+python scripts/validate_master_dataset.py
+```
+
+Các output trên **đã tồn tại**; không chạy lại với cùng đường dẫn. Khi tái
+lập, chọn thư mục mới và sửa `master_root/master_manifest_sha256` trong một
+config mới. Đổi inventory roots khi chạy trên máy khác. CLI prepare trả mã 2
+và manifest PARTIAL nếu thiếu nguồn; không tự nới quota. Xem
+`availability.json` và `audit/sources_by_post.csv` để rà nguồn.
+
+Khi có đủ nguồn được chứng minh chưa dùng cho guideline/chọn model: reserve
+180 câu bằng seed/quota → dùng `scripts/build_blind_workbooks.mjs` trong
+môi trường bundled `@oai/artifact-tool` với `workbook_input.json` đã mù →
+`scripts/finalize_blind_workbooks.py --source <reservation> --workbooks <xlsx_dir> --output <ready_task>`.
+Không gửi cả thư mục coordinator cho người gán; chỉ giao `test_annotator_a.xlsx`
+và, nếu có người thứ hai, `test_annotator_b_50.xlsx`. Hướng dẫn theo V2.1:
+điền POS/NEG/NEU ở `label`, REVIEW cần `review_reason`, EXCLUDE cần `reason`;
+có thể để status trống khi đã điền quyết định ở label, importer sẽ chuẩn hóa.
+
+Import sau khi gán (chưa chạy trên test thật):
+
+```powershell
+python scripts/import_blind_annotations.py --reservation <ready_task> --input <test_annotator_a.xlsx> --output <new_labels_dir> --annotator annotator_a --role a
+```
+
+B dùng `--role b` và output riêng; không tự lấy nhãn A làm đáp án B. Giữ
+REVIEW/EXCLUDE, không tự tạo gold. Sau xử lý bất đồng/REVIEW và freeze model
+trước nhãn test, mới dùng `scripts/evaluate_cluster_bootstrap.py`: 2.000
+replicates theo **nguyên bài đăng**, CI 95%, báo replicate thiếu lớp riêng.
+Không dùng test/CI để chọn model, threshold hoặc sửa guideline. Guard chống
+dùng nhầm reservation đã nối vào baseline/development/Phase E và silver entry
+point; pipeline mới phải gọi `src.dataset.blind.assert_allowed` tương tự.
+
 ## Thu thập Facebook mới (Python CLI)
 
 Dán nhiều link trong cùng run, dùng Brave:

@@ -43,6 +43,8 @@ def read_locked(config):
         raise ValueError('Dataset manifest differs from frozen experiment contract')
     verify_files(source,manifest)
     rows=read_csv(source/'annotations.csv')
+    from src.dataset.blind import assert_allowed
+    assert_allowed(rows, 'model_selection')
     if (manifest['purpose']!='exploratory_development_only' or manifest['independent_test']
             or manifest['pending_review_ids'] or not manifest['all_human_review_resolved']):
         raise ValueError('Only completed, exposed development annotations are allowed')

@@ -36,6 +36,8 @@ def mask_text(text, aliases, movie_id, normalize_unicode=True):
 
 
 def plan(rows, cfg):
+    from src.dataset.blind import assert_allowed
+    assert_allowed(rows, 'validation')
     ids = [r['id'] for r in rows]
     if len(ids)!=len(set(ids)) or any(not r['post_id'] or not r['post_url'] or not r['comment_id'] for r in rows):
         raise ValueError('Unique IDs and post/source provenance required')
@@ -75,6 +77,8 @@ def plan(rows, cfg):
 
 def execute(rows, cfg, split_plan, aliases):
     """Reuse Phase D estimators and metric definitions, fit vectorizers inside each fold."""
+    from src.dataset.blind import assert_allowed
+    assert_allowed(rows, 'train')
     by_id={r['id']:r for r in rows}
     results, predictions, coefficients = [], [], []
     for variant in cfg['variants']:

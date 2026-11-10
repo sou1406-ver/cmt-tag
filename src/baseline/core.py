@@ -33,6 +33,8 @@ def metrics(y,pred):
 
 def dataset(release_path,mode='mixed'):
     records,manifest,meta=load_release(release_path)
+    from src.dataset.blind import assert_allowed
+    assert_allowed(records, 'train')
     if meta['status']!='ready' or not manifest['locked_gold']: raise ValueError('Independent gold holdout not ready')
     by_id={r['id']:r for r in records}; pools={s:[] for s in ('train','dev','test')}
     for e in manifest['entries']:

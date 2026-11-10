@@ -6,7 +6,7 @@ import { Workbook, SpreadsheetFile } from '@oai/artifact-tool';
 
 const [inputPath, outputDir] = process.argv.slice(2);
 if (!inputPath || !outputDir) throw new Error('Usage: node build_blind_workbooks.mjs workbook_input.json NEW_OUTPUT_DIR');
-const fields = ['id','text_raw','status','label','review_reason','reason'];
+const fields = ['id','text_view','status','label','review_reason','reason'];
 const payload = JSON.parse(await fs.readFile(inputPath, 'utf8'));
 if (Object.keys(payload).sort().join(',') !== 'a,b') throw new Error('Only blind A/B input is permitted');
 for (const key of ['a','b']) {
@@ -18,7 +18,7 @@ for (const key of ['a','b']) {
   }
 }
 if (new Set(payload.a.map(r=>r.id)).size!==180 || new Set(payload.b.map(r=>r.id)).size!==50 ||
-    payload.b.some(r=>!payload.a.some(a=>a.id===r.id && a.text_raw===r.text_raw)))
+    payload.b.some(r=>!payload.a.some(a=>a.id===r.id && a.text_view===r.text_view)))
   throw new Error('B must be a distinct subset of A with identical literal text');
 await fs.mkdir(outputDir, {recursive:false});
 for (const key of ['a','b']) {
@@ -39,7 +39,7 @@ for (const key of ['a','b']) {
   sheet.getRange(`C2:F${last}`).format.fill = '#FFF9E6';
   sheet.getRange(`C2:F${last}`).format.font = {name:'Arial',size:11,color:'#1756A9'};
   rows.forEach((row,i)=>{
-    sheet.getRange(`A${i+2}:F${i+2}`).format.rowHeight = Math.min(409,Math.max(62,18*(Math.ceil(row.text_raw.length/100)+row.text_raw.split('\n').length)));
+    sheet.getRange(`A${i+2}:F${i+2}`).format.rowHeight = Math.min(409,Math.max(62,18*(Math.ceil(row.text_view.length/100)+row.text_view.split('\n').length)));
     if (i%2===1) sheet.getRange(`A${i+2}:B${i+2}`).format.fill='#F0F4F8';
   });
   sheet.getRange(`C2:C${last}`).dataValidation={rule:{type:'list',values:['LABELED','REVIEW','EXCLUDE']}};

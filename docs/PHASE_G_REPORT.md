@@ -154,7 +154,8 @@ File reservation hỏng bị chặn; manifest PARTIAL hợp lệ với 0 ID khô
 tạo một reservation. Guard không thể kiểm soát code ngoài repository.
 
 Builder Excel dùng `@oai/artifact-tool`, chỉ nhận whitelist 6 field:
-`id,text_raw,status,label,review_reason,reason`. Một sheet nhìn thấy, header
+`id,text_view,status,label,review_reason,reason` (đã sửa tên cột trong
+[follow-up](PHASE_G_FOLLOWUP.md), `text_raw` trong master không đổi). Một sheet nhìn thấy, header
 cố định, wrap text, ô nhập màu nhạt và dropdown. A có 180 câu, B là 50 câu
 chung test nhưng xáo độc lập; mọi quyết định trống. Mapping coordinator ở
 file riêng, không phải sheet ẩn. Validator từ chối extra columns/sheets,

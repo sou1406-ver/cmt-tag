@@ -177,6 +177,9 @@ môi trường bundled `@oai/artifact-tool` với `workbook_input.json` đã mù
 `scripts/finalize_blind_workbooks.py --source <reservation> --workbooks <xlsx_dir> --output <ready_task>`.
 Không gửi cả thư mục coordinator cho người gán; chỉ giao `test_annotator_a.xlsx`
 và, nếu có người thứ hai, `test_annotator_b_50.xlsx`. Hướng dẫn theo V2.1:
+Workbook/CSV mù chỉ có `id,text_view,status,label,review_reason,reason`.
+`text_view` là bản DOM đã bỏ mention nếu có `dom_text_v2`, nếu không thì
+giữ nguyên nội dung; `text_raw` nguồn vẫn giữ riêng, không đổi trong master.
 điền POS/NEG/NEU ở `label`, REVIEW cần `review_reason`, EXCLUDE cần `reason`;
 có thể để status trống khi đã điền quyết định ở label, importer sẽ chuẩn hóa.
 
@@ -193,6 +196,39 @@ replicates theo **nguyên bài đăng**, CI 95%, báo replicate thiếu lớp ri
 Không dùng test/CI để chọn model, threshold hoặc sửa guideline. Guard chống
 dùng nhầm reservation đã nối vào baseline/development/Phase E và silver entry
 point; pipeline mới phải gọi `src.dataset.blind.assert_allowed` tương tự.
+
+### Bổ sung bài mới cho blind test
+
+Đã rà 8 bài trong `availability.json`: cả 8 **chưa đủ bằng chứng xác nhận
+chưa dùng** nên vẫn ngoài pool. Chi tiết metadata/provenance local:
+`outputs/phase_g/exposure_audit/post_audit.csv`. Không suy ra độc lập từ
+việc không có trong 400 câu. [Luồng và bằng chứng follow-up](docs/PHASE_G_FOLLOWUP.md).
+
+`test_posts.csv` vừa thêm có 25 dòng mẫu, chưa có link/mã phim/evidence;
+preflight đã báo BLOCKED 25/25, chưa mở browser. File người dùng giữ nguyên
+và được gitignore. Điền đúng 8 cột có sẵn; `movie_slot` chỉ là kế hoạch,
+phải điền `movie_id` thật. `post_id` có thể để trống để trích từ URL bài;
+nếu điền thì phải khớp. `selected_from_post_content_only=true` xác nhận chỉ
+chọn theo bài viết, không xem comment để chọn nguồn. Cột
+`unused_exposure_evidence` là đường dẫn JSON receipt người phụ trách xác
+nhận trước crawl; xem schema và giới hạn bằng chứng trong tài liệu follow-up.
+Ghi chú tự do hoặc ô trống không thay thế receipt.
+
+```powershell
+python scripts/collect_blind_test_posts.py preflight --input test_posts.csv --output outputs/phase_g/test_posts_preflight_v2
+python scripts/collect_blind_test_posts.py crawl --plan outputs/phase_g/test_posts_preflight_v2 --channel brave --profile data/browser_profile_brave_manual
+python scripts/collect_blind_test_posts.py reserve --plan outputs/phase_g/test_posts_preflight_v2 --run <fb_run_id> --output outputs/phase_g/post_collection_v2
+```
+
+Chỉ chạy crawl khi preflight READY. Preflight kiểm syntax/ID từ URL, bài
+trùng, master, lịch sử metadata và receipt; không tự xác minh nội dung phim
+hoặc khả năng truy cập từ xa. Crawl gọi lại **`python -m src.crawler crawl-batch`**,
+giới hạn 100 comment/bài; không đọc comment để lọc/chọn bài. Resume dùng
+`crawl --plan <plan> --resume <run_id>` và phải đúng run của kế hoạch.
+Sau crawl, reserve tạo master mới, nối toàn bộ duplicate/component với dữ
+liệu cũ rồi áp quota 10/bài, 20/phim; thiếu 180 vẫn PARTIAL, không có file gán.
+Đăng ký quarantine post trước crawl và component sau reservation; không dùng
+các nguồn này cho train/pseudo-label, kể cả khi đợt thu thập chưa đủ quota.
 
 ## Thu thập Facebook mới (Python CLI)
 

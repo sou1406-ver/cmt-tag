@@ -67,6 +67,9 @@
 !/data/tasks/multifilm_annotation_200_20261110/coordinator/replay_random.py
 !/data/tasks/multifilm_annotation_200_20261110/coordinator/validation_report.json
 /outputs/
+# Local blind-test source lists/receipts; never publish candidate URLs or evidence.
+/test_posts.csv
+/test_posts.xlsx
 /crawl/*.csv
 # Retain protection for legacy local media; no media is present in this clone.
 /media/

@@ -12,7 +12,7 @@ from src.dataset.common import load, save, seal, sha, staged, verify
 
 
 def check_workbook(path, expected):
-    fields, rows, _ = read_input(path)
+    fields, rows, _ = read_input(path, text_field='text_view')
     if fields != BLIND_FIELDS or rows != expected: raise ValueError('Workbook values differ from blinded task')
     with zipfile.ZipFile(path) as z:
         ns={'s':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}

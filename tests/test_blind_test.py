@@ -86,6 +86,7 @@ class BlindTests(unittest.TestCase):
             payload=load(root/'blind/workbook_input.json');self.assertEqual(len(payload['a']),180);self.assertEqual(len(payload['b']),50)
             for row in payload['a']+payload['b']:
                 self.assertEqual(set(row),set(BLIND_FIELDS));self.assertTrue(all(not row[k] for k in BLIND_FIELDS[2:]))
+                self.assertEqual(row['text_view'],next(r['text_view'] for r in rows if r['id']==row['id']))
             self.assertTrue({r['id'] for r in payload['b']} <= {r['id'] for r in payload['a']})
             reserved=load(root/'blind/reservation.json')
             self.assertEqual(len(reserved['ids']),len(rows)) # all component members, not just 180 selected
@@ -102,7 +103,7 @@ class BlindTests(unittest.TestCase):
 
     def test_import_preserves_review_and_exclude_and_refuses_missing_decisions(self):
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);task=root/'task';task.mkdir();rows=[dict(id=str(i),text_raw='fixture'+str(i),status='',label='',review_reason='',reason='') for i in range(3)]
+            root=Path(temp);task=root/'task';task.mkdir();rows=[dict(id=str(i),text_view='fixture'+str(i),status='',label='',review_reason='',reason='') for i in range(3)]
             write_csv(task/'test_annotator_a.csv',rows,BLIND_FIELDS)
             seal(task,dict(status='RESERVED_PENDING_WORKBOOKS',guideline_sha256='fixture'))
             a=copy.deepcopy(rows);a[0]['label']='POS';a[1].update(label='REVIEW',review_reason='REV_CONTEXT');a[2].update(label='EXCLUDE',reason='Off topic')
@@ -111,6 +112,17 @@ class BlindTests(unittest.TestCase):
             self.assertEqual((r['sentiment'],r['review'],r['excluded']),(1,1,1));self.assertFalse(r['gold_created'])
             write_csv(root/'missing.csv',rows,BLIND_FIELDS)
             with self.assertRaises(ValueError):import_labels(task,root/'missing.csv',root/'bad','fixture')
+            self.assertFalse((root/'bad').exists())
+
+    def test_old_raw_header_cannot_misrepresent_a_cleaned_blind_view(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);task=root/'task';task.mkdir()
+            rows=[dict(id='1',text_view='cleaned view',status='',label='',review_reason='',reason='')]
+            write_csv(task/'test_annotator_a.csv',rows,BLIND_FIELDS)
+            seal(task,dict(status='RESERVED_PENDING_WORKBOOKS',guideline_sha256='fixture'))
+            write_csv(root/'legacy.csv',[dict(id='1',text_raw='cleaned view',status='',label='POS',review_reason='',reason='')],
+                      ['id','text_raw','status','label','review_reason','reason'])
+            with self.assertRaisesRegex(ValueError,'text_view'):import_labels(task,root/'legacy.csv',root/'bad','fixture')
             self.assertFalse((root/'bad').exists())
 
 

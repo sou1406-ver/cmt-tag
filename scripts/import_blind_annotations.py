@@ -16,7 +16,7 @@ def import_labels(reservation_root, annotation_file, output, annotator, workshee
     if manifest['status'] not in {'RESERVED_PENDING_WORKBOOKS','BLIND_READY'}:
         raise ValueError('No independent test reserved')
     if not annotator.strip(): raise ValueError('Annotator identity required; stored coordinator-side only')
-    fields, rows, input_sha = read_input(Path(annotation_file), sheet_name=worksheet)
+    fields, rows, input_sha = read_input(Path(annotation_file), sheet_name=worksheet, text_field='text_view')
     if list(fields) != BLIND_FIELDS: raise ValueError('Unexpected annotation fields or metadata')
     if role not in {'a','b'}: raise ValueError('Annotator role must be a or b')
     expected, _ = csv_rows((root/('test_annotator_a.csv' if role=='a' else 'test_annotator_b_50.csv')).read_bytes())
@@ -26,7 +26,7 @@ def import_labels(reservation_root, annotation_file, output, annotator, workshee
     resolved = []
     for original in rows:
         row = dict(original)
-        if row['text_raw'] != lookup[row['id']]['text_raw']: raise ValueError('Blind task text modified')
+        if row['text_view'] != lookup[row['id']]['text_view']: raise ValueError('Blind task text view modified')
         for key in ('status','label','review_reason'): row[key] = row[key].strip().upper()
         # Support the familiar single decision in label while separating states explicitly.
         if row['label'] in {'REVIEW','EXCLUDE'} and row['status'] in {'', row['label']}:

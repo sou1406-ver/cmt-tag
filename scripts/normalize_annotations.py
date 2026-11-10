@@ -19,7 +19,7 @@ EDITABLE = frozenset(('status', 'label', 'review_reason', 'reason'))
 NS = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
 
 
-def read_input(path, sheet_name=None, header_row=1, last_column=None):
+def read_input(path, sheet_name=None, header_row=1, last_column=None, text_field='text_raw'):
     """Read literal cell values only; never evaluate workbook formulas."""
     path = Path(path)
     if type(header_row) is not int or header_row < 1 or (last_column is not None and (type(last_column) is not int or last_column < 1)):
@@ -77,8 +77,10 @@ def read_input(path, sheet_name=None, header_row=1, last_column=None):
                     for number, values in sorted(grid.items()) if number > header_row and any(values.get(c, '') for c in columns)]
     else:
         raise ValueError('Input must be CSV or XLSX')
-    if not fields or len(fields) != len(set(fields)) or not {'id', 'text_raw', 'label'}.issubset(fields):
-        raise ValueError('Unique headers id, text_raw and label are required')
+    if text_field not in {'text_raw','text_view'}:
+        raise ValueError('Unsupported text field')
+    if not fields or len(fields) != len(set(fields)) or not {'id', text_field, 'label'}.issubset(fields):
+        raise ValueError('Unique headers id, '+text_field+' and label are required')
     return fields, rows, hashlib.sha256(payload).hexdigest()
 
 

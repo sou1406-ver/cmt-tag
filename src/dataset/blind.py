@@ -8,7 +8,7 @@ from .master import normal, post_url
 from src.annotation.guidelines import GUIDELINE, GUIDELINE_VERSION, validate_guideline
 from src.crawler.parser import post_id as url_post_id
 
-BLIND_FIELDS = ['id', 'text_raw', 'status', 'label', 'review_reason', 'reason']
+BLIND_FIELDS = ['id', 'text_view', 'status', 'label', 'review_reason', 'reason']
 PROHIBITED = ('train', 'validation', 'model_selection', 'active_learning', 'pseudo_labeling',
               'prompt_tuning', 'guideline_tuning', 'threshold_tuning')
 
@@ -125,7 +125,7 @@ def prepare(config_path, output):
             save(work/'reservation.json', reservation)
             a = list(selected); random.Random(cfg['seed']+1).shuffle(a)
             b = random.Random(cfg['seed']+2).sample(sorted(selected, key=lambda r: r['id']), cfg['second_annotator_count'])
-            def blinded(items): return [dict(id=r['id'], text_raw=r['text_view'], status='',label='',review_reason='',reason='') for r in items]
+            def blinded(items): return [dict(id=r['id'], text_view=r['text_view'], status='',label='',review_reason='',reason='') for r in items]
             write_csv(work/'test_annotator_a.csv', blinded(a), BLIND_FIELDS)
             write_csv(work/'test_annotator_b_50.csv', blinded(b), BLIND_FIELDS)
             # The artifact-tool builder consumes only whitelisted blind fields; no hidden coordinator sheet.
@@ -138,6 +138,7 @@ def prepare(config_path, output):
             max_per_movie=cfg['max_per_movie'], algorithm='seeded_movie_post_round_robin_without_replacement_v1',
             quota_sample_not_natural_facebook_distribution=True, guideline_version=GUIDELINE_VERSION,
             guideline_sha256=sha(GUIDELINE), gold_created=False, labels_imported=False, predictions_opened=False,
+            blind_text_field='text_view', blind_text_policy='existing_dom_text_v2_when_available_else_unchanged_raw',
             blocker='' if enough else 'Insufficient provably unused sources; no quota relaxed and no annotation files emitted'))
     return result
 
@@ -148,6 +149,8 @@ def assert_allowed(rows, purpose, reservation_root=None):
     The default local reservation is absent before Phase G, or sealed PARTIAL with
     zero reservations. A present but corrupt/incomplete reservation fails closed.
     """
+    from .test_posts import assert_intakes_allowed
+    assert_intakes_allowed(rows,purpose)
     directory = Path(reservation_root) if reservation_root else ROOT/'outputs/phase_g/blind_test'
     if not directory.exists(): return
     manifest = verify(directory)
@@ -156,7 +159,11 @@ def assert_allowed(rows, purpose, reservation_root=None):
             raise ValueError('Invalid partial reservation')
         return
     reserved = load(directory/'reservation.json')
-    if purpose not in reserved['prohibited_uses']: raise ValueError('Explicit prohibited use required at this boundary')
+    deny_reserved(rows,purpose,reserved)
+
+
+def deny_reserved(rows,purpose,reserved):
+    if purpose not in PROHIBITED: raise ValueError('Explicit prohibited use required at this boundary')
     keys = {k: set(reserved[k]) for k in ('ids','groups','comment_ids','post_ids','post_urls','text_hashes')}
     from .common import digest
     for row in rows:

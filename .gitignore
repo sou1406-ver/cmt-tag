@@ -52,6 +52,19 @@
 !/data/tasks/source_quality_pilot_20261110/coordinator/task.json
 !/data/tasks/source_quality_pilot_20261110/coordinator/selection_manifest.json
 !/data/tasks/source_quality_pilot_20261110/coordinator/prepare_config.json
+!/data/tasks/multifilm_annotation_200_20261110/
+/data/tasks/multifilm_annotation_200_20261110/*
+!/data/tasks/multifilm_annotation_200_20261110/README.md
+!/data/tasks/multifilm_annotation_200_20261110/annotator_a.csv
+!/data/tasks/multifilm_annotation_200_20261110/coordinator/
+/data/tasks/multifilm_annotation_200_20261110/coordinator/*
+!/data/tasks/multifilm_annotation_200_20261110/coordinator/input_*.csv
+!/data/tasks/multifilm_annotation_200_20261110/coordinator/task.json
+!/data/tasks/multifilm_annotation_200_20261110/coordinator/prepare_config.json
+!/data/tasks/multifilm_annotation_200_20261110/coordinator/selection_manifest.json
+!/data/tasks/multifilm_annotation_200_20261110/coordinator/random_pool_manifest.json
+!/data/tasks/multifilm_annotation_200_20261110/coordinator/replay_random.py
+!/data/tasks/multifilm_annotation_200_20261110/coordinator/validation_report.json
 /outputs/
 /crawl/*.csv
 # Retain protection for legacy local media; no media is present in this clone.

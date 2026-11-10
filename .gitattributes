@@ -10,3 +10,6 @@ data/imports/facebook_diversity_batch_20261110/comments.csv -text whitespace=-bl
 data/imports/facebook_diversity_batch_20261110/source_list.csv -text whitespace=cr-at-eol
 data/tasks/source_quality_pilot_20261110/*.csv -text whitespace=-blank-at-eol
 data/tasks/source_quality_pilot_20261110/coordinator/input.csv -text whitespace=-blank-at-eol
+data/tasks/multifilm_annotation_200_20261110/*.csv -text whitespace=-blank-at-eol
+data/tasks/multifilm_annotation_200_20261110/coordinator/input_*.csv -text whitespace=-blank-at-eol
+data/tasks/multifilm_annotation_200_20261110/coordinator/*.json -text whitespace=cr-at-eol

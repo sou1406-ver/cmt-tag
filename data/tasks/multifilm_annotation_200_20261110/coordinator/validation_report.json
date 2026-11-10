@@ -1,0 +1,27 @@
+{
+  "rows": 200,
+  "films": 25,
+  "posts": 36,
+  "cohorts": {
+    "hard": 120,
+    "random": 80
+  },
+  "xlsx_verified_cells": 1407,
+  "source_metadata_preserved": true,
+  "all_human_fields_blank": true,
+  "no_formulas": true,
+  "zero_exact_or_near_duplicate_pairs": true,
+  "random_selection_replayed": true,
+  "no_pilot_id_overlap": true,
+  "pilot_files_unchanged": true,
+  "csv_sha256": "7e95102596837d1b32df370cf5a67bce769e2ee2b9128cf1fdc41b42e406adcb",
+  "xlsx_sha256": "defc506217cf7965be5972c2ebaff1c183175d1c0767e29c7f54138eb8029c0d",
+  "task_sha256": "3a7d7897ff4186d135bd540958a8e12ad2dabbe0b5b65f8e6b339cf08e9dc0f6",
+  "gold_created": false,
+  "model_trained": false,
+  "unittest_tests_passed": 128,
+  "random_pool_replay_passed": true,
+  "old_raw_runs_checksum_verified": 19,
+  "workbook_storage": "local only; user will edit annotation cells",
+  "phase_b_or_pipeline_changed": false
+}

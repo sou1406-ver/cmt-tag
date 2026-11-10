@@ -43,8 +43,14 @@ Mỗi bản thuộc một run riêng, kèm nguồn, mã phim theo đầu vào v�
 Hai bản đầu là `mua_do`; bản pilot có 5 phim và thêm cột `source_group`.
 Chi tiết nguồn, số lượng và giới hạn của đợt mới: [pilot nhóm phim](docs/FACEBOOK_GROUP_PILOT_20261110.md).
 Pilot gán nhãn người đã chuẩn bị **70 fanpage + 130 group**, cùng phim Mưa Đỏ,
-seed 42, hai file độc lập chưa có nhãn: [hướng dẫn và file gán](data/tasks/source_quality_pilot_20261110/README.md).
-Chưa có kết quả người gán, agreement/Kappa hoặc tỷ lệ usable thật.
+seed 42: [hướng dẫn và file gán](data/tasks/source_quality_pilot_20261110/README.md).
+Hiện một người gán dùng file A, nhãn đã chuẩn hóa giữ local; file B là template
+dự phòng. Chưa có đánh giá đồng thuận nhiều người hoặc Kappa người thật.
+Đợt gán chính mới có **200 câu / 25 chủ đề phim / 36 bài**, tách khỏi pilot:
+[file gán và cách lấy mẫu](data/tasks/multifilm_annotation_200_20261110/README.md).
+Gồm 120 mẫu ưu tiên có dấu hiệu phê bình và 80 mẫu ngẫu nhiên có phân tầng,
+không ép tỷ lệ sentiment hoặc tự gán nhãn. Không dùng hai đợt làm gold test
+độc lập; chưa tự gộp nhãn pilot vào train.
 Đợt bulk mới là hai bài Mai trong nhóm khoảng 1,6 triệu thành viên, không trùng
 ID ba bản trước: [nguồn, sửa lỗi href và đối soát](docs/FACEBOOK_HIGH_ACTIVITY_20261110.md).
 Đợt tiếp thêm Interstellar, The Dark Knight và Nhà Bà Nữ, có nhóm Chê Phim Review

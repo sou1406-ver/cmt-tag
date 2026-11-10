@@ -1,11 +1,17 @@
 # Pilot chất lượng nguồn: 70 fanpage + 130 group
 
-Hai người gán **độc lập**, mỗi người 200 dòng:
+Đây là **pilot vòng đầu** để rà nguồn và cách áp dụng guideline, tách khỏi
+[đợt gán chính đa phim](../multifilm_annotation_200_20261110/README.md).
+Không tự coi mẫu pilot đã dùng để phát triển là gold test độc lập hoặc tự
+động đưa toàn bộ nhãn pilot vào train. Giữ nguyên dữ liệu và quyết định gốc.
 
-- Người A chỉ dùng `annotator_a.csv` hoặc bản `.xlsx` tương ứng nếu đã tạo.
-- Người B chỉ dùng `annotator_b.csv` hoặc bản `.xlsx` tương ứng nếu đã tạo.
-- Không trao đổi nhãn, xem file của người còn lại, nhãn luật hoặc dự đoán máy trước khi nộp.
-- Thư mục `coordinator/` dành cho người điều phối; không đưa cho người gán trước khi hoàn tất.
+Quy trình hiện tại có **một người gán**, sử dụng `annotator_a.csv` hoặc bản
+`.xlsx` tương ứng. Không chờ file B để chuẩn hóa và lưu quyết định của A.
+`annotator_b.csv` là template dự phòng nếu sau này có người thứ hai thực sự gán
+độc lập; không cần điền trong quy trình hiện tại.
+
+Không xem nhãn luật hoặc dự đoán máy trước khi tự quyết định nhãn. Thư mục
+`coordinator/` chứa thông tin điều phối, không phải gợi ý nhãn cho người gán.
 
 Theo [guideline V2.0](../../../docs/guidelines/MOVIE_SENTIMENT_V2_0.md).
 Giữ nguyên `id`, `movie_id`, `text_raw`; chỉ điền bốn cột cuối:
@@ -27,7 +33,8 @@ lời thì dùng REVIEW phù hợp, không tự tìm thêm bài trên mạng.
 
 Tất cả mẫu thuộc phim Mưa Đỏ; file gán không có nguồn, URL, tên tác giả hoặc
 gợi ý nhãn. Nội dung tự do có thể tự tiết lộ nguồn; phần mềm không chứng minh
-được rằng người gán thực sự làm độc lập. Thứ tự A/B khác nhau; luôn ghép theo ID.
+được rằng người gán thực sự làm độc lập. Nếu dùng thêm B, thứ tự A/B khác nhau;
+luôn ghép theo ID.
 
 ## Chuẩn hóa file gán trước khi import
 
@@ -60,7 +67,8 @@ có giá trị trước/sau và bằng chứng; không dùng để tự đoán n
 
 Mỗi lần chạy phải dùng thư mục output mới, không ghi đè file gán gốc hoặc kết
 quả cũ. Output nhãn người giữ local. Bước này không tạo gold, không chạy train,
-không thay đổi split; vẫn cần người B để tính agreement/Kappa cho pilot.
+không thay đổi split. Quy trình một người không tính agreement/Kappa giữa hai
+người; quyết định gán nhãn vẫn được lưu và có thể tự rà soát sau.
 
 ## Lấy mẫu và phạm vi kết luận
 
@@ -87,26 +95,43 @@ Các ID pilot và các nhóm bài/trùng lặp liên thông của chúng phải 
 đã dùng cho phát triển, loại khỏi test độc lập tương lai theo quy tắc group
 isolation hiện có. Chưa sửa hoặc đóng băng manifest train/dev/test chính thức.
 
-## Import và agreement bằng CLI hiện có
+## Import một người bằng CLI hiện có
 
-Chạy từ thư mục gốc repo, **sau khi hai người gán xong**:
+Chạy từ thư mục gốc repo sau khi A gán xong và file chuẩn hóa `import_ready=true`:
 
 ```powershell
 New-Item -ItemType Directory -Force data/annotations/source_quality_pilot_20261110 | Out-Null
-python -m src.annotation import-human --task data/tasks/source_quality_pilot_20261110/coordinator/task.json --csv data/tasks/source_quality_pilot_20261110/annotator_a.csv --annotator person_a --blind --output data/annotations/source_quality_pilot_20261110/a.jsonl
+python -m src.annotation import-human --task data/tasks/source_quality_pilot_20261110/coordinator/task.json --csv data/annotations/source_quality_pilot_20261110/a_normalized_v1/normalized.csv --annotator person_a --blind --output data/annotations/source_quality_pilot_20261110/a.jsonl
+```
+
+Đổi đường dẫn output chuẩn hóa theo lần chạy thực tế. `--blind` là xác nhận
+của người vận hành về quy trình gán mù, không có nghĩa là đã có hai người gán.
+Nếu không thực hiện gán mù thì bỏ cờ này. Không tạo release gold hoặc train
+model chỉ bằng bước chuẩn hóa/import. Các đợt do cùng một người gán dùng cùng
+ID người gán; không coi các đợt đó là hai người độc lập.
+
+## Tùy chọn khi thực sự có người gán thứ hai
+
+Chỉ khi B đã gán độc lập cùng 200 ID mới chạy:
+
+```powershell
 python -m src.annotation import-human --task data/tasks/source_quality_pilot_20261110/coordinator/task.json --csv data/tasks/source_quality_pilot_20261110/annotator_b.csv --annotator person_b --blind --output data/annotations/source_quality_pilot_20261110/b.jsonl
 python -m src.annotation agreement --left data/annotations/source_quality_pilot_20261110/a.jsonl --right data/annotations/source_quality_pilot_20261110/b.jsonl --output data/agreement/source_quality_pilot_20261110
 ```
 
-Dùng hai ID người gán khác nhau. `--blind` là xác nhận của người vận hành.
-CSV trống hiện tại bị CLI từ chối; không có nhãn người, gold hoặc Kappa thật.
+Dùng hai ID người gán khác nhau cho hai người thực tế. Hiện chưa có B nên
+không tính hoặc báo cáo inter-rater agreement/Kappa. Template trống bị từ chối.
 Output `agreement.json` chia riêng cohort `fanpage` và `group`, gồm agreement,
 Cohen's Kappa trên POS/NEG/NEU/REVIEW/EXCLUDE và số cặp sentiment. Kappa null
 khi marginals suy biến, không diễn giải thành 1.
 
-## Adjudication và tỷ lệ dùng trực tiếp
+## Rà soát và tỷ lệ dùng trực tiếp
 
-Người điều phối xem `disagreements.jsonl`, phân xử bất đồng và giải quyết REVIEW
+Với một người gán, tự rà lại REVIEW theo guideline, lưu quyết định mới thành
+bản riêng và giữ nguyên lịch sử. EXCLUDE giữ để audit, không đưa vào train
+sentiment ba lớp. Không xóa dòng khỏi dữ liệu gốc.
+
+Nếu sau này có hai người gán, người điều phối xem `disagreements.jsonl`, phân xử bất đồng và giải quyết REVIEW
 theo guideline. Chuẩn bị `adjudicated.csv` đủ 200 ID, giữ nguyên text; các dòng
 đã thống nhất chỉ giữ nhãn khi người phân xử đã kiểm tra. Ghi lý do quyết định.
 
@@ -114,12 +139,14 @@ theo guideline. Chuẩn bị `adjudicated.csv` đủ 200 ID, giữ nguyên text;
 python -m src.annotation import-human --task data/tasks/source_quality_pilot_20261110/coordinator/task.json --csv adjudicated.csv --annotator adjudicator --blind --adjudication --output data/annotations/source_quality_pilot_20261110/adjudicated.jsonl
 ```
 
-Không gọi `release` để mở Phase D trong nhiệm vụ pilot này. Khi đã phân xử,
-báo cáo **riêng từng nguồn**: N, số POS/NEG/NEU/EXCLUDE/REVIEW, số bất đồng,
-agreement/Kappa trước phân xử, và số REVIEW còn lại. Công thức usable:
+Không gọi `release` để mở Phase D trong nhiệm vụ pilot này. Báo cáo **riêng từng
+nguồn**: N, số POS/NEG/NEU/EXCLUDE/REVIEW và số REVIEW còn lại. Ghi rõ kết quả
+hiện tại do một người gán, chưa có kiểm chứng đồng thuận giữa nhiều người.
+Chỉ thêm số bất đồng/agreement/Kappa khi có hai bộ nhãn độc lập thực tế.
+Công thức usable ở trạng thái hiện tại:
 
-- Fanpage: `(POS + NEG + NEU sau phân xử) / 70`.
-- Group: `(POS + NEG + NEU sau phân xử) / 130`.
+- Fanpage: `(POS + NEG + NEU hợp lệ) / 70`.
+- Group: `(POS + NEG + NEU hợp lệ) / 130`.
 
 Nếu còn REVIEW, ghi rõ đây là tỷ lệ dùng được hiện tại, chưa phải tỷ lệ cuối
 cùng sau xử lý toàn bộ. Không thay kết quả người gán bằng nhãn luật hoặc LLM.

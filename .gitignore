@@ -26,6 +26,12 @@
 !/data/imports/facebook_high_activity_20261110/comments.xlsx
 !/data/imports/facebook_high_activity_20261110/import_config.json
 !/data/imports/facebook_high_activity_20261110/export_manifest.json
+!/data/imports/facebook_diverse_sources_20261110/
+/data/imports/facebook_diverse_sources_20261110/*
+!/data/imports/facebook_diverse_sources_20261110/comments.csv
+!/data/imports/facebook_diverse_sources_20261110/comments.xlsx
+!/data/imports/facebook_diverse_sources_20261110/import_config.json
+!/data/imports/facebook_diverse_sources_20261110/export_manifest.json
 !/data/tasks/
 /data/tasks/*
 !/data/tasks/source_quality_pilot_20261110/

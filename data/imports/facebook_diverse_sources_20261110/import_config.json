@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "inputs": [
+    {
+      "path": "data/imports/facebook_diverse_sources_20261110/comments.csv",
+      "format": "csv",
+      "source_dataset": "fb_3246b4f0f02a459e972fe5f44b441264",
+      "post_namespace": "facebook",
+      "columns": {
+        "text_raw": "text",
+        "comment_id": "comment_id",
+        "post_id": "post_id",
+        "post_url": "post_url",
+        "parent_comment_id": "parent_comment_id",
+        "movie_id": "movie_id",
+        "collected_at": "collected_at"
+      }
+    }
+  ],
+  "quality": {
+    "ui_strings": [],
+    "spam_patterns": []
+  },
+  "near_duplicate": {
+    "threshold": 0.9,
+    "min_chars": 40,
+    "shingle_size": 3
+  },
+  "split": {
+    "seed": 42,
+    "ratios": {
+      "train": 0.7,
+      "dev": 0.15,
+      "test": 0.15
+    }
+  }
+}

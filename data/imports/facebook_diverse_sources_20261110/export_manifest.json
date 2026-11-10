@@ -1,0 +1,137 @@
+{
+  "run_id": "fb_3246b4f0f02a459e972fe5f44b441264",
+  "source": "facebook",
+  "source_run_count": 1,
+  "merged": false,
+  "raw_records": 147,
+  "exported_text_records": 143,
+  "by_movie": {
+    "interstellar": 15,
+    "the_dark_knight": 87,
+    "nha_ba_nu": 41
+  },
+  "by_group": {
+    "youneverwatchedthismovie": 102,
+    "1489850877861839": 41
+  },
+  "record_types": {
+    "comment": 27,
+    "reply": 116
+  },
+  "source_posts": [
+    {
+      "post_url": "https://www.facebook.com/groups/551234962149786/posts/1529586850981254",
+      "movie_id": "interstellar",
+      "group": "youneverwatchedthismovie",
+      "group_name": "Maybe You Never Watched This Movie",
+      "group_members_display": "1,6 triệu thành viên",
+      "public_verified": true,
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "engagement_observed": [
+        "194 bình luận",
+        "303 lượt chia sẻ"
+      ],
+      "observed_at": "2026-11-10T07:15:27.536927+00:00",
+      "selection_reason": "Bài kỷ niệm và bàn trải nghiệm xem Interstellar; nhóm công khai khoảng1,6 triệu thành viên, 194 bình luận quan sát. Header nhóm xác nhận alias numeric551234962149786; không dùng nội dung bài để suy ra sentiment comment."
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/551234962149786/posts/1782122902394313",
+      "movie_id": "the_dark_knight",
+      "group": "youneverwatchedthismovie",
+      "group_name": "Maybe You Never Watched This Movie",
+      "group_members_display": "1,6 triệu thành viên",
+      "public_verified": true,
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "engagement_observed": [
+        "163 bình luận",
+        "46 lượt chia sẻ"
+      ],
+      "observed_at": "2026-11-10T07:21:06.545171+00:00",
+      "selection_reason": "Bài phân tích và khuyến nghị xem Batman The Dark Knight; nhóm công khai1,6 triệu thành viên, 163 bình luận/46 chia sẻ xác minh lại ở bài gốc. Chọn thêm phim khác thể loại, không gán nhãn từ quan điểm bài gốc."
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/1489850877861839/posts/2325658017614450",
+      "movie_id": "nha_ba_nu",
+      "group": "1489850877861839",
+      "group_name": "Chê Phim Review",
+      "group_members_display": "256,7K thành viên",
+      "public_verified": true,
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "engagement_observed": [
+        "232 bình luận",
+        "16 lượt chia sẻ"
+      ],
+      "observed_at": "2026-11-10T07:32:55.117296+00:00",
+      "selection_reason": "Quick review Nhà Bà Nữ: bàn cụ thể quay phim, diễn xuất, kịch bản, nhạc; nhóm Chê Phim Review công khai256,7K thành viên. Chọn theo nội dung và232 bình luận hiển thị; không suy ra nhãn comment từ ý kiến bài gốc."
+    }
+  ],
+  "post_results": [
+    {
+      "post_url": "https://www.facebook.com/groups/551234962149786/posts/1529586850981254",
+      "movie_id": "interstellar",
+      "status": "partial",
+      "reason": "unparsed_comments",
+      "at": "2026-11-10T07:15:53.329667+00:00",
+      "attempt": 1
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/551234962149786/posts/1782122902394313",
+      "movie_id": "the_dark_knight",
+      "status": "partial",
+      "reason": "unparsed_comments",
+      "at": "2026-11-10T07:21:35.741257+00:00",
+      "attempt": 1
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/1489850877861839/posts/2325658017614450",
+      "movie_id": "nha_ba_nu",
+      "status": "success",
+      "reason": "visible_dom_exhausted",
+      "at": "2026-11-10T07:33:21.219399+00:00",
+      "attempt": 1
+    }
+  ],
+  "per_post_exported": {
+    "1529586850981254": 15,
+    "1782122902394313": 87,
+    "2325658017614450": 41
+  },
+  "removed_account_mentions": 120,
+  "omitted_non_emoji_image_alts": 3,
+  "context_review_records": 3,
+  "excluded_reason_counts": {
+    "NO_TEXT_AFTER_REMOVING_ACCOUNT_TAGS": 4
+  },
+  "raw_sha256": "0739e6573f0ab6243656976320c6cb4b2cc1af42c566e814a115e1aab8b9b8c1",
+  "csv_sha256": "bcfc841142aad5b37faf9e9d2e7d8ff4b0cb1626b52fee396f365642a19708d6",
+  "raw_storage": "local_only; original messages and browser profile are not published",
+  "raw_validation_errors": 0,
+  "dom_parse_observations": 23,
+  "extractor_js_sha256": "4c766c5dfcb90ae224b4a9ea864181d5c4e32be3b1169077c1ea249c43e5cfca",
+  "coverage_verified": false,
+  "labels_created": false,
+  "evaluation_split_frozen": false,
+  "selection_method": "Targeted convenience sample of public film review/discussion posts. Groups selected by visible public status and member counts; review/discussion posts prioritized by visible comment counts within inspected candidates. Previously shared IDs excluded from this export. Not a verified ranking of all group posts.",
+  "limits": {
+    "interactive": true,
+    "max_posts": 25,
+    "max_comments": 3000,
+    "max_rounds": 1000,
+    "post_timeout": 900,
+    "max_actions": 30,
+    "wait_ms": 30000,
+    "settle_ms": 2000,
+    "idle_rounds": 8,
+    "retries": 0,
+    "source_dataset": null
+  },
+  "cleaning_policy": "Existing dom_text_v2 only: remove identifiable account-link nodes, including verified numeric groups/user paths; preserve ambiguous plaintext names, emoji, negation and line breaks. No author_name/author_id fields.",
+  "clean_text_field": "text",
+  "disjoint_from_previous_exports": true,
+  "xlsx_sha256": "817c9170fe2395eeb9c7979f30aa56d2793827ef75c02eae8feb3fcef9cef73b",
+  "verified_xlsx_cells": 2736,
+  "artifact_validation": "passed"
+}

@@ -5,5 +5,6 @@ data/imports/facebook_fresh/comments.csv -text whitespace=-blank-at-eol
 data/imports/facebook_group_1909400102999925/comments.csv -text whitespace=-blank-at-eol
 data/imports/facebook_group_pilot_20261110/comments.csv -text whitespace=-blank-at-eol
 data/imports/facebook_high_activity_20261110/comments.csv -text whitespace=-blank-at-eol
+data/imports/facebook_diverse_sources_20261110/comments.csv -text whitespace=-blank-at-eol
 data/tasks/source_quality_pilot_20261110/*.csv -text whitespace=-blank-at-eol
 data/tasks/source_quality_pilot_20261110/coordinator/input.csv -text whitespace=-blank-at-eol

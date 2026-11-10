@@ -53,7 +53,17 @@ theo phim sau này; không diễn giải số phim như 25 đối tượng đán
 
 ## File để gán
 
-Dùng `annotator_a.xlsx` được tạo local, hoặc template `annotator_a.csv`.
+Dùng `annotator_a.xlsx`, hoặc template `annotator_a.csv`.
+Theo yêu cầu chia sẻ của người gán, workbook đã điền nhãn và
+[báo cáo rà soát](../../../docs/annotation_reviews/multifilm_20261110/REVIEW.md)
+được đưa lên Git. CSV vẫn là template trống, không phải bản nhãn hiện tại.
+Báo cáo là các đề nghị kiểm lại, chưa được tự áp vào workbook; nhãn hiện tại
+chưa phải gold đã phân xử. Mã lý do REVIEW còn thiếu và các trường hợp cần
+xem lại được giữ nguyên để người gán quyết định.
+
+`coordinator/selection_manifest.json` và `validation_report.json` ghi trạng
+thái template lúc tạo; checksum workbook đã gán tại thời điểm rà nằm trong
+`docs/annotation_reviews/multifilm_20261110/audit_report.json`.
 Chỉ cần một người (`person_a`), không có file B bắt buộc và không tính Kappa
 giữa hai người khi chưa thực sự có người thứ hai gán độc lập.
 
@@ -89,8 +99,9 @@ python -m src.annotation import-human --task data/tasks/multifilm_annotation_200
 ```
 
 Lệnh trên không tự khẳng định gán mù. Chỉ thêm `--blind` nếu người vận hành
-thực sự xác nhận quy trình đó; một cờ không tạo ra người gán thứ hai. Nhãn
-người và workbook đang gán giữ local. Mỗi lần chuẩn hóa dùng output mới.
+thực sự xác nhận quy trình đó; một cờ không tạo ra người gán thứ hai. Những
+output chuẩn hóa giữ local trừ khi có yêu cầu chia sẻ riêng. Mỗi lần chuẩn
+hóa dùng output mới; chia sẻ workbook không tự tạo release hoặc chạy train.
 
 ## Sau khi gán xong
 

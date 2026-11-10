@@ -1,0 +1,457 @@
+{
+  "reviewed_at": "2026-11-10T15:09:16.465818+00:00",
+  "source": "data/tasks/multifilm_annotation_200_20261110/annotator_a.xlsx",
+  "source_sha256": "3fc248a6d8eb3c17778bf58131fa1e3a2d5a54344d76b89872ab95f712cd3655",
+  "task_sha256": "3a7d7897ff4186d135bd540958a8e12ad2dabbe0b5b65f8e6b339cf08e9dc0f6",
+  "guideline_sha256": "b094bcffc28f5099b6aa0278f95eaf4ee35cba1ee4f3965afa7009d26bd43844",
+  "policy": {
+    "reference": "Existing V2.0 plus user clarification in this chat",
+    "clarification": "A clearly positive emotional impact, empathy or valued viewing experience may count as POS without an explicit statement that the film is good. Do not mechanically relabel crying or fear as wrong POS. Ambiguous emotional words alone still do not establish positive impact.",
+    "guideline_file_changed": false,
+    "alignment_note": "This interpretation is broader than the literal R06 wording. Record and reconcile the interpretation before an official release; this audit does not silently edit the guideline or labels."
+  },
+  "rows": 200,
+  "missing_label_rows": [],
+  "label_counts": {
+    "NEU": 22,
+    "NEG": 137,
+    "POS": 20,
+    "EXCLUDE": 20,
+    "REVIEW": 1
+  },
+  "all_task_ids_once": true,
+  "wording_edits": false,
+  "text_whitespace_changes": [
+    {
+      "excel_row": 58,
+      "id": "c_d73f9164e42d0f57592a9d60c18d5256005dee74ee3a3bccd37dcdb3c59f7f31",
+      "whitespace_only": true,
+      "detail": "One trailing ASCII space removed; wording unchanged"
+    },
+    {
+      "excel_row": 59,
+      "id": "c_102d23857a34aaf83bf051c672a20d126791aa96a01ca2fc1ac478993a5eca79",
+      "whitespace_only": true,
+      "detail": "One trailing ASCII space removed; wording unchanged"
+    },
+    {
+      "excel_row": 80,
+      "id": "c_c31b0d2954074ac408c1658e33fe88e4426bb85dbd105869bc87c731ec3d8075",
+      "whitespace_only": true,
+      "detail": "One trailing ASCII space removed; wording unchanged"
+    },
+    {
+      "excel_row": 180,
+      "id": "c_003a52048434280d4ca204e3dbbcc72a86cd0838205c4ded433c319b291eaf42",
+      "whitespace_only": true,
+      "detail": "One trailing ASCII space removed; wording unchanged"
+    }
+  ],
+  "format_issues": [
+    {
+      "row": 58,
+      "id": "c_d73f9164e42d0f57592a9d60c18d5256005dee74ee3a3bccd37dcdb3c59f7f31",
+      "code": "COMMENT_TEXT_EDITED"
+    },
+    {
+      "row": 59,
+      "id": "c_102d23857a34aaf83bf051c672a20d126791aa96a01ca2fc1ac478993a5eca79",
+      "code": "COMMENT_TEXT_EDITED"
+    },
+    {
+      "row": 80,
+      "id": "c_c31b0d2954074ac408c1658e33fe88e4426bb85dbd105869bc87c731ec3d8075",
+      "code": "COMMENT_TEXT_EDITED"
+    },
+    {
+      "row": 155,
+      "id": "c_1dc78640317ad254b37815bfae2097ef3e781f4bb9211096ef2acbb1960b83bc",
+      "code": "MISSING_REVIEW_REASON"
+    },
+    {
+      "row": 180,
+      "id": "c_003a52048434280d4ca204e3dbbcc72a86cd0838205c4ded433c319b291eaf42",
+      "code": "COMMENT_TEXT_EDITED"
+    }
+  ],
+  "format_issues_after_whitespace_only_restoration": [
+    {
+      "row": 155,
+      "id": "c_1dc78640317ad254b37815bfae2097ef3e781f4bb9211096ef2acbb1960b83bc",
+      "code": "MISSING_REVIEW_REASON"
+    }
+  ],
+  "blank_status_is_not_missing_human_label": true,
+  "status_can_be_normalized_without_manual_reentry": true,
+  "pos_rows_reviewed": 20,
+  "unambiguous_pos_to_neg_errors_found": 0,
+  "pos_87_note": "Retain as defensible POS under user clarification: empathic emotional impact. Not automatically relabeled for crying.",
+  "suggestions": [
+    {
+      "excel_row": 26,
+      "cell": "E26",
+      "id": "c_3924dd0225bef72211d1d9eea7fdf555de7c214907caccbe796928f1806b8105",
+      "current_label": "NEG",
+      "priority": "primary",
+      "suggestion": "POS",
+      "reason": "Đang giải thích và bênh lựa chọn phục trang/ẩn dụ của phim, kết luận “Đó kh phải lỗi, đó là tính năng”; không phải lời chê phim.",
+      "guideline_rules": "R02/R09/R11",
+      "text_raw": "Peter Hoàng sạch và trắng là vì cổ là tiểu thư khuê các, đi đâu cũng chăm chút ngoại hình, chiến tranh vẫn có thể áo gấm lụa là, trc còn có nhà 3 tầng phố cổ có đàn piano. Thứ 2 là cổ mới ngủ dậy, đang hàn huyên với ngyeu thì gặp địch đến, sau giây phút ngắn ngủi lo sợ thì cổ liều chet lao vào xe tăng luôn chứ không có xô xát. Đó là lý do đồ cổ trắng bóc vậy, nhưng mình nghĩ đó cũng là hình ảnh ẩn dụ tạo nên sự tương phản giữa sự trong sạch của tấm lòng ng dân yêu nước với chiến tranh tang tóc đau thương. Đó kh phải lỗi, đó là tính năng =))))))))))))",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 77,
+      "cell": "E77",
+      "id": "c_1dd7d7529c98f49029a24b3a8949b8270aeeb14b2cc4e1d78bc7b2fa37f947a2",
+      "current_label": "NEG",
+      "priority": "primary",
+      "suggestion": "POS hoặc REVIEW(REV_MIXED)",
+      "reason": "Với phim đang xét, tác giả nói “trung bình, xem được”, quảng cáo không lố; lời công kích mạnh nhắm bộ phim khác. Nghiêng POS nhẹ theo R01; không tự áp NEG từ phần ngoài lề.",
+      "guideline_rules": "R01/R03/R10",
+      "text_raw": "Hay cũng được, dở cũng được. Chỉ cần hay hay dở cũng có bản lĩnh tự sinh tự diệt, không khóc tu tu bao biện, bơm thổi rồi tìm mọi cách lùa gà ra rạp như bộ-phim-nào-đó-full-suất-chiếu để ăn doanh thu bất chấp là khán giả đã thông cảm cho rồi.\nCá nhân tui thấy phim này ở mức trung bình, xem được. Nhất là quảng cáo sao, phim vậy, không lố quá. Tuy nhiên một số chi tiết gượng ép.",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 139,
+      "cell": "E139",
+      "id": "c_d3f1aa5fc7ee4dc5356a8f9521fa973daea4c1e4d602206d9cd718e78bfff378",
+      "current_label": "NEU",
+      "priority": "primary",
+      "suggestion": "POS",
+      "reason": "Có điểm trừ nhưng khẳng định “Điểm cộng: những cái còn lại” và đánh giá tổng thể 8/10. Không phải câu chỉ tường thuật thông tin trung tính.",
+      "guideline_rules": "R03/R04",
+      "text_raw": "Điểm trừ: kĩ xảo lỏ, khúc cuối thấy hơi hụt, đoạn gia tiên đỡ cho kiếp nạn ảo như phim siêu nhưn\nĐiểm cộng: những cái còn lại =)))\nCũng cũng 8/10 đối với t, mém khóc trong rạp",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 6,
+      "cell": "E6",
+      "id": "c_415ac3a8af61782d9c126153aeb480e09310ff53c59ecd0b946262f09f7e9ad3",
+      "current_label": "NEU",
+      "priority": "primary",
+      "suggestion": "NEG",
+      "reason": "Nhận định tính khoa học của kịch bản không cao và việc một người trộm vặt thành nhà khoa học lượng tử là phê bình cách xây dựng, không chỉ kể nội dung.",
+      "guideline_rules": "R01/R11",
+      "text_raw": "Lý thuyết lượng tử rất khó và chưa có nhiều nghiên cứu đột phá, nên tính khoa học của kịch bản nó không cao. Chưa kể từ từ 1 trộm vặt được boot lên thành nhà khoa học lượng tử luôn.",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 190,
+      "cell": "E190",
+      "id": "c_3a7486436b288ec4c1fbce04ec9884499ca4960bc83515f8b1d14f48f7ae695a",
+      "current_label": "NEU",
+      "priority": "primary",
+      "suggestion": "NEG",
+      "reason": "Kết luận “phim 5đ vì k có gì đặc sắc thật” thể hiện đánh giá không hài lòng; không phải thông tin thuần túy.",
+      "guideline_rules": "R01",
+      "text_raw": "cuối phim đâu có đề cập ông sông hay chết .tóm lại phim 5đ vì k có gì đặc sắc thật",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 40,
+      "cell": "E40",
+      "id": "c_e2a5c2493800fe18561b2e53e24bfbf7e28c68103bfdbad279cc069258d9d611",
+      "current_label": "NEG",
+      "priority": "primary",
+      "suggestion": "EXCLUDE",
+      "reason": "Nhận xét/dạy đời người viết bài hoặc người đọc; không có nhận xét về tác phẩm trong chính comment.",
+      "guideline_rules": "R15",
+      "text_raw": "Đọc cũng được nhưng chớ dạy đời người đọc phải làm gì, nên liên hệ bản thân thôi",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 161,
+      "cell": "E161",
+      "id": "c_2cdec59848f965a96680b49cf15038ebe9b03de2fc6e6c6da3e2057df8c895f9",
+      "current_label": "NEG",
+      "priority": "primary",
+      "suggestion": "EXCLUDE",
+      "reason": "“như m combat ... trình độ của bản thân t” chê đối phương tranh luận; chữ “chê” không làm nó thành sentiment NEG về phim.",
+      "guideline_rules": "R15/R16",
+      "text_raw": "như m combat đúng là kéo thấp trình độ của bản thân t 🙂 chê nha má",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 112,
+      "cell": "E112",
+      "id": "c_247197bf3205cdc7c85bd12801f5a66f9bd4916046d77de8d25b78c6f742d089",
+      "current_label": "EXCLUDE",
+      "priority": "primary",
+      "suggestion": "NEU",
+      "reason": "Nói về phim được đặt sản xuất, doanh thu, đi tranh giải và phát hành trên nền tảng mạng. Đây là thông tin trong miền phim, chưa có đánh giá chất lượng.",
+      "guideline_rules": "R19/R20",
+      "text_raw": "Minh Duy Võ kp nha, phim nhà nước đặt sx nên doanh thu sao cũng đc chỉ để đủ kpi đi tranh giải thôi. với sau là chiếu trên các nền tảng mạng chứ k bán.",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 55,
+      "cell": "E55",
+      "id": "c_21fbf9f8fbae2e61c427dcb27011ce227731df674f7279a1544863266028bbaa",
+      "current_label": "POS",
+      "priority": "optional_pos",
+      "suggestion": "Giữ POS nếu m xác nhận đang trân trọng tác động phim; nếu chỉ sợ/ám ảnh thì REVIEW(REV_OTHER)",
+      "reason": "“ám ảnh cảnh đó cả tháng” có thể là tác động phim mong muốn hoặc trải nghiệm tiêu cực. Parent xác thực nói sợ cảnh người chồng bà quản gia dưới tầng hầm. Không tự kết luận POS sai; tác động tích cực chưa được nói rõ.",
+      "guideline_rules": "User clarification/R06",
+      "text_raw": "t bị ám ảnh cảnh đó cả tháng luôn á tr",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 150,
+      "cell": "E150",
+      "id": "c_32d49e1f8574342aaaea1a0e4fa573a8a7405cbbe6fc6cbba5d41ccbea768baa",
+      "current_label": "POS",
+      "priority": "optional_pos",
+      "suggestion": "POS nếu là lời bênh kỹ xảo; NEU nếu hỏi thật; REVIEW(REV_CONTEXT) nếu chưa xác định",
+      "reason": "Câu hỏi “phim nào ... choáng ngợp hơn Avatar 2” có thể là tu từ hoặc xin so sánh. Parent trực tiếp được lưu đang khen Avatar 2, nên không dùng riêng emoji để xác định mỉa mai hoặc lấy nhãn parent áp sang reply.",
+      "guideline_rules": "R08/R17/R18",
+      "text_raw": "vậy phim nào theo bạn kỹ xảo đồ hoạ siêu đỉnh và choáng ngợp hơn Avatar 2 thế ạ? 🌝",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 180,
+      "cell": "E180",
+      "id": "c_003a52048434280d4ca204e3dbbcc72a86cd0838205c4ded433c319b291eaf42",
+      "current_label": "POS",
+      "priority": "optional_pos",
+      "suggestion": "POS nếu trọng tâm là khen; REVIEW(REV_MIXED) nếu hai phía không phân giải được",
+      "reason": "Khen cảnh quay/diễn viên “cực kì tuyệt vời”, đồng thời chê nội dung rời rạc và kết nhạt/hụt hẫng. POS có thể bảo vệ được theo trọng tâm m chọn; không có căn cứ tự đổi thẳng NEG.",
+      "guideline_rules": "R03/R04",
+      "text_raw": "Nguyễn Gia Hưng nội dung thì rời rạc thật nhưng mình thấy cảnh quay và diễn viên thì cực kì tuyệt vời nè... chỉ có điều xem xong kết khá là nhạt nên hơi hụt hẫng thôi",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 195,
+      "cell": "E195",
+      "id": "c_640fc75a2c1f1ce94f23b059f733089f9448695d4fba00c10a34452c8e7328bb",
+      "current_label": "POS",
+      "priority": "optional_pos",
+      "suggestion": "Giữ POS nếu đây là tác động tích cực m đọc được; nếu không rõ thì REVIEW(REV_OTHER)",
+      "reason": "Chưa xem trọn phim, chỉ nói lướt TikTok và “suy” với nhân vật. Có thể thể hiện gắn bó tích cực, nhưng riêng chữ “suy” không tự xác định thái độ với phim.",
+      "guideline_rules": "User clarification/R06/R07",
+      "text_raw": "ở nước ngoài không xem đc hicc mà lướt tiktok suy ngang với Cường Quang huhu 😭😭😭",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 62,
+      "cell": "E62",
+      "id": "c_5e573bc5e6fdf36cd77949d3ae92f78ed35d2db83c97133fd493a68f0a203ef4",
+      "current_label": "NEU",
+      "priority": "secondary",
+      "suggestion": "REVIEW(REV_MIXED) hoặc nhãn chủ đạo sau khi đọc lại",
+      "reason": "Có phê bình diễn xuất/chuyển thể và lời khen rõ, điểm 8,5. Có đánh giá thực sự nên không mặc định NEU vì khen/chê cùng xuất hiện.",
+      "guideline_rules": "R04/R10",
+      "text_raw": "Đồng ý là overrated, nhưng theo mình là ở phần diễn xuất, thiết lập của 2 nhân vật Paul vs Chani không đủ để người xem có sự đồng cảm. Một số tình tiết thay đổi so với truyện gây nên sự khó hiểu/không đúng cảm nhận về nhân vật. Đối với mình người xuất sắc nhất là Lệnh bà Jessica, nhưng phần phản ánh về tôn giáo chưa đủ hay ở 2 phần Dune 1 và 2. Mình chỉ chấm 8,5đ.",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 91,
+      "cell": "E91",
+      "id": "c_4f1a7850b19ee874b6c7b67f04a8de333fc420c800bcc3e7ea952d60b626cf0f",
+      "current_label": "NEG",
+      "priority": "secondary",
+      "suggestion": "EXCLUDE hoặc REVIEW(REV_TARGET)",
+      "reason": "Parent xác thực đang phản bác người review chê Dune nhiều thoại. Reply tiếp tục bình phẩm nhận xét đó; chưa có lời chê trực tiếp phim từ chính tác giả reply.",
+      "guideline_rules": "R09/R15",
+      "text_raw": "nghe thoại nhiều cái bật ngửa, cỡ này xem Oppenheimer chắc xỉu ngang trong rạp 🤤",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 124,
+      "cell": "E124",
+      "id": "c_1a0c57c13a608b934e4d66129abf22b065dd591ab082914daa4b6c76d83b2e76",
+      "current_label": "NEU",
+      "priority": "secondary",
+      "suggestion": "POS nếu là kỳ vọng mong muốn cameo; REVIEW(REV_SARCASM) nếu đang mỉa mai",
+      "reason": "“có ... thì tuyệt đối điện ảnh” mang đánh giá/kỳ vọng, không hẳn chỉ hỏi hoặc kể dữ kiện. Không dùng hiểu biết ngoài để quyết định cameo có thật hay không.",
+      "guideline_rules": "R05/R07",
+      "text_raw": "after credit có quả Leon Kennedy do Robert Pattinson đóng chạy ra thì tuyệt đối điện ảnh",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 165,
+      "cell": "E165",
+      "id": "c_3c5e80cdf32aeaea2160278b2d01535fe38042f51fa086e4715dd5378a7d1bba",
+      "current_label": "NEG",
+      "priority": "secondary",
+      "suggestion": "REVIEW(REV_TARGET) trước khi ép NEG",
+      "reason": "“ráng rặn được vài câu ... như cc” không nêu rõ phim hay bài/comment. Parent đang nói seeding/truyền thông; cần phân biệt chê nội dung viết với chê phim.",
+      "guideline_rules": "R15/R18",
+      "text_raw": "cũng ráng rặn được vài câu. Nhưng nó như cc vậy á.",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 178,
+      "cell": "E178",
+      "id": "c_b55022f87e5750738e0c1b65b03b23eeca029c7676fbe7b9aeef7d14713e5035",
+      "current_label": "NEU",
+      "priority": "secondary",
+      "suggestion": "NEG hoặc REVIEW(REV_TARGET)",
+      "reason": "“phim hài nhảm rác mức dưới trung bình” là đánh giá tiêu cực/dự báo chất lượng, không phải lời kể trung tính; cần chốt phạm vi đối tượng nếu đang nói chung ngành phim.",
+      "guideline_rules": "R07/R15",
+      "text_raw": "z thì mỗi năm sẽ càng nhiều phim hài nhảm rác mức dưới trung bình và điển ảnh việt ko ngóc đầu lên nổi",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 181,
+      "cell": "E181",
+      "id": "c_a93e68c5f3cb28f9e8123dcdf572f7e0394c01fd91958656ccd44262ebae83b0",
+      "current_label": "NEG",
+      "priority": "secondary",
+      "suggestion": "EXCLUDE hoặc REVIEW(REV_TARGET)",
+      "reason": "Yêu cầu người review chê các phim cho sòng phẳng, chưa thể hiện chính tác giả đang đánh giá chất lượng phim thế nào.",
+      "guideline_rules": "R09/R15",
+      "text_raw": "Chê Lật Mặt 8 thậm tệ thì mi nhớ cũng sòng phẳng với phim Phan Tểu, thầy của mi y vậy nha chưa.",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 49,
+      "cell": "E49",
+      "id": "c_ec2bd39c71495efac851edb943cd7b9980154444cf7969ec363435962c793305",
+      "current_label": "NEG",
+      "priority": "secondary",
+      "suggestion": "POS hoặc REVIEW(REV_MIXED), cần xác định trọng tâm",
+      "reason": "Khen kết/độ vui/cặp diễn viên, chê một vai và nói gần bản Hàn. Không thấy kết luận tiêu cực rõ để tự xem mọi nhận xét trong câu là NEG.",
+      "guideline_rules": "R03/R04",
+      "text_raw": "Phim gần như copy nguyên bản Hàn. Có phần kết có vẻ tích cực hơn, phần diễn của Thu Trang khiến phim vui hơn. Đoạn của Hứa Vĩ Văn lúc trả lời đt của con gái hơi kém, cảm xúc ko tới đc như bản Hàn. Phim này đóng tốt nhất là cặp Bình Quỳnh",
+      "label_changed": false,
+      "human_confirmed": false
+    },
+    {
+      "excel_row": 74,
+      "cell": "E74",
+      "id": "c_125a60d2b2e79faf3f4afbffe4b4c77e2bdcd76682b969e23fb5abde9a7d1f14",
+      "current_label": "NEG",
+      "priority": "secondary",
+      "suggestion": "REVIEW(REV_MIXED) nếu chưa rõ đánh giá tổng thể",
+      "reason": "Vừa chê nội dung/CGI vừa khen hình ảnh, âm thanh “gánh nguyên film”; không chọn NEG chỉ vì câu mở đầu có lời chê.",
+      "guideline_rules": "R03/R04",
+      "text_raw": "Nội dung dễ đoán, quá nhàn\nHình ảnh ấn tượng, CGI đánh đấm bị khựng vài chỗ, không mượt bằng A1 \nÂm thanh, hiệu ứng ok gánh nguyên film",
+      "label_changed": false,
+      "human_confirmed": false
+    }
+  ],
+  "verified_parent_context": [
+    {
+      "excel_row": 17,
+      "comment_id": "682175995853369",
+      "parent_comment_id": "682144615856507",
+      "parent_found": true,
+      "parent_text": "Tính ra thì em chưa coi phim nào về chiến tranh mà cách kể lại tươi sáng như vày nên cho bác đạo diễn người Kiwi 9/10 điểm",
+      "source_run": "fb_78eae52277ee4110be0242e51afe59e4",
+      "used_for": "Resolve target/context only; never copy parent sentiment onto the reply"
+    },
+    {
+      "excel_row": 26,
+      "comment_id": "1494213274518612",
+      "parent_comment_id": "1490855194854420",
+      "parent_found": true,
+      "parent_text": "Nãy có xem 1 đoạn cut đoạn cô gái mặc áo dài cầm bom ba càng lao vào xe tăng. Lỗi mình soi đk có chăng là cái áo dài cô ấy mặc nó sạch và trắng quá thôi chứ chạm đến cảm xúc thật sự",
+      "source_run": "fb_cfe87db5d35f41088e494b585bfe97ec",
+      "used_for": "Resolve target/context only; never copy parent sentiment onto the reply"
+    },
+    {
+      "excel_row": 55,
+      "comment_id": "1473174566622483",
+      "parent_comment_id": "1469915593615047",
+      "parent_found": true,
+      "parent_text": "xem phim này chỉ sợ đoạn ông chồng bà quản gia thò mặt dưới tầng hầm lên 💀",
+      "source_run": "fb_78eae52277ee4110be0242e51afe59e4",
+      "used_for": "Resolve target/context only; never copy parent sentiment onto the reply"
+    },
+    {
+      "excel_row": 56,
+      "comment_id": "1790452324894704",
+      "parent_comment_id": "1782166885723248",
+      "parent_found": true,
+      "parent_text": "Nếu xét là 1 bộ phim chính kịch nặng tâm lí xã hội thì Dark Knight là quá mạnh trong dòng phim siêu anh hùng. Nhưng nếu xét về khía cạnh của những khán giả yêu cầu nhiều về những pha hành động mãn nhãn thì Dark Knight sẽ không thỏa mãn được họ",
+      "source_run": "fb_3246b4f0f02a459e972fe5f44b441264",
+      "used_for": "Resolve target/context only; never copy parent sentiment onto the reply"
+    },
+    {
+      "excel_row": 87,
+      "comment_id": "1529823890957550",
+      "parent_comment_id": null,
+      "parent_found": false,
+      "parent_text": null,
+      "source_run": "fb_3246b4f0f02a459e972fe5f44b441264",
+      "used_for": "Resolve target/context only; never copy parent sentiment onto the reply"
+    },
+    {
+      "excel_row": 107,
+      "comment_id": "2445178665662384",
+      "parent_comment_id": null,
+      "parent_found": false,
+      "parent_text": null,
+      "source_run": "fb_9dbccf8c3749484491d7d31332e1ab0a",
+      "used_for": "Resolve target/context only; never copy parent sentiment onto the reply"
+    },
+    {
+      "excel_row": 150,
+      "comment_id": "2297010677145851",
+      "parent_comment_id": "2296730807173838",
+      "parent_found": true,
+      "parent_text": "Với người mê đồ hoạ như t thì A2 siêu đỉnh á, t bị choáng ngợp vì hình ảnh 🥲",
+      "source_run": "fb_78eae52277ee4110be0242e51afe59e4",
+      "used_for": "Resolve target/context only; never copy parent sentiment onto the reply"
+    },
+    {
+      "excel_row": 155,
+      "comment_id": "2400213170158934",
+      "parent_comment_id": "2400100743503510",
+      "parent_found": true,
+      "parent_text": "Chưa bàn đến đúng sai nhưng mà cái này là review hay là spoil phim zậy 😂😂😂",
+      "source_run": "fb_78eae52277ee4110be0242e51afe59e4",
+      "used_for": "Resolve target/context only; never copy parent sentiment onto the reply"
+    },
+    {
+      "excel_row": 170,
+      "comment_id": "2160940384086215",
+      "parent_comment_id": "2160665864113667",
+      "parent_found": true,
+      "parent_text": "Love and Thunder 200 củ mà CGI lởm, đó ko phải do budget có hạn mà nsx coi thường người xem. Từ khi có cái trò mkt tạo hint abc để kéo người xem thì kỹ xảo MV càng ngày càng nát, phim nào cũng 160-200 củ mà đánh nhau như 1 lũ hề, còn k bằng thằng Aquaman 160 củ. Chẳng phải đầu tư 1 bộ phim hẳn hoi làm gì khi mà hài nhảm + hint marketing là ez tiền, chất lượng phim xuống đi trông thấy. Từ Dr2, BW, SC, SpiderMan NWH,… đánh nhau nhạt toẹt,. đc có mỗi Eternal có đánh nhau tạm ổn nhưng với sức mạnh như thế trông cũng nhàm.",
+      "source_run": "fb_9dbccf8c3749484491d7d31332e1ab0a",
+      "used_for": "Resolve target/context only; never copy parent sentiment onto the reply"
+    },
+    {
+      "excel_row": 180,
+      "comment_id": "839053300165637",
+      "parent_comment_id": "839047560166211",
+      "parent_found": true,
+      "parent_text": "RÌ VIU PHIM RÒM THEO Ý KIẾN RIÊNG VÀ KHÔNG CÓ CHUYÊN MÔN NHA MN.\nKhông biết có phải tại mình dốt không hiểu được ẩn ý phim hay do không chơi lô ghi đề... nhưng thiệt tình là mình thấy phim khá rời rạc... kết thúc mở. Xem ở rạp đc cái âm thanh sống động, màn rượt đuổi và những khúc khá hồi hộp... nhưng có vẻ do kịch tính quá nên kết thúc làm mình thất vọng !!! Cảnh cuối là Ròm và Phúc đuổi nhau để dành đi “ghi” (mà Ròm bị Phúc lừa từ nhỏ tới lớn luôn á mn) \nPhim khắc hoạ rõ nét về những góc khuất cuộc sống. Ai chơi lô chơi đề thì đi coi coi hiểu hông nha!!! Nói chung lại là cuối cùng không có kết cục tốt cho cả chung cư... điều làm thất vọng ở đây là vì phim nêu ra quá nhiều vấn đề xã hội nhưng lại không giải quyết hết tất cả các khúc mắc đó, nên cuối cùng khi hết phim sẽ tạo cảm giác cực kì hụt hẫng... cả rạp đều ngơ ngác “ỦA”... đến bây giờ mình vẫn chưa hiểu gì chơn á mn. Mà có khúc Phúc thua bida thiếu tiền đại ca Wowy nhưng mình chưa thấy khúc trả 🤣, cũng chưa thấy khúc chặt ngón tay các thứ nha mn. Rồi Ròm cũng vẫn không biết bame mình là ai. Rồi cả chung cư cháy do Ròm cũng có ng quay video lại... nhưng tiếp đó làm sao nữa thì mình cũng không biết á mn. Rồi cháy chung cư tiền nợ trả sao, rồi mn đi đâu thì tui cũng không biết luôn á . Cuối cùng mình chỉ muốn biết Ròm vs Phúc dí nhau tới khi nào, rồi ai “ghi” được số hôm đó thôi. Chứ mình thấy 79 ph thì dí nhau hơn 70 ph luôn á chời 🤣🤣🤣 Huhu đây là ý kiến riêng nha mn",
+      "source_run": "fb_cfe87db5d35f41088e494b585bfe97ec",
+      "used_for": "Resolve target/context only; never copy parent sentiment onto the reply"
+    },
+    {
+      "excel_row": 195,
+      "comment_id": "1898925010714101",
+      "parent_comment_id": null,
+      "parent_found": false,
+      "parent_text": null,
+      "source_run": "fb_cfe87db5d35f41088e494b585bfe97ec",
+      "used_for": "Resolve target/context only; never copy parent sentiment onto the reply"
+    }
+  ],
+  "source_modified": false,
+  "labels_modified": false,
+  "models_trained": false,
+  "git_push": false,
+  "note": "An assistant review under an explicitly recorded interpretation, not independent second-human gold annotation. Suggestions require the annotator decision."
+}

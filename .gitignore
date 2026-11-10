@@ -56,6 +56,7 @@
 /data/tasks/multifilm_annotation_200_20261110/*
 !/data/tasks/multifilm_annotation_200_20261110/README.md
 !/data/tasks/multifilm_annotation_200_20261110/annotator_a.csv
+!/data/tasks/multifilm_annotation_200_20261110/annotator_a.xlsx
 !/data/tasks/multifilm_annotation_200_20261110/coordinator/
 /data/tasks/multifilm_annotation_200_20261110/coordinator/*
 !/data/tasks/multifilm_annotation_200_20261110/coordinator/input_*.csv

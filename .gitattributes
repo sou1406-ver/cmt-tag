@@ -13,3 +13,7 @@ data/tasks/source_quality_pilot_20261110/coordinator/input.csv -text whitespace=
 data/tasks/multifilm_annotation_200_20261110/*.csv -text whitespace=-blank-at-eol
 data/tasks/multifilm_annotation_200_20261110/coordinator/input_*.csv -text whitespace=-blank-at-eol
 data/tasks/multifilm_annotation_200_20261110/coordinator/*.json -text whitespace=cr-at-eol
+data/tasks/multifilm_annotation_200_20261110/annotator_a.xlsx binary
+docs/annotation_reviews/multifilm_20261110/*.json -text whitespace=cr-at-eol
+# Preserve literal quoted comments and their whitespace in the audit report.
+docs/annotation_reviews/multifilm_20261110/REVIEW.md -text whitespace=-blank-at-eol

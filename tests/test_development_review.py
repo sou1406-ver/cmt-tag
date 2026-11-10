@@ -57,7 +57,7 @@ class DevelopmentReviewTests(unittest.TestCase):
     def csv(self,rows,name='decisions.csv'):
         p=self.root/name;write_csv(p,rows,list(self.template[0]));return p
 
-    def workbook(self,decisions,formula=False,edit_source=False):
+    def workbook(self,decisions,formula=False,edit_source=False,omit_source_round=False):
         """Minimal XLSX parser fixture; no browser, Excel process or authoring dependency."""
         ns='http://schemas.openxmlformats.org/spreadsheetml/2006/main'
         def sheet(table,header):
@@ -77,7 +77,7 @@ class DevelopmentReviewTests(unittest.TestCase):
         with zipfile.ZipFile(p,'w') as book:
             book.writestr('xl/workbook.xml',f'<workbook xmlns="{ns}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Duyet nhan" sheetId="1" r:id="r1"/><sheet name="400 binh luan" sheetId="2" r:id="r2"/></sheets></workbook>')
             book.writestr('xl/_rels/workbook.xml.rels','<Relationships><Relationship Id="r1" Target="worksheets/sheet1.xml"/><Relationship Id="r2" Target="worksheets/sheet2.xml"/></Relationships>')
-            keys=list(self.template[0])
+            keys=[k for k in self.template[0] if not (omit_source_round and k=='source_round')]
             book.writestr('xl/worksheets/sheet1.xml',sheet([keys,*[[r[k] for k in keys] for r in decisions]],5))
             book.writestr('xl/worksheets/sheet2.xml',sheet([fields,*[[r[k] for k in fields] for r in snapshot]],1))
         return p
@@ -116,6 +116,27 @@ class DevelopmentReviewTests(unittest.TestCase):
         self.assertEqual(reviewed['review_guideline_version'],'V2.1')
         verify_reviewed_dataset(out,rows,manifest)
 
+    def test_legacy_workbook_omitted_round_is_recovered_by_id(self):
+        out=self.root/'reviewed'
+        manifest=import_review(self.source,self.workbook(list(reversed(self.decisions())),omit_source_round=True),out,'a')
+        restored=manifest['human_review']['input_normalizations']
+        self.assertEqual(len(restored),3)
+        self.assertTrue(all(r['operation']=='RESTORE_SOURCE_ROUND_BY_LOCKED_ID' for r in restored))
+        verify_reviewed_dataset(out,read_csv(out/'annotations.csv'),manifest)
+
+    def test_unchanged_legacy_review_stays_outside_train_without_invented_explanation(self):
+        self.rows[7].update(status='REVIEW',label='',review_reason='REV_OTHER',reason='')
+        (self.source/'annotations.csv').unlink()
+        write_csv(self.source/'annotations.csv',self.rows,list(self.rows[0]))
+        meta=load(self.source/'manifest.json');meta['output_sha256']['annotations.csv']=sha(self.source/'annotations.csv')
+        (self.source/'manifest.json').write_text(json.dumps(meta))
+        out=self.root/'reviewed';result=import_review(self.source,self.csv(self.decisions()),out,'a')
+        r=next(r for r in read_csv(out/'annotations.csv') if r['id']==self.rows[7]['id'])
+        self.assertEqual(r['reason'],'');self.assertEqual(r['status'],'REVIEW')
+        self.assertEqual(r['ready_for_development'],'False')
+        self.assertIn(r['id'],result['legacy_review_without_explanation_ids'])
+        verify_reviewed_dataset(out,read_csv(out/'annotations.csv'),result)
+
     def test_missing_invalid_stale_and_invented_decisions_leave_no_output(self):
         variants=[]
         incomplete=self.decisions();incomplete[0]['decision']='';variants.append(incomplete)
@@ -140,6 +161,41 @@ class DevelopmentReviewTests(unittest.TestCase):
             with self.subTest(formula=formula):
                 with self.assertRaises(ValueError):
                     import_review(self.source,self.workbook(self.decisions(),formula,source_edit),self.root/'out','a')
+
+    def test_missing_explanation_requires_explicit_authorization_and_is_not_invented(self):
+        decisions=self.decisions();decisions[1]['reason']=''
+        p=self.csv(decisions)
+        with self.assertRaisesRegex(ValueError,'human explanation'):
+            import_review(self.source,p,self.root/'blocked','a')
+        out=self.root/'reviewed'
+        manifest=import_review(self.source,p,out,'a',allow_missing_change_reason=True)
+        row=next(r for r in read_csv(out/'annotations.csv') if r['id']==self.rows[3]['id'])
+        self.assertEqual(row['label'],'NEG');self.assertEqual(row['reason'],'')
+        event=next(e for e in load(out/'review_history.json') if e['id']==row['id'])
+        self.assertFalse(event['reason_provided']);self.assertEqual(event['human_note'],'')
+        self.assertIn('Explicit user authorization',event['reason_omission_authorization'])
+        verify_reviewed_dataset(out,read_csv(out/'annotations.csv'),manifest)
+
+    def test_only_trailing_ascii_spaces_can_be_restored_with_opt_in(self):
+        # Synthetic prepared task contains meaningful interior spacing and a trailing space.
+        self.rows[3]['text_raw']+=' '
+        self.template[1]['text_raw']=self.rows[3]['text_raw']
+        for name,rows in [('annotations.csv',self.rows),('review_decisions.csv',self.template)]:
+            (self.source/name).unlink();write_csv(self.source/name,rows,list(rows[0]))
+        manifest=load(self.source/'manifest.json')
+        manifest['output_sha256'].update({name:sha(self.source/name) for name in ('annotations.csv','review_decisions.csv')})
+        (self.source/'manifest.json').write_text(json.dumps(manifest))
+        decisions=self.decisions();decisions[1]['text_raw']=decisions[1]['text_raw'].rstrip(' ')
+        p=self.csv(decisions)
+        with self.assertRaises(ValueError):import_review(self.source,p,self.root/'strict','a')
+        out=self.root/'restored';result=import_review(self.source,p,out,'a',restore_trailing_spaces=True)
+        row=next(r for r in read_csv(out/'annotations.csv') if r['id']==self.rows[3]['id'])
+        self.assertEqual(row['text_raw'],self.rows[3]['text_raw'])
+        self.assertEqual(len(result['human_review']['input_normalizations']),1)
+        verify_reviewed_dataset(out,read_csv(out/'annotations.csv'),result)
+        decisions[1]['text_raw']=decisions[1]['text_raw'].replace(' ','  ',1)
+        with self.assertRaises(ValueError):
+            import_review(self.source,self.csv(decisions,'interior.csv'),self.root/'interior','a',restore_trailing_spaces=True)
 
     def baseline_config(self):
         (self.root/'aliases.json').write_text('{"aliases":[]}')

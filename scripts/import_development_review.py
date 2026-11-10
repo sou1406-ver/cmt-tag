@@ -30,25 +30,47 @@ def verify_files(directory, manifest):
         raise ValueError('Incomplete prepared snapshot checksums')
 
 
-def review_input(path, parent_rows):
+def review_input(path, parent_rows, restore_trailing_spaces=False, normalizations=None):
     path = Path(path)
+    expected = {r['id']:r for r in parent_rows}
+    def restore(row, sheet):
+        original=expected.get(row['id'],{}).get('text_raw')
+        observed=row['text_raw']
+        if (restore_trailing_spaces and original is not None and observed!=original
+                and observed.rstrip(' ')==original.rstrip(' ')):
+            if normalizations is not None:
+                normalizations.append(dict(sheet=sheet,id=row['id'],field='text_raw',
+                    operation='RESTORE_TRAILING_ASCII_SPACES_FROM_PARENT',
+                    observed_sha256=hashlib.sha256(observed.encode()).hexdigest(),
+                    original_sha256=hashlib.sha256(original.encode()).hexdigest()))
+            row['text_raw']=original
     if path.suffix.lower()=='.xlsx':
         _, decisions, checksum = read_input(path, 'Duyet nhan', header_row=5)
         _, snapshot, snapshot_sha = read_input(path, '400 binh luan', last_column=14)
         if snapshot_sha != checksum:
             raise ValueError('Workbook changed while reading')
-        expected = {r['id']:r for r in parent_rows}
         if len(snapshot)!=len(expected) or len({r['id'] for r in snapshot})!=len(snapshot) or set(expected)!={r['id'] for r in snapshot}:
             raise ValueError('Workbook source sheet IDs changed')
         for row in snapshot:
+            restore(row,'400 binh luan')
             if any(value != expected[row['id']].get(key) for key,value in row.items()):
                 raise ValueError('Workbook source sheet edited; use Duyet nhan only: '+row['id'])
+        for row in decisions:
+            restore(row,'Duyet nhan')
+            # The original working workbook omitted this immutable metadata column.
+            # Recover it from the locked ID mapping, never from a guessed label or row order.
+            if 'source_round' not in row and row['id'] in expected:
+                row['source_round']=expected[row['id']]['source_round']
+                if normalizations is not None:
+                    normalizations.append(dict(sheet='Duyet nhan',id=row['id'],field='source_round',
+                        operation='RESTORE_SOURCE_ROUND_BY_LOCKED_ID',value=row['source_round']))
         return decisions, checksum
     _, decisions, checksum = read_input(path)
+    for row in decisions:restore(row,'CSV')
     return decisions, checksum
 
 
-def validate_row(row):
+def validate_row(row, require_review_explanation=True):
     if row['status']!='LABELED' and row['label']:
         raise ValueError('REVIEW/EXCLUDE cannot carry a sentiment label')
     if row['status']!='REVIEW' and row['review_reason']:
@@ -58,11 +80,12 @@ def validate_row(row):
     validate_decision(dict(label_source='human',status=row['status'],label=row['label'] or None,
                            review_reason=row['review_reason'] or None,confirmed=False,is_pseudo=False,
                            needs_review=row['status']=='REVIEW'))
-    if row['status']=='REVIEW' and row['review_reason']=='REV_OTHER' and not row['reason'].strip():
+    if require_review_explanation and row['status']=='REVIEW' and row['review_reason']=='REV_OTHER' and not row['reason'].strip():
         raise ValueError('REV_OTHER requires an explanation')
 
 
-def resolve(parent_rows, template, decisions, actor, timestamp, guideline, input_sha, parent_sha):
+def resolve(parent_rows, template, decisions, actor, timestamp, guideline, input_sha, parent_sha,
+            allow_missing_change_reason=False):
     """Pure replay by immutable IDs; both import and baseline receipt verification use it."""
     if not actor.strip():
         raise ValueError('Annotator ID required')
@@ -103,7 +126,7 @@ def resolve(parent_rows, template, decisions, actor, timestamp, guideline, input
             if code:row['review_reason']=code
             if reason:row['reason']=reason
         elif action=='CHANGE':
-            if not reason:
+            if not reason and not allow_missing_change_reason:
                 raise ValueError('CHANGE requires a human explanation: '+rid)
             if label not in LABELS | {'REVIEW','EXCLUDE'}:
                 raise ValueError('CHANGE requires POS/NEG/NEU/REVIEW/EXCLUDE: '+rid)
@@ -127,13 +150,17 @@ def resolve(parent_rows, template, decisions, actor, timestamp, guideline, input
                    decision_input_sha256=input_sha,text_sha256=hashlib.sha256(row['text_raw'].encode()).hexdigest(),
                    before=before,after={k:row[k] for k in DECISION_FIELDS},human_note=reason,
                    previous_event_sha256=previous_hash)
+        if action=='CHANGE' and not reason:
+            event.update(reason_provided=False,
+                         reason_omission_authorization='Explicit user authorization; annotator did not provide a reason')
         previous_hash=hashlib.sha256(json.dumps(event,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
         event['event_sha256']=previous_hash
         row['review_event_id']=previous_hash
         events.append(event)
     for row in rows:
         for key in REVIEW_METADATA:row.setdefault(key,'')
-        if row.get('review_disposition')!='DEFER':validate_row(row)
+        if row.get('review_disposition')!='DEFER':
+            validate_row(row,require_review_explanation=bool(row.get('review_disposition')))
         row['ready_for_development']=str(row['status']=='LABELED' and not row['validation_issues']
                                          and not row['audit_pending'] and row['review_disposition']!='DEFER')
     if any(r['audit_pending'] for r in rows):
@@ -159,10 +186,14 @@ def verify_reviewed_dataset(directory, rows, manifest):
     input_path=directory/'provenance'/receipt['input_name']
     if Path(receipt['input_name']).name!=receipt['input_name'] or sha(input_path)!=receipt['input_sha256']:
         raise ValueError('Review input checksum mismatch')
-    decisions,input_sha=review_input(input_path,parent_rows)
+    normalizations=[]
+    decisions,input_sha=review_input(input_path,parent_rows,receipt.get('restore_trailing_spaces',False),normalizations)
+    if normalizations!=receipt.get('input_normalizations',[]):
+        raise ValueError('Review whitespace restoration log mismatch')
     validate_guideline(receipt['guideline']['version'],receipt['guideline']['sha256'])
     replay,events=resolve(parent_rows,template,decisions,receipt['annotator_id'],receipt['decided_at'],
-                          receipt['guideline'],input_sha,receipt['parent_manifest_sha256'])
+                          receipt['guideline'],input_sha,receipt['parent_manifest_sha256'],
+                          receipt.get('allow_missing_change_reason',False))
     if replay!=rows or load(directory/'review_history.json')!=events:
         raise ValueError('Reviewed data/history does not match human decisions')
     deferred=sorted(r['id'] for r in rows if r['review_disposition']=='DEFER')
@@ -171,7 +202,8 @@ def verify_reviewed_dataset(directory, rows, manifest):
     return receipt
 
 
-def import_review(source, input_path, output, annotator):
+def import_review(source, input_path, output, annotator, restore_trailing_spaces=False,
+                  allow_missing_change_reason=False):
     source=Path(source).resolve();input_path=Path(input_path).resolve();output=Path(output).resolve()
     manifest=load(source/'manifest.json');verify_files(source,manifest)
     if manifest['purpose']!='exploratory_development_only' or manifest['independent_test']:
@@ -182,7 +214,8 @@ def import_review(source, input_path, output, annotator):
     if set(manifest['pending_review_ids'])!={r['id'] for r in template}:
         raise ValueError('Pending review task mismatch')
     payload=input_path.read_bytes()
-    decisions,input_sha=review_input(input_path,parent_rows)
+    normalizations=[]
+    decisions,input_sha=review_input(input_path,parent_rows,restore_trailing_spaces,normalizations)
     if hashlib.sha256(payload).hexdigest()!=input_sha:
         raise ValueError('Review input changed while reading')
     parent_sha=sha(source/'manifest.json')
@@ -192,13 +225,16 @@ def import_review(source, input_path, output, annotator):
         raise ValueError('Review guideline differs from prepared task; explicit migration required')
     if output.exists():
         existing=load(output/'manifest.json');receipt=existing.get('human_review',{})
-        if (receipt.get('input_sha256'),receipt.get('parent_manifest_sha256'),receipt.get('annotator_id'),receipt.get('guideline'))!=(input_sha,parent_sha,annotator.strip(),guideline):
+        if (receipt.get('input_sha256'),receipt.get('parent_manifest_sha256'),receipt.get('annotator_id'),receipt.get('guideline'),
+            receipt.get('restore_trailing_spaces',False),receipt.get('allow_missing_change_reason',False))!=(
+                input_sha,parent_sha,annotator.strip(),guideline,restore_trailing_spaces,allow_missing_change_reason):
             raise FileExistsError('Reviewed output exists with different decisions; preserve it and choose another output')
         verify_files(output,existing)
         verify_reviewed_dataset(output,read_csv(output/'annotations.csv'),existing)
         return existing
     timestamp=datetime.now(timezone.utc).isoformat()
-    rows,events=resolve(parent_rows,template,decisions,annotator,timestamp,guideline,input_sha,parent_sha)
+    rows,events=resolve(parent_rows,template,decisions,annotator,timestamp,guideline,input_sha,parent_sha,
+                        allow_missing_change_reason)
     output.parent.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.review-',dir=output.parent) as temporary:
         staged=Path(temporary)/'reviewed';staged.mkdir()
@@ -229,8 +265,13 @@ def import_review(source, input_path, output, annotator):
                       deferred_review_ids=sorted(r['id'] for r in rows if r['review_disposition']=='DEFER'),
                       human_review=dict(annotator_id=annotator.strip(),decided_at=timestamp,guideline=guideline,
                                         input_name=input_name,input_sha256=input_sha,parent_manifest_sha256=parent_sha,
-                                        event_count=len(events),evidence_mode='assisted'),
+                                        event_count=len(events),evidence_mode='assisted',
+                                        restore_trailing_spaces=restore_trailing_spaces,
+                                        input_normalizations=normalizations,
+                                        allow_missing_change_reason=allow_missing_change_reason),
                       current_validation_issues={r['id']:r['validation_issues'] for r in rows if r['validation_issues']},
+                      legacy_review_without_explanation_ids=[r['id'] for r in rows if r['status']=='REVIEW'
+                          and r['review_reason']=='REV_OTHER' and not r['reason'].strip() and not r['review_disposition']],
                       sentiment_candidates=sum(r['ready_for_development']=='True' for r in rows),
                       output_sha256={p.name:sha(p) for p in staged.iterdir() if p.is_file()})
         save(staged/'manifest.json',result)
@@ -248,8 +289,11 @@ def main():
     p.add_argument('--input',type=Path,default=ROOT/'outputs/development/annotations.xlsx')
     p.add_argument('--output',type=Path,default=ROOT/'outputs/development/reviewed')
     p.add_argument('--annotator',required=True)
+    p.add_argument('--restore-trailing-spaces',action='store_true',help='Restore only trailing ASCII space differences from source; audit each cell')
+    p.add_argument('--allow-missing-change-reason',action='store_true',help='Only with explicit human authorization: preserve missing CHANGE explanations in history')
     args=p.parse_args()
-    try:result=import_review(args.source,args.input,args.output,args.annotator)
+    try:result=import_review(args.source,args.input,args.output,args.annotator,
+                             args.restore_trailing_spaces,args.allow_missing_change_reason)
     except (ValueError,OSError,KeyError) as exc:p.exit(2,f'{type(exc).__name__}: {exc}\n')
     print(json.dumps(dict(rows=result['rows'],pending=len(result['pending_review_ids']),
                           deferred=len(result['deferred_review_ids']),sentiment_candidates=result['sentiment_candidates'],

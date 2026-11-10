@@ -1,7 +1,7 @@
 # Phân loại sắc thái bình luận phim tiếng Việt
 
 Đặc tả chính thức: [CODEX_HANDOFF_MOVIE_SENTIMENT.md](CODEX_HANDOFF_MOVIE_SENTIMENT.md).
-Đã triển khai **Phase A/B**, **Phase C tooling** và **Phase D baseline trên fixture**. Phạm vi chỉ
+Đã triển khai **Phase A/B**, **Phase C tooling** và baseline thăm dò trên nhãn người. Phạm vi chỉ
 là comment về phim với ba sentiment `POS / NEG / NEU`.
 `REVIEW` và `EXCLUDE` là trạng thái, không phải lớp huấn luyện.
 
@@ -32,7 +32,7 @@ REVIEW cần mã ở G (kể cả KEEP nếu mã đang thiếu). Cột A là s�
 Không sửa các cột nguồn/đề xuất hoặc sheet snapshot. Lưu Excel rồi nhập:
 
 ```powershell
-python scripts/import_development_review.py --annotator annotator_a
+python scripts/import_development_review.py --annotator annotator_a --restore-trailing-spaces --allow-missing-change-reason
 python scripts/development_baseline.py --dataset outputs/development/reviewed --output outputs/development/baseline_reviewed --run
 ```
 
@@ -42,6 +42,11 @@ thể nhập lại an toàn; output có quyết định khác không bị ghi đ
 giữ đủ 400 dòng, snapshot đầu vào, lịch sử trước/sau và manifest. DEFER giữ
 nhãn/trạng thái gốc nhưng không vào train; không đồng nghĩa đã phân xử sentiment.
 Baseline kiểm tra và phát lại bằng chứng duyệt trước khi fit, không chỉ đọc cờ.
+Hai lệnh trên đã chạy với batch hiện tại. Người gán đã xác nhận cho phép nhập
+11 CHANGE không có lý do; lịch sử ghi rõ thiếu lý do, không tự tạo giải thích.
+Mặc định vẫn yêu cầu lý do. Flag phục hồi khoảng trắng chỉ chấp nhận dấu cách
+ASCII cuối text và ghi log; nội dung gốc không đổi. source_round thiếu trong
+workbook cũ được lấy từ ánh xạ ID khóa. Output/run đã có không bị ghi đè.
 
 Chuẩn bị từ hai workbook local đã khóa checksum (không ghi đè output có sẵn):
 
@@ -55,10 +60,13 @@ Bước thứ hai chỉ tạo kế hoạch, **không fit model**. Cấu hình
 3-fold theo nhóm bài đăng và cụm trùng/gần trùng; hai biến thể dùng cùng fold.
 `configs/entity_mask.json` liệt kê alias che tên phim/nhân vật, giữ văn bản gốc;
 danh sách có giới hạn, tránh tự đoán tên người hoặc che các từ đơn mơ hồ.
-File local hiện còn 19 quyết định chờ người gán, nên chưa chạy baseline thật.
-Đây là dữ liệu phát triển đã tiếp xúc và được chọn có chủ đích, không phải gold
-test độc lập; chưa train dữ liệu thật, chưa có kết quả so sánh hai biến thể.
-Chi tiết số liệu và giới hạn: [chuẩn bị baseline](docs/DEVELOPMENT_BASELINE.md).
+Đã nhập **11 CHANGE + 8 KEEP**, không còn pending. Bản hiện tại ở
+`outputs/development/reviewed/`: **110 POS / 144 NEG / 92 NEU**, ngoài train có
+4 REVIEW và 50 EXCLUDE. Đã chạy sáu tổ hợp NB/LR/LinearSVC × original/masked
+bằng 3-fold theo nhóm bài. Macro-F1 OOF cao nhất quan sát được là **0,4828**
+(LR masked); model vẫn dự đoán NEG nhiều, recall POS/NEU còn yếu.
+Đây là dữ liệu phát triển đã tiếp xúc và được chọn có chủ đích, chưa có gold
+test độc lập. [Kết quả, confusion matrix và giới hạn](docs/DEVELOPMENT_BASELINE.md).
 
 Phase 0 đã audit nguồn local 29k: [quyết định dùng fixture trước](docs/PHASE_0_DATA_AUDIT.md).
 Phase C có workflow CLI blind annotation, agreement/Kappa, silver provider và
@@ -67,8 +75,8 @@ hoặc Kappa người thật; nhãn `overall` chưa được xác minh, không �
 
 Repository phục vụ pipeline Python CLI: thu thập → tiền xử lý → gán nhãn
 bán tự động → trích xuất đặc trưng → huấn luyện → đánh giá → báo cáo.
-Không xây web, dashboard hoặc giao diện ứng dụng. Tooling C/D đã kiểm thử bằng fixture;
-các bước huấn luyện/đánh giá/báo cáo trên dữ liệu thật chưa có gold để chạy.
+Không xây web, dashboard hoặc giao diện ứng dụng. Tooling C/D đã kiểm thử bằng
+fixture và đã chạy CV thăm dò trên nhãn người; đánh giá gold độc lập vẫn chưa có.
 Baseline CLI và kết quả fixture: [Phase D](docs/PHASE_D_REPORT.md).
 
 ## Thu thập Facebook mới (Python CLI)

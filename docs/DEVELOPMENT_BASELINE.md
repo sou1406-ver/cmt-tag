@@ -1,145 +1,145 @@
-# Chuẩn bị dữ liệu và baseline thăm dò
+# Baseline thăm dò trên nhãn người đã duyệt
 
-Duyệt mới dùng [V2.1](guidelines/MOVIE_SENTIMENT_V2_1.md); nhãn task ban đầu giữ
-hợp đồng [V2.0](guidelines/MOVIE_SENTIMENT_V2_0.md). Hai file khóa checksum bất
-biến. Cập nhật hướng dẫn không tự xác nhận lại 400 quyết định cũ.
+Cập nhật 11/11/2026. Đã nhập 19 quyết định: 11 CHANGE và 8 KEEP, không còn
+pending. Dùng [V2.1](guidelines/MOVIE_SENTIMENT_V2_1.md) cho đợt duyệt mới;
+metadata của task gốc vẫn theo [V2.0](guidelines/MOVIE_SENTIMENT_V2_0.md).
+Hai guideline bất biến và các workbook nguồn giữ nguyên checksum.
 
-## Bộ dữ liệu làm việc
-
-Một thư mục chính: `outputs/development/`. Excel `annotations.xlsx` có ba sheet:
-
-- `Duyet nhan`: 18 đề xuất rà nhãn và một dòng REVIEW thiếu mã. Điền `decision`
-  bằng KEEP / CHANGE / DEFER. CHANGE cần quyết định mới và lý do; REVIEW cần mã.
-  Đề xuất và nhãn hiện tại nằm ở các cột riêng. Cột E dòng 6–24 là quyết định;
-  F là nhãn mới, G là mã REVIEW, H là lý do. Cột A là dòng trong workbook gốc.
-  Nhập bằng `scripts/import_development_review.py` sau khi lưu workbook.
-- `400 binh luan`: toàn bộ quyết định đã chuẩn hóa, giữ nguyên văn bản task,
-  emoji, phủ định, ID và nguồn vòng gán tại thời điểm tạo task. Không sửa trực
-  tiếp sheet này; dữ liệu sau duyệt ở `reviewed/annotations.csv`.
-- `Thong ke`: nhãn đã nhập theo chủ đề phim nguồn, trước khi duyệt đề xuất.
-
-CSV `annotations.csv` giữ đủ provenance gồm comment/post/parent ID, URL,
-crawl run, cohort, checksum workbook và guideline của task gốc. `manifest.json`
-khóa checksum đầu vào/đầu ra. `provenance/` giữ snapshot và log từng thao tác,
-phân vùng sentiment / REVIEW / EXCLUDE. Không xóa vật lý dòng nào.
+## Dữ liệu sau duyệt
 
 | Đợt | POS | NEG | NEU | REVIEW | EXCLUDE | Tổng |
 |---|---:|---:|---:|---:|---:|---:|
 | Pilot Mưa Đỏ | 88 | 8 | 71 | 4 | 29 | 200 |
-| Đa phim | 20 | 137 | 22 | 1 | 20 | 200 |
-| Tổng | 108 | 145 | 93 | 5 | 49 | 400 |
+| Đa phim | 22 | 136 | 21 | 0 | 21 | 200 |
+| Tổng | 110 | 144 | 92 | 4 | 50 | 400 |
 
-Đây là nhãn một người đã nhập, chưa phải tập gold độc lập. Có **346** dòng mang
-nhãn sentiment. Trong đó **17** dòng đang chờ rà nhãn; kế hoạch tạm dùng **329**
-ứng viên không bị đánh dấu, nhưng vẫn chặn huấn luyện toàn bộ đến khi người gán
-duyệt. Dòng EXCLUDE được đề nghị xem lại cũng chưa tự chuyển thành NEU.
+Có 346 ứng viên sentiment; 4 REVIEW và 50 EXCLUDE ngoài train. Đây là nhãn
+một người trên dữ liệu phát triển đã tiếp xúc và được chọn có chủ đích, không
+phải gold test độc lập. Không tự thay lựa chọn của người gán bằng đề xuất máy.
+Dòng 155 đã được người gán chuyển từ REVIEW sang EXCLUDE. POS cảm xúc đã xác
+nhận được giữ nguyên. Không xóa vật lý dòng nào.
 
-Các xác nhận trước trong chat được áp dụng theo ID với expected/set/evidence:
-pilot dòng 19 NEU, 196 POS, dòng 3 và 11 thêm REV_CONTEXT. Chỉ phục hồi một dấu
-cách cuối văn bản ở pilot dòng 34 và đa phim dòng 58/59/80/180 theo task gốc.
-Workbook nguồn không đổi. Đa phim dòng **155** (`spoil =))`) vẫn thiếu mã REVIEW.
+Người gán xác nhận nhập 11 CHANGE dù không cung cấp lý do. Lịch sử lưu đúng
+nhãn đã chọn, human_note rỗng, reason_provided=false và dấu vết cho phép rõ
+ràng; không tạo giải thích giả. Một REVIEW cũ có REV_OTHER nhưng thiếu giải
+thích được giữ nguyên, liệt kê trong QA và ngoài train.
 
-Giữ POS cảm xúc ở dòng 87 đã xác nhận, cùng dòng 55/195 theo hướng dẫn hiện hành;
-không tự đưa các dòng này sang REVIEW vì chỉ không có từ khen nghệ thuật.
-Các đề xuất còn lại ở dòng 6, 26, 40, 49, 62, 74, 77, 91, 112, 124, 139, 150,
-161, 165, 178, 180, 181, 190 là câu hỏi để người gán quyết định, không phải đáp án.
-Những ghi chú audit tùy chọn của pilot vẫn giữ ở báo cáo cũ, chưa tự sửa nhãn.
+Một workbook làm việc ở `outputs/development/annotations.xlsx`; sheet
+`Duyet nhan` có quyết định đã nhập. Sheet `400 binh luan` và `Thong ke` là
+snapshot trước duyệt. Dữ liệu hiện tại cho pipeline ở:
 
-## Phụ thuộc phim và nhãn
+- `outputs/development/reviewed/annotations.csv`: đủ 400 dòng và provenance.
+- `reviewed/manifest.json`, `reviewed/review_history.json`: checksum, 19 sự
+  kiện trước/sau, actor/time, guideline/hash, nguồn file duyệt và chuỗi hash.
+- `reviewed/statistics.json`: thống kê theo phim/bài/cohort/nguồn/vòng gán.
+- `reviewed/provenance/`: parent snapshot, file duyệt nguyên byte và phân vùng
+  sentiment / REVIEW / EXCLUDE / DEFER. Không ghi đè workbook đã điền.
 
-Theo `statistics.json`, Mưa Đỏ là chủ đề nguồn của **205/400** dòng; trong đó
-90 POS, 10 NEG, 71 NEU, 4 REVIEW, 30 EXCLUDE. Các bảng theo bài, vòng gán,
-fanpage/group và cohort được xuất cùng thống kê theo phim.
-
-Trên 346 nhãn sentiment hiện tại, Cramér's V không hiệu chỉnh là **0,5601**,
-mutual information **0,3883 nat** giữa chủ đề phim nguồn và nhãn. Có 59 ô chéo
-ít hơn 5 mẫu. Đây chỉ là mô tả tập đã chọn: vòng pilot một phim và vòng đa phim
-ưu tiên phê bình có cách lấy mẫu khác nhau. Không suy ra quan hệ nhân quả hoặc
-khẳng định model đã học shortcut; chưa có model trên dữ liệu này.
-Thống kê tách theo vòng và cohort cũng có trong JSON.
-
-`movie_id` là chủ đề bài nguồn; comment có thể nói phim khác hoặc so sánh nhiều
-phim. Chưa coi việc giữ riêng movie_id là đánh giá khái quát sang phim chưa thấy.
-
-## Cấu hình và kiểm tra đã thực hiện
+## Nhập quyết định và kiểm tra
 
 ```powershell
-python scripts/prepare_development.py
-python scripts/development_baseline.py
-```
-
-Lệnh chuẩn bị từ chối ghi đè output đang có và từ chối input khác checksum;
-đầu ra chỉ được đặt vào thư mục đích sau khi chuẩn bị thành công. Các input
-workbook nằm local; checkout Git mới cần người vận hành cung cấp đúng hai bản.
-Builder Excel là công cụ tạo tài liệu local; hai lệnh trên tạo CSV, JSON và plan.
-
-`configs/baseline_development.json` cố định TF-IDF unigram+bigram, NB (alpha=1),
-LR và LinearSVC (C=1, balanced), seed 42, 3-fold StratifiedGroupKFold.
-Các nhóm nối bắc cầu theo bài, comment ID, trùng văn bản chuẩn hóa NFC/khoảng
-trắng/không phân biệt hoa thường và gần trùng token-3gram Jaccard ≥0,9.
-Dùng lại nhóm/trích xuất đặc trưng/model/metrics hiện có; không sửa Phase B
-hoặc nới điều kiện independent gold của Phase D.
-
-Kế hoạch tạm có 36 cụm bài/duplicate trên 400 dòng, không thấy ID trùng,
-trùng văn bản hoặc cặp gần trùng theo ngưỡng này. Sau khi bỏ các dòng chờ duyệt,
-fold validation tạm có 144 / 103 / 82 dòng; mọi fold train đều có đủ ba lớp.
-Hai biến thể dùng đúng cùng ID/fold, TF-IDF chỉ fit trên phần train mỗi fold:
-
-- `original`: nguyên văn comment.
-- `masked`: thay alias phim/nhân vật xác định trong `configs/entity_mask.json`
-  bằng TEN_PHIM / TEN_NHAN_VAT; không cắt tên bằng regex chữ hoa. Từ đơn mơ hồ
-  như “Mai”, “Sen”, “Cường”, “Quang” không bị che toàn cục. Lexicon có giới hạn,
-  cần kiểm tra độ phủ trước khi diễn giải so sánh và khóa trước test độc lập.
-
-## Nhập quyết định và mở baseline
-
-```powershell
-python scripts/import_development_review.py --annotator annotator_a
+python scripts/import_development_review.py --annotator annotator_a --restore-trailing-spaces --allow-missing-change-reason
 python scripts/development_baseline.py --dataset outputs/development/reviewed --output outputs/development/baseline_reviewed --run
 ```
 
-Importer mặc định đọc sheet `Duyet nhan`, header ở dòng 5 của workbook chung.
-Có thể dùng `--input <file.csv>` với cùng cấu trúc cột. Phải có đúng các ID
-đang chờ một lần; thứ tự dòng không quan trọng. Các cột nguồn và sheet snapshot
-được đối chiếu chính xác, không cho sửa text/ID/nhãn gốc để lách bước duyệt.
-Formula không được dùng làm quyết định.
+Lần chạy này đã hoàn tất. Import lại cùng input/actor/options là idempotent;
+run model hoặc snapshot khác cần output mới, không ghi đè kết quả hiện có.
+Mặc định importer vẫn từ chối CHANGE thiếu lý do. Chỉ bật
+`--allow-missing-change-reason` khi người gán cho phép rõ ràng, như đợt này.
+DEFER luôn cần lý do; REVIEW mới với REV_OTHER luôn cần giải thích.
 
-- KEEP giữ status/label. Cho phép điền mã REVIEW còn thiếu; đổi mã đã có cần
-  CHANGE. KEEP không tự chấp nhận nhãn mà Codex đề xuất.
-- CHANGE cần POS/NEG/NEU/REVIEW/EXCLUDE và lý do người gán; REVIEW cần mã hợp lệ.
-  REV_OTHER cần giải thích. Các mã không phù hợp với trạng thái bị từ chối.
-- DEFER cần lý do, để trống nhãn mới và mã REVIEW. Giữ nguyên nhãn/trạng thái
-  gốc và lỗi kỹ thuật còn lại; metadata đánh dấu không được huấn luyện.
+Importer đọc sheet `Duyet nhan`, header dòng 5, hoặc CSV cùng cấu trúc. Nối
+đúng ID, kiểm mọi quyết định; không dựa vào vị trí dòng để áp nhãn. Cột E dòng
+6–24 là KEEP/CHANGE/DEFER, F là nhãn mới, G mã REVIEW, H lý do.
 
-Nếu còn ô decision trống hoặc quyết định không hợp lệ, không tạo output dở
-dang. Khi đủ, `reviewed/` là snapshot mới đủ 400 dòng với lịch sử 19 sự kiện,
-actor/time, guideline/hash, checksum input, giá trị trước/sau và ghi chú.
-Snapshot cha và file duyệt được giữ trong provenance. Bản gốc và workbook không
-bị ghi đè. Cùng input/actor nhập lại trả về cùng kết quả; input khác phải chọn
-output mới bằng `--output`, không ghi đè lịch sử đã có.
+Workbook ban đầu không hiển thị source_round trong sheet duyệt; importer
+phục hồi metadata đó từ ánh xạ ID đã khóa và ghi log từng dòng. Với flag
+khôi phục khoảng trắng, chỉ chấp nhận chênh lệch dấu cách ASCII cuối text:
+5 ô sheet snapshot và 1 ô sheet duyệt đã phục hồi từ parent. Không cho sửa
+nội dung, khoảng trắng bên trong, ID hoặc nhãn snapshot. Workbook gốc không
+bị chỉnh để lách kiểm tra; snapshot input lưu nguyên byte.
 
-`all_human_review_resolved` chỉ được đặt sau khi nhập đủ quyết định hợp lệ.
-DEFER là hoàn tất quyết định hoãn, không phải gold sentiment. Baseline kiểm
-checksum và phát lại toàn bộ quyết định để đối chiếu dataset/history trước
-khi fit; chỉ đổi cờ manifest không mở được. Mọi dòng DEFER, REVIEW hoặc EXCLUDE
-đều ngoài supervised train. Các nhóm post/duplicate được tính trên cả 400 dòng,
-kể cả dòng ngoài train, để giữ liên kết bắc cầu. Fold được tính lại sau duyệt.
+KEEP giữ nhãn/trạng thái; CHANGE dùng đúng nhãn người nhập; DEFER giữ quyết
+định gốc nhưng không huấn luyện. Baseline kiểm checksum và phát lại quyết định
+để đối chiếu dataset/history trước khi fit. Chỉ đổi cờ manifest không mở được.
+Không có quyết định hợp lệ thì không tạo output dở dang.
 
-`--run` là hành động fit rõ ràng; file hiện vẫn còn 19 ô trống nên chưa chạy
-baseline thật. Sau khi nhập quyết định hợp lệ, lệnh này sẽ xuất
-OOF metrics, recall từng lớp, confusion matrix, dự đoán sai và hệ số SVM theo
-fold. Accuracy trong metrics chỉ mô tả mẫu phát triển đã chọn, không phải hiệu
-năng theo phân phối thực tế. Không tạo hoặc mở test độc lập.
+## Cấu hình và chia nhóm
 
-**Đã chạy:** chuẩn hóa local, kiểm checksum/ID/provenance, thống kê, kế hoạch
-chia nhóm; fixture kiểm NB/LR/LinearSVC, cả hai biến thể, metrics và chống rò
-vocabulary. **Chưa chạy:** train/CV trên 400 dòng thật, so sánh che tên, phân
-tích hệ số/dự đoán sai trên nhãn thật, đánh giá phim mới hoặc gold test độc lập.
+TF-IDF unigram+bigram, NB alpha=1, LR/LinearSVC C=1 và class_weight=balanced,
+seed 42, 3-fold StratifiedGroupKFold. Có 36 cụm post/duplicate trên cả 400 dòng;
+346 dòng tham gia CV thuộc 35 bài. Không phát hiện trùng ID, trùng text hoặc
+cặp gần trùng theo ngưỡng đã dùng.
 
-Lượt chuẩn bị trước: 138/138 test pass; đã đối chiếu 400 dòng Excel/CSV và
-checksum nguồn. Lượt hoàn thiện importer bổ sung fixture Excel/CSV, KEEP /
-CHANGE / DEFER, thiếu quyết định/mã, dữ liệu bị sửa, tính lặp an toàn, journal
-và receipt, checksum guideline bất biến, cùng chạy baseline đủ sáu tổ hợp bằng
-fixture sau khi mở khóa hợp lệ. Lượt cuối `python -m unittest discover -s tests`
-**145/145 pass** (22,624 giây); `git diff --check` sạch. Workbook local và toàn
-bộ input/task giữ nguyên checksum; chưa có quyết định thật mới hoặc model thật.
+Nhóm nối bắc cầu theo bài, source ID, text NFC/khoảng trắng/casefold và gần
+trùng token-3gram Jaccard ≥0,9; tính trên cả các dòng ngoài train. Các nhóm
+không xuất hiện ở cả train và validation. TF-IDF chỉ fit trong train của mỗi
+fold. Hai biến thể dùng đúng cùng fold và ID, không thêm tuning sau xem OOF.
+
+| Fold | Train | Validation | POS validation | NEG validation | NEU validation |
+|---|---:|---:|---:|---:|---:|
+| 1 | 194 | 152 | 58 | 47 | 47 |
+| 2 | 242 | 104 | 29 | 48 | 27 |
+| 3 | 256 | 90 | 23 | 49 | 18 |
+
+Mọi fold train đủ ba lớp. `original` giữ nguyên text; `masked` dùng lexicon
+`configs/entity_mask.json` cho TEN_PHIM / TEN_NHAN_VAT. Có 44/346 text thay
+đổi do mask. Không đoán tên từ chữ hoa; tên đơn mơ hồ không che toàn cục.
+Lexicon chưa bao phủ đầy đủ nên đây chỉ là một phép thử có giới hạn.
+
+## Kết quả OOF trên dữ liệu phát triển
+
+Macro-F1 được tính gộp từ 346 dự đoán ngoài fold, không phải trung bình ba
+Macro-F1 của fold. Đã chạy sáu tổ hợp, tổng 18 lần fit.
+
+| Model | Văn bản | Macro-F1 | Recall POS | Recall NEG | Recall NEU |
+|---|---|---:|---:|---:|---:|
+| Naive Bayes | original | 0.2946 | 0.1727 | 0.9514 | 0.0109 |
+| Logistic Regression | original | 0.4575 | 0.3000 | 0.9167 | 0.2174 |
+| LinearSVC | original | 0.4561 | 0.3182 | 0.9236 | 0.1957 |
+| Naive Bayes | masked | 0.3024 | 0.1818 | 0.9653 | 0.0109 |
+| Logistic Regression | masked | 0.4828 | 0.3364 | 0.9375 | 0.2283 |
+| LinearSVC | masked | 0.4727 | 0.3364 | 0.9375 | 0.2065 |
+
+Giá trị cao nhất quan sát được là LR masked, Macro-F1 0,4828; cao hơn LR
+original khoảng 0,0253 trong đúng phép thử này. Chưa thể kết luận mask luôn
+tốt hơn hoặc model đã hết phụ thuộc tên phim. Không có test độc lập, kiểm
+định chênh lệch hoặc đánh giá phim chưa thấy.
+
+Confusion matrix của LR masked, hàng là nhãn người, cột là dự đoán:
+
+| Nhãn người / Dự đoán | POS | NEG | NEU |
+|---|---:|---:|---:|
+| POS | 37 | 64 | 9 |
+| NEG | 6 | 135 | 3 |
+| NEU | 21 | 50 | 21 |
+
+Model còn nghiêng NEG: dự đoán NEG cho 64/110 POS và 50/92 NEU. Recall NEG
+0,9375 đi cùng precision NEG khoảng 0,5422; không nên diễn giải riêng recall
+cao là mô hình tốt. Recall POS khoảng 0,3364, NEU 0,2283 còn thấp. Chưa có cơ
+sở triển khai hoặc báo cáo đây là hiệu năng theo phân phối thực tế.
+
+Mưa Đỏ chiếm 205/400 dòng theo chủ đề nguồn; các cohort lấy mẫu khác nhau.
+Cramér's V mô tả phim–nhãn sau duyệt là 0.5640, mutual information
+0.3938 nat; 60 ô chéo có ít hơn 5 mẫu. Đây là mô tả
+mẫu đã chọn, không chứng minh quan hệ nhân quả hay shortcut của model.
+movie_id chỉ là chủ đề bài nguồn, không luôn là phim được đánh giá trong câu.
+
+## Kết quả và kiểm tra
+
+`outputs/development/baseline_reviewed/` giữ metrics.json, plan.json,
+predictions.csv và svm_features.csv. Dự đoán/feature coefficients đã xuất để
+phân tích lỗi tiếp; chưa tự sửa nhãn theo model. Trạng thái run:
+models_trained=true, provisional=false, independent_test=false.
+
+- metrics.json SHA-256: `7b33a30c2c9b78230781342ac588d1dd84cbe64e05231ed723245da34dd9cd2b`.
+- reviewed manifest SHA-256: `a4dba6c15c28455661ea84992ad4a19478e90b5dde62abe8acbe5533d2f91d64`.
+- Workbook duyệt SHA-256: `78974825d72e3f559047463a3cf2fd5bb9cb7556928302092d682d88c3369788`.
+
+`python -m unittest discover -s tests`: **149/149 pass** (24,959 giây).
+Fixture kiểm Excel/CSV, quyết định thiếu/sai, KEEP/CHANGE/DEFER, nhập lặp,
+log phục hồi khoảng trắng/metadata, thiếu giải thích có phép rõ ràng, REVIEW
+legacy, chống sửa cờ/checksum để bỏ qua lịch sử, split/duplicate/vocabulary và
+cả sáu tổ hợp model/variant. Checksum nguồn/task và workbook không đổi sau
+import/run. Guideline bất biến; Phase B, silver API và independent gold gate
+không bị nới. Chưa tạo test độc lập, chưa gọi API gán nhãn hoặc crawl thêm.

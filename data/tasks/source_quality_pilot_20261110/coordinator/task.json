@@ -1,0 +1,1216 @@
+{
+  "dataset_version": "6cdc0e41154d05c1ff86",
+  "guideline_version": "V2.0",
+  "guideline_sha256": "b094bcffc28f5099b6aa0278f95eaf4ee35cba1ee4f3965afa7009d26bd43844",
+  "seed": 42,
+  "split": "train",
+  "requested": 200,
+  "selected": 200,
+  "hard_selected": 0,
+  "rows": [
+    {
+      "id": "c_f1b11b9625d03b68970ef926db6908d120f1be403ad4aee4c2a02fd52a301134",
+      "text_raw": "Nhìn cái gân tay 😂😂nó phải nói là tê lê phê🤓",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_4a0c6086361b729fb5e0fe161a4c82912549c5a13717fa5648a79a87184e2252",
+      "text_raw": "Đẹp trai nhất đoàn",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_39ea3b1780c9c2bfb79407b2d65f88cd3892650a158a3ab2122c3c5eaa4b6fb7",
+      "text_raw": "Xem đợi ổng hoàn lương mà mãi k hoàn lương tức ghê 🤣 đã đẹp zai lại còn phản diện 🤣",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_4359160a006f5a49ead189217658be939850505e3646ce69387633610636d62c",
+      "text_raw": "Mình cũng mê a này nhất phim nhaaa ,là địch là lính ngụy nhưng đẹp zai nhất phim và a ấy cũng rất quân tử 🙂",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_116a561f466e800027088b5e301aeff0e8a8c01a00853f6ebe24f1b0c5bbade3",
+      "text_raw": "Me too :)))",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_56b1f952a717832728d28dbc3caeeb688520264acfcd6f344ac0cc9ba2244971",
+      "text_raw": "ảnh đẹp mà ảnh phản diện 😇",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_f2edbd9512aa8cd9d022c1dede27f90b261a31eff72aa906b71fe8d28507532b",
+      "text_raw": "chị ko cô đơn ☺️",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_d4c56fe3b4bea7a0f11ab7bc69da20ada447f2b04b50210e809997ca50aa10d0",
+      "text_raw": "thì cứ đi xem phim đi, biết đâu xem xong lại mê",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_e09ae1564d0f9ed7fb4395a6de993cc2daa2305d4b57870f8560572d7f3f8cd2",
+      "text_raw": "không. 😂",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_edf07970f8df66f9cda1675f3338b416749738af473d5691b4ff7819c03e6d50",
+      "text_raw": "Chắc chưa!?",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_00ca7a61d0c49168125cb6eb4a2f3e73665ec41d02312df64247ee07f35eafff",
+      "text_raw": "Lên xe",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_daa33b4958594af53e66dff40b5ebe031473955cc72d052a25fca3dad5818718",
+      "text_raw": "Thân thái hay quá",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_f74cee12aa9db8c0b41cd5e94370372e825108be2c3a112394d211622b267509",
+      "text_raw": "cảm ơn cháu, chú nghĩ thế này _giờ lớp trẻ nhiều khi không hiểu hết mọi chuyện, xem phim dễ bị thị.giác đánh lừa, chú thấy việc chọn nhân vật phản diện quá hoàn hảo sẽ có tác dụng ngược và từ đó mọi việc sẽ...cháu xem kỹ phần tham gia của các bạn trẻ sẽ hiểu ý chú ....",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_19ad0b7ad442276af860424338d0ef2c09269a30cb9a61ee2f926ed8ddc95e5d",
+      "text_raw": "Tui cũng phái ảnh quá🥲",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_75a9c46792716ba5d95542aae250661b6cf1aa8be75953645545ecaa9f01812f",
+      "text_raw": "Nhìn nhíu mày, nheo mắt thôi mà mê ơi là mê 😋",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_bcfce973f43396480833827cdfdcd74a22486b444f41f9b82ba2854ae81c0715",
+      "text_raw": "Mờ ê",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_376de94f53972e70ef69686cdae0505c6e69981a7721ca1f9be41010369f040f",
+      "text_raw": "😆😆 xinh quá",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_68df3a624f12e5b40f3e8380a0288085209925fafd4c9534b196ae98e6cc93ab",
+      "text_raw": "Chú Vạn 🤣",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_ba68b6f9736f2bf76b1191973d6806e39c5f735889c4af8b86ca636ca6d5944a",
+      "text_raw": "anh Quang oi... hay là anh xé quần xé áo em ra đi\n😝😝😝😝🤦‍♀️",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_d98f5e1c6c4d1df777d357c3e0847389f8f02235be9bccc63b121131e9dc8159",
+      "text_raw": "Tình Tứ đàn em Phúc cọp đây mà",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_13e5ed0cf829494598ecda145d99230bfa2832bc8a573690f24abe7155c351ae",
+      "text_raw": "=)) t tưởng lính của sư đoàn dù với lính thủy đánh bộ VNCH phải đc ăn học đàng hoàng hơn lính bth chứ?",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_170775cfa2e534700ddcb90c893e16c940cf72bee2038fad9a13213e01b7b173",
+      "text_raw": "vẫn thấy phe địch ngon 😝",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_e1aa17d56b8d4d65388b4b9d9aaf2085160003c68a4d860cb511211d682e9636",
+      "text_raw": "vì Bi Long mà film nào có mặt t cũng xem 😊",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_1a4c6b8df56d20e1f336947f472486b411e5cc85c0f24e58ebad2755a487bb58",
+      "text_raw": "đã qá tr oi",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_d65f12950c47d2ce36e6e860d99926450c205c5558de56ad1b113d070796c430",
+      "text_raw": "Nhìn có nét giống Lee Min Ho",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_97d4d9e54b2c7f1062a48bfa2e8fab642c5a4d8831116c6c3b61acb9899b6e94",
+      "text_raw": "biết đọc quân hàm, nể.",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_72efcc23686fecda4ca6884872713692b1fcf7cb20f68de3c8b150d30b550f2f",
+      "text_raw": "e hong thấy ghét chút nào luôn ó",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_e891ce73fee12b7ee83d70fad83f5b6aa775f978c6f96e10286f7965538ba58c",
+      "text_raw": "xem gì đây =))))",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_af4bd676e11356721ad36dbf9283bb4c6e36fa10d78297a511265c2a0674a152",
+      "text_raw": "Phản diện phải hởm",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_4ada540eb50e5712a2d0153db2694369def56ca6ec0791807d585203b2c7ce08",
+      "text_raw": "xem hình ảnh quân \"giải phóng\" cùng thời chưa ?",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_b860ecf0e039faaab22e5d13e3380d28a207ffb30ee38c92b3499cff21437f27",
+      "text_raw": "e gặp rồi à?",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_b2a070b48e0b6a399156edfed4df33bc174cb553c3677e26e03dacc5006132dd",
+      "text_raw": "T mê nhân vật,ko mê diễn viên",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_4031412fe7278a8b07eb1c83195c397dea4c20ad27cc0c47c9ab1874be18d685",
+      "text_raw": "xĩu xĩu luôn bé ơi 🤤🤤",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_96e0ce9ce1998b21499fb56d33cb9b2e183b9cfb29c4fdf197aca9915d109e3f",
+      "text_raw": "Ông này vai nguyên mẫu tướng vnch Ngô quang Trưởng đây à mn.",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_1e9fe2b8ceca5a8917199f30e069968515aca9515f852b37aa571cab20ce5442",
+      "text_raw": "Thuỵ Điển thuộc quốc gia không liên kết vẫn giữ thương mại với Việt Nam kể cả khi bị cấm vận. Nên nói Việt Nam bị cấm vận mà không phát triển là không đúng",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_76144df5412f2d0c6045290a7a08393b764ff6fa403a04136c646fdc97ed57b9",
+      "text_raw": "đây là lính nó chả thế, còn đag nói sĩ quan cao cấp của Vnch cơ mà?",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_22e8f3b65146a0f4e1c229456da63bd7304dcbf6eaf9bdc9999fc89f7b0e7703",
+      "text_raw": "A seven nguyên nói ji nữa",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_9d1314cc84552ec14efa54aea3e7c6178e63b6910f718f3948cc06ef3c0f67b2",
+      "text_raw": "má chị Hồng ẵm toàn quả nhức nách :))",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_211101c5d67e4bda52872662f3752ccac62496d371eea0c09d8adba2c2027d11",
+      "text_raw": "Ông diễn viên ni giống ông nhân vật nhỉ",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_ab08b6b8d063c0c08d8519560767a0e7000eaca14779bd11ed8b13c05fb6eb42",
+      "text_raw": "nhưng ngầu hé, mạnh mẽ🤣🤣🤣",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_87b7666cc1fbb60af7fab5ffb32615756f5e564270e61d8fa74d345b8c0129d9",
+      "text_raw": "sao lại rỗng đạn hả bác chả lẽ khó đạn bị quân ta cướp hay mĩ không viện trợ kịp",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_df106f8e4db7717b83ddbb7845b87ab796fcf7a49411401189578a2a0fc2515c",
+      "text_raw": "Lính ngụy ăn no, đào tạo chính quy nó đô con.\nLính nhà mình đói ăn, còi dí còi dị, đi đánh giặc mà quần chỉ trực rớt xuống đầu gối vì quá nhỏ so với bộ quần áo.\nKhắc hoạ nhiều mảng đối lập thực sự.",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_f807f1c0a972e37ed3113447c7681b9fabf3e127ef129f3bb19b7ae179cbabd9",
+      "text_raw": "Xem phim mùa hè đỏ lửa hay hơn",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_fc04aec2d364c13fad996f816cb8682b954aa94234dcf5c2aff32cbe2aee9e1d",
+      "text_raw": "thấy rồi em 👍👍👍",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_69cf3f8a44fc72d169e34ff297efa6cfec77ea56fc2906ad57fc16ceb102c87f",
+      "text_raw": "Đã đóng vai phản diện mà còn si tình😌",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_105e69d6c81f0919fb55de4b7d73e627e19f3aae320c3fea291f0d9981977a0a",
+      "text_raw": "Tui mê cái múi của a quá 😊",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_0a7e824886bb79453192a2a06c9f4fdfcd2b6a0fb12a08b633bd97fe5165c8f7",
+      "text_raw": "Ê thật, t còn quay ra hỏi, 3 que cũng có người đẹp trai z hả",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_ac1eefed5b10d7f05a32228882f3346f02884bbfb5deace89577b717f049bcdd",
+      "text_raw": "Thêm một lần nữa quá thất vọng cho phim chủ đề kháng chiến cứu nước, lần trước là \"địa đạo\" bây giờ là mưa đỏ, cả hai lần đều ko được dẫn con gái của tôi đi xem vì còn nhỏ, mà thực sự bọn trẻ rất thích xem và tìm hiểu về cuộc kháng chiến oai hùng này của cha ông, rất mong đạo diễn hãy cố gắng làm nhiều về đề tài này và chú trọng đến các bé 🤪",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_c9fa7131de9cd90178b467033cb9aff42b982d0a3ebecdfa0790d4dec58827e3",
+      "text_raw": "Vai phản diện nhưng nhìn phát là mê nha!",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_2ca0897e564f54724a1865afcf2c57bfb49c319dc9a2da096c663b343f665964",
+      "text_raw": "Mê diễn viên và thấy thương nhân vật , sâu thẳm trong ánh mắt ấy khát khao một tình yêu, nhưng lại không thể lựa chọn số phận .",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_56d7fcdb16077813f3fd09dec6508f8042974b39d041f2376b964df2831bc3f6",
+      "text_raw": "Tui cũng mê ảnh 😂😂😂",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_8f1dd4dba5b791e0039a6cdec1b35702cf3f249054b19bf1d6a7567e524f342d",
+      "text_raw": "xấu có đẹp có, nhưng họ ko ác",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_2bb1a91940c4c95ac7b97fdfe58ea88fd922544d81196af98b2080a04fc80c0b",
+      "text_raw": "phản diện nma đẹp trai 🥰",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_771b9d84e3b74f63a3c648eb35a339291a90bdb92a72375ee228c5740e6e1167",
+      "text_raw": "xem rất cảm động đến rơi lệ...giá như không có cuộc chiến này thì hay biết mấy...người việt đánh người việt 🥲",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_4f495daa5a5727fcb6bbf31d5c59d4f7696a4ad23ba804fed576fe424ccb4512",
+      "text_raw": "Ai rủ đi xem lại vẫn mạnh dạn đi cùng nhaaa",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_012217908976a730d59140a6c6975ec60cca679590bc72db81451d7347ba6acd",
+      "text_raw": "ê nhầm nha. Bên cs đầy ông cao to đẹp trai luôn :))))",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_f81810062bf17a063225ba57d8033fb452fa7b47677273d7aa9332762d21edb6",
+      "text_raw": "sai , xem tai liệu thì lính ngụy vs bộ đội mình tạng người như nhau , mình thua size bọn lính mĩ vs đồng mình thôi",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_9e156fa73f101b9623cff631807648bd8689cf1875eb4c8b0c87ea596e541f49",
+      "text_raw": "u mê . 🤣🤣",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_86ee3f2f8726d6dc25988fc582268c057e03386dec5a575eed6011915b2733e5",
+      "text_raw": "Đúng đúng :))) cỡ này mà 3/",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_26d461d9b6c346946660670ccda4d6dde8a8f945b3d2c1769fa5c3437409301b",
+      "text_raw": "Đẹp trai, nam tính, đóng phim hay 🥰 vì mê trai đẹp mà tớ đã đi xem lại lần 2.",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_4999636655d11bf35791205ea721542f9a63c8023190e27f6dc0a9992cb1f582",
+      "text_raw": "Nội dung ko bàn . Xây dựng hình tượng nhân vật thì thua rất nhiều so với phim ngày xưa . Hồi tôi còn bé xem : nhìn thấy mặt lính ngụy thấy chúng nó tàn ác vô nhân tính đến tột cùng ấy . Xem thôi mà còn xôi hết cả máu",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_dab401ab2b9f4a30e06d0b032cf3cf5ab0b676f67b4c7f6509f657fff6435c3a",
+      "text_raw": "Từ hôm xem phim xong tới h vẫn mê ảnh nhất 😊😊",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_3a7daae94411fb11a5445c1181eea576c778c3cc970d7f0934341e8c35a5885e",
+      "text_raw": "Giỏi quá",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_13fdf2b8860876d25b50fe2312719fbeef572a165dbffe132bb76da5a8e52c5d",
+      "text_raw": "Cường dơ vl 😂😂. Cuối game cạch tay đôi k lại lụm dao đâm",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_16c3a3c50eab5e87ca917f60d61919de7632fe7cc039f74f3a1a9524d0c13dc7",
+      "text_raw": "Í là mê trai luôn đi add. 🤣🤣",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_a1a635432167d58b1f1e9fa19e1189226f69b66c7c3ce3c5f5e9a9aba20d4060",
+      "text_raw": "uk, nên trong phim có câu toàn sinh viên, phí quá, nm phải chịu thôi mà",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_c7cf0df54bba37fa4df34c2075bff46e16d2f1767a60fe6d0d6a8e1d91c8b5f8",
+      "text_raw": "Tạo hình tóc tai hơi hiện đại, ko giống như kiểu  xưa thập niên 60-70",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_d2285d5577956948bdabb878333d70e7c7e0a7d048a04056542c5cb7115a09e5",
+      "text_raw": "Trong phim kh thấy anh Thiệu 😆😆😆",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_eb8c77bc35fee96d7e1eeb1e43ede3dc63f529243e2172272249f08bcc1e81b3",
+      "text_raw": "con bé 13 tuổi nó ngồi bên cạnh t nó nói thằng đó như con trâu nước sao mấy chú bộ đội đánh lại",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_c3ebe8fdbde53343bb32a1655cb4a148194ef629f602cfc4820e68f0f343f495",
+      "text_raw": "sao không hứng nước mưa uống Hihi",
+      "split": "train",
+      "cohort": "fanpage"
+    },
+    {
+      "id": "c_7a6c462722c03df99b7939a48b257486b708f527f95a037318890c2223d2a191",
+      "text_raw": "huhu tui cũng vậy bạn ơi, ngày nào cũng đeo airport để nghe bản giao hưởng này ta nói nó pheeee😭",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_bd3f387dd8bdc807f411414edd2f23fb65425b1fe1608c2f4d3823f3928f2e57",
+      "text_raw": "Mình đặc biệt thích bản giao hưởng trong phim, nghe thôi có thể khóc",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_7049f651aa7d806ece46c93f18acf8272f38f1b6b3e65fde0503618c7d9416c6",
+      "text_raw": "Mình cũng vậy, bố mình đi xem cùng mà về phải bảo là khán giả hôm nay toàn người văn minh, rạp chỉ có tiếng cảm thán nhẹ hoặc là cười những câu thoại hài thôi",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_0fa5e9e020c8915156cc47c25586a1b155f3a8405a2331daa1da8fde2f0fb8cc",
+      "text_raw": "Phận anh trả nợ nước, rứa là xong. Chỉ thương em....(⁠༎ຶ⁠ ⁠෴⁠ ⁠༎ຶ⁠) \nNgày thắng lợi, nếu còn nghĩ đến anh, em cứ đi tàu vô Quảng Trị, xuôi sông Thạch Hãn, em tìm đến thôn An Hoà. Người ta vớt anh lên, trôn ở đó...",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_dbf02599d621190249c37e918aaa9bfbd3d05144a390b0c92c84f7b266ceff1f",
+      "text_raw": "mình bổ sung \"Đóng giúp... Đảng phí tháng này\"\nLúc ấy vừa khóc, mình vừa hiểu vì sao tầng lớp nông dân và công nhân là lực lượng nòng cốt của Cách mạng. Họ là những người hiểu rõ nhất mục tiêu của Đảng, vì sao phải làm Cách mạng.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_8e3e4df09e79835b60b3a3fb751f249f265e9e40e42a3d491c2f4aed93ff7e47",
+      "text_raw": "\"Em đói, em sợ chiều không có sức mà đánh í\"",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_caddfcf15a2ae88c484b268de018e50151eea35554e9496e57a2b3a9af2fa80b",
+      "text_raw": "\"Tau là Tạ, gần ba chục, quê Thanh Hoá, nông dân trăm phần trăm, văn hoá lớp bảy, một vợ một con\"\n\"Tôi là Sen, hai tư tuổi, ông già hy sinh thời kháng Pháp, nhà còn mẹ và em gái, là lính đặc công trinh sát\"\n\"Em là Hải, quê ở Quảng Nam, trước theo ông già đi lắp điện sửa điện cho người ta\"\n\"Em tên Bình, quê gốc Sài Gòn nhưng theo bố mẹ tập kết ra Bắc, đang theo học Đại học Mỹ thuật Hà Nội\"\n\"Em là Cường, sinh viên năm ba nhạc viện, quê gốc Hà Nội, em có học qua Vịnh Xuân và Nhu đạo\"\n\"Em là Tú, bố mẹ cũng là cán bộ tập kết, em...sắp tốt nghiệp cấp ba\"\n\"Em là Tấn, sinh viên, cũng có được huấn luyện qua qua, có gì các anh cứ bảo em thêm\"\n\"Nhưng mà con hứa, hết chiến tranh con sẽ trở lại nhạc viện\"\n\"Hoà Bình, Hoà Bình, theo anh về quê nha\"\n\"Tuổi em nhỏ, nhưng gan đánh giặc của em không nhỏ, phải không anh?\"\n\"Anh em ở lại....bảo ban nhau nhá\"\n\"Phận anh trả nợ nước rứa là xong, chỉ thương em...Mai sau nếu có người thật lòng yêu thương em, thì em cứ gắn bó với người ta\"\n\"Đẹp thật, đẹp như thánh nữ trên sông vậy\"\n\"Đến bây giờ tụi này vẫn còn tiếc cái mạng sống, là vì chưa biết nắm tay ai, chưa biết nụ hôn đầu, đâu có như ai kia được người ta nâng ch*m cho đ*i\"\n\"Sống chết còn chưa biết, chim cò gì? Thả đi!\"\n\"Đừng bỏ cuộc, đừng nản lòng, chúng ta sẽ giành chiến thắng!\"\n\"O cho tôi giữ chiếc khăn đến hết chiến dịch nhá?\"\n\"Em đói...em sợ chiều không có sức mà đánh ý\"\n\"Mỗi chiến sĩ của chúng ta phải hứng chịu 100 trái bom, 200 trái pháo, với mật độ khốc liệt nhất trong lịch sử chiến tranh của nhân loại\"\n\"Ngày hoà bình, em cùng anh ra Bắc thăm mẹ nhé?\"\n\"Nếu không phải chiến tranh loạn lạc, có lẽ tao và mày cũng có thể là những thằng bạn chơi được đó\"\n\"Mình ơi!\"\n\"Chào các anh em, chúng tôi đi nhá\"",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_092285c01ec8128dcc99d724da3dc8184200420f000e23f9f2717f7ecb86a101",
+      "text_raw": "Lần đầu tiên có bộ phim mà check doanh thu mỗi ngày là một niềm vui 🥺 Các diễn viên đều đáng iu nữa 🥺",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_4792ebe41813db0f2ca0e4914cc14dfb080827c6210eeb9e9e23d9f98c97a93a",
+      "text_raw": "Khi xem phim lần đầu hoặc sau này đọc tiểu thuyết, mình vẫn coi Cường là một nhân vật lý tưởng, thể hiện cho ý muốn của khán giả, đại diện cho lý tưởng và chính nghĩa nên hội tụ đủ tinh hoa. Ảnh là người mà khiến cả một kẻ bên địch là Quang (cả trong phim lẫn truyện) bị thu hút và ám ảnh mà.\nHơi khó để đồng cảm nhưng không thể phủ nhận là Hoàng có cách lý giải và thể hiện Cường quá hay.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_0b1b52ced252551bafb425b747fcd2b82fe3ec59a4c98685e1930a768ca66217",
+      "text_raw": "Trong phim thì mình nhớ nhất cảnh sen đc bới lên từ đống đất, cái đôi mắt mở to sợ hãi đó cứ bị ám ảnh \nCòn ngoài đời thì tui đu otp Huy Hoàng 🥴😍",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_d137572bb1d5ffb0aef314ce0bd6135678fbd6c2ab92890b65dbf559fbfb4c62",
+      "text_raw": "Mình tiếc đoạn Hải bị tratan vì mình cứ nghĩ Hải sẽ hô thật to \"K3 Tam Sơn còn thành cổ còn\" nhưng mà chắc do K3 Tam Sơn là tên của đội nên k được hô chăng?",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_b1375becad657509f38b8f08e1951dd26e5bb797fa9cd86c2eced9c5d2614b3b",
+      "text_raw": "đm dạo nè nhiều nick acc clone lẫn báo chí dìm Mưa đỏ quá làm đủ trò . Đúng kiểu của thằng lệ tổ rui đẩy bài book bài thuê người nói xấu MĐ",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_72f11afbc17d25c921cd6857b053129ca57b5c93f4a804ae6dee1b98715dbb26",
+      "text_raw": "Mình thích nhân vật Sen. Hoàng Long diễn ra cái vẻ thâm trầm nhiều tâm sự của Sen nhé. Sen nhiều tâm sự mà không thể nói huỵch toẹt ra như các anh em khác, mang gánh nặng là trụ cột của đội cùng với anh Tạ. Tạ lo cho anh em từng li từng tí còn mục tiêu của Sen có vẻ \"thực dụng\" hơn: Chỉ cần các thành viên trong đội còn sống. Ấn tượng với đoạn Sen sắp mất vẫn cố với tay tới chỗ  Hải. Hải là ngọn lửa soi đường cho các đồng đội của mình.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_3b679a53284d767bf849e14265764ee266a0252bb3e1168c5bc295b7772bdbca",
+      "text_raw": "“Nhưng mà con hứa, hết chiến tranh, con sẽ trở lại Nhạc Viện.”\n“Anh đi rồi anh sẽ về với em. Nhưng mà nếu anh không về, em đưa cho mẹ hộ anh nhé. Anh yêu em.”\nXem phim năm lần, đọc tiểu thuyết một lần nhưng lần nào tua đến phân đoạn này tim mình cũng như bị ai đó bóp nghẹt lại.\nCường đã tự viết ra cho mình một kịch bản có từ NẾU. Anh có thể lựa chọn không đi, có thể ở lại với người mình yêu, ra Bắc và trở về vòng tay của mẹ. Tác giả hoàn toàn có thể nhẹ tay viết cái kết có hậu cho nhân vật có hào quang nam chính.  Nhưng ai đó đã từng nói rằng “Nhà văn phải là người thư kí trung thành của thời đại” và sự hi sinh của Cường mới chính là hiện thực của thời chiến bấy giờ.  \nCảnh Hồng ôm chặt ba lô của Cường giữa cơn mưa thật sự là một nhát dao cứa vào tim người xem. Không còn bàn tay để nắm, không còn bờ vai để tựa, thứ duy nhất còn lại chỉ là chiếc ba lô thấm đẫm kỷ niệm – nơi gửi gắm hình bóng của người đã đi xa.\nTình yêu của họ, giản dị mà mãnh liệt, đã bị chiến tranh cướp đi một cách tàn nhẫn. Giữa tiếng mưa rơi dồn dập, bóng dáng Hồng nhỏ bé, run rẩy mà kiên cường. Cái ôm ấy không chỉ dành cho ba lô, mà là ôm lấy quá khứ, ôm lấy tất cả những gì từng là hy vọng và hạnh phúc.\nCó lẽ tình yêu đẹp nhất không nằm ở những lời hẹn ước xa hoa, mà chính là sự gắn bó đến phút cuối, ngay cả khi một người đã rời bỏ thế gian, người còn lại vẫn không buông.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_bd7369d25013b15850d028c8848ffcfc448382cd2823abf2dea3d0524540bc81",
+      "text_raw": "đm còn thuê cả mấy lão ko biết có phải CCB Quảng Trị ko chê phim , rui mấy con mụ báo chí và luật sư đi chê bôi phim để bênh cho drpn leto",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_3f132605fa8b3f9f6123ade15c6f9e6d2035029eda49a0d549b6c8af7bcbae14",
+      "text_raw": "\"Gánh một anh họa xỉ, một anh nhạc xỉ...\"\nHồi đại học mình có thằng trưởng nhóm làm bài tập lớn người Thanh Hóa, đến khi anh Tạ nói cái câu này thì cười lăn cười bò vì giọng y chang khứa đó =))))))",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_4dccc58e7355343856a8cb969b6a264f9cebc1c63bf013528b332e3dfda67b31",
+      "text_raw": "Với lại câu cuối là \"thà chết chớ lui\" nhe thím =))",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_726e3f1f16b76fa804d1e9133f0c8efcdaa97f9a194519699f850efb2c32203e",
+      "text_raw": "Anh nào chết là khóc anh đó 😇",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_3d12ead2aa295eca773533169ed5905698aa934787c6b06c9d734365d3562630",
+      "text_raw": "“Phần anh trả nợ nước nữa là xong, chỉ thương em…” khóc tàn canh má ơi",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_6e9a3639ae76f8d9ec31b48d8d3b43dc62b7b7040f8d3cef47646db2a505530a",
+      "text_raw": "Mình thích mọi thứ thuộc về Mưa Đỏ, mình yêu tiểu đội 1 rất nhiều, yêu O Hồng và cả những anh em trong đội quân khác nữa. \nMỗi lần thấy câu “Máu xương đổ xuống, đất trời lưu danh” mà không kiềm nổi xúc động, biết bao thế hệ đã ngã xuống để cho đất nước có ngày hoà bình như hôm nay. Biết ơn và trân trọng.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_42b054784d89df771cdd006442a57f16a62e0477f402beae2f8d11e1fe170f68",
+      "text_raw": "Lần đầu đi xem mình có đi cùng em mình, bọn mình cũng là những người hiếm hoi trong phòng khóc từ khi bản giao hưởng cất lên. Bạn bè thấy khó tin vì mở đầu chưa có sự kiện gì để kích thích tinh thần đến mức đó cả, chưa chứng kiến ai hi sinh, nhưng lúc đó bọn mình đã khóc thật đấy. Mình bảo em mình là phải chăng người theo nghệ thuật thì nhạy cảm hơn, dễ khóc, sau lên mạng mới biết cũng có những người như vậy.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_b582f13c5099bf5b7b7324e961a7b0877ea80ece462fd2ff6c908ca56dc5890a",
+      "text_raw": "Xem xog chỉ biết thốt lên VN mình quá nhiều đề tài để khai thác từ lịch sử và văn hóa, chẳng phải đi đâu xa mua kb r remake làm gì ✌",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_2425c15519977088f4b6221683f89a4ce83f3dfa4e8352e9af792aa9139fa7c1",
+      "text_raw": "phim hay và ng ngồi cạnh cũng hay",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_c855cf266553f642f9c016c6bf0720ee158d8d1581e230608a4ad4bac1c22ddc",
+      "text_raw": "Xem Mưa Đỏ 5 lần nhưng đắm chìm trong hiệu ứng truyền thông phải đến 50 nghìn lần. Từ review phim, phân tích nhân vật, nêu bật lịch sử, luận bàn ý nghĩa đến những câu chuyện về công tác quay phim, hành trình của các diễn viên. Quá là đong đầy cảm xúc mà chắc trong đời chỉ một lần trải này thôi.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_d0ec0875c56ef5fe15a861a75f57df88024d2a5c79ad1a178ac84cd161542f7c",
+      "text_raw": "luỵ phim vào đây luỵ tiếp nè chị ơi",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_88ccdb7e879009421ad2517bda3d1a71270e1abcbc75c4035d7ea407e78b5344",
+      "text_raw": "cái chính là dàn diễn viên đều rất cống hiến và có nét duyên riêng é nên mn lưu luyến cũng phải",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_2bae921b2a7fb686208eb380658d185bd3bf1324fed9b3da9072d111f8df67ad",
+      "text_raw": "Đúng rồi, xem xong đầu cứ vang lên bài này thôi, còn coi lại MV lần nào cũng muốn khóc, nhớ K3 Tam Sơn quá 🥺",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_c24a3f59770812fd476d7664f04dc070100d4e5fa00fd9c66526cf2c3388170f",
+      "text_raw": "Xem 3 lần, lần sau khóc nhiều hơn lần trước vì cảm thấy sao mà nước mình khổ, sao mà nhiều đau thương, máu xương như thế. Đi xem phim về nghe câu hát cuối bài Nhà tôi có treo một lá cờ lần nào cũng tự động chảy nước mắt “Việt Nam có một lá cờ, để biết chúng ta tự do - Dù ai xuôi ngược chốn nào, nhìn lên sẽ thấy tự hào 🇻🇳🕊️”",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_cccd71b474b890c4b2a06a49c744d1e3b5fae524bf3167a818ed6c5e1703e1fc",
+      "text_raw": "tui ấn tượng Ông Quang ôm mẹ và o Hồng hát ôm đứa bé🥺\ntui có cảm giác ổng rất thương phụ nữ",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_2efbb017bbafd3d72859d81fd6035e2b8e7bae899233428f77c67bf236d98bea",
+      "text_raw": "\"Hòa Bình, Hòa Bình, hết chiến dịch về quê với anh nhé\" câu của Tú nói với con chim nhỏ ở cảnh anh Tạ viết thư",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_0f2f88499215157f836521d2473d721d5697291c8071f662e1b0730eaba028ef",
+      "text_raw": "k ai ngờ là tự dưng luỵ phim luỵ diễn viên nội địa",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_d0f59cc5c6ebd686ecd804566bcb69f2f5ea6459a202fb9407f77404e6ba5040",
+      "text_raw": "Mùi cỏ cháy ko khóc nhg mưa đỏ khóc quá trời mỗi 1ng mất mk lại khóc cả rạp khóc luôn mk đi xem 1mk ngồi kế bên đôi tình nhân họ thấy mk khóc cho mk 1tờ khăn giấy ướt rồi mk cảm ơn rồi khóc nữa",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_52237562f6f1700efd5687b754d066bd18246511995889ed90bb7b586f57f208",
+      "text_raw": "?",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_f5b61c6b18e7f492fdc533b0f8d106d012a3cd1eeb8963748d535ad3d9512e8e",
+      "text_raw": "đoạn Mùi Hẻ Cháy gào lên “ĐỪNG NẢN LÒNG ĐỪNG BỎ CUỘC CHÚNG TA SẼ GIÀNH CHIẾN THẮNG” nó rợn cả người nổi da gà luôn á \nvà đoạn “Thư trung uý, và chiến tranh cũng không phải chỗ dành cho sự si mê đàn bà. Nhất là con đàn bà ở phía bên kia” ta nói đoạn này giọng Lê Minh Thuấn đúng hợp, nhấn nhá như giọng hồi xưa nghe đúng hay ấn tượng mãi\nvà chưa bao giờ thấy 1 bộ phim mà nguyên dàn cast ai cũng được yêu quý từ chính diện, phản diện và những nhân vật phụ như vậy. Ai ai cũng dễ thương chiều fan mến khán giả và bộ phim thành công nhiều gương mặt ít nổi nhiều người biết và yêu mến hơn, đúng là do các cụ và nhà nước chọn thì không sai. Mãi iu Mưa Đỏ, mãi vẫn luỵ phim và luỵ dàn cast, lúc còn phim thì mọi người tương tác nhiều giờ phim rời rạp dàn cast ít tương tác hơn cũng buồn 😭",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_8c67a1cf96b7cc018f68e9d0904e85cb9929bb08f32a03443db48f212b3013ba",
+      "text_raw": "nghe nghiêm khắc, lạnh lùng vậy thôi chứ thương các em lắm. Đầu phim Sen đúng chiến luôn mà anh mạnh quá nên đến nửa phim bị biên kịch khắc chế. Nếu không thì đúng kiểu \"phát một, hết cơ hội thích Hồng luôn\". 🤣🤣🤣",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_5efc6aadd0b8ae6391db15ef5f94aaf4cca3d4e01b2290b918761a18abb59ea1",
+      "text_raw": "kìm nén cả phim, đoạn cuối nhìn chiếc khăn hình chữ S, mình oà khóc giữa rạp phim 🙁",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_f688c0da968008e4abf5eeee517dd1fea2366f119f49c8d886995c63202f8a45",
+      "text_raw": "Ông admin cứ như có thù vs tôi ấy, cũng đăng bài mà mãi chưa thấy duyệt 🥹",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_9d997f96ba473605c5cd04241ef40b12c8469c54ae74dc839dc6d884352d254b",
+      "text_raw": "Vừa mới vào cảnh ga tàu là e đã rưng rưng ròi í🥹 mà ráng không khóc, tới lúc anh Tạ là bùng nổ cảm xúc luôn ạ😭",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_667750009d27d9d0cc7a47ca0fe4d8324edec088ccaf70ed8971183bf933c029",
+      "text_raw": "Khoảnh khắc Tạ tha chết cho tên lính Nguỵ sau khi bức ảnh vợ con hắn rơi ra.\nKhoảnh khắc Cường tha chết cho Quang.\nNhững khoảnh khắc ấy, họ hoàn toàn có thể kết liễu đối phương nhưng anh Tạ, Cường họ vẫn có sự nhân từ của người Chiến sĩ Cộng Sản. Họ vẫn mong đối phương quay đầu, đất nước thành một dải",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_c02bc1fb02a995eb06ce283dd139c9109b31ce59a99ca974070a56c803f3661b",
+      "text_raw": "ngay từ đoạn đầu chưa qua sông anh Sen đã cầm súng sẵn sàng đứng trước các em và thoại \"Biết chắc có ngày về?\" thế rồi làm gì anh cũng chỉ dẫn bao bọc cho các em, từ việc lao xuống sông vớt các em lên, bảo các em dùng tay mà chèo cho nhanh, cho đến tư thế phòng vệ và vận động chiến đấu cực tinh nhuệ của anh khi đáp sang bờ bên kia là đủ biết ở tuổi 24 còn rất trẻ đó nhưng quãng đời trước của anh đã trải quá nhiều. Anh nghiêm túc, đôi khi khó ở, nghiêm túc kiểu một người mà toàn thân từ máu và mồ hôi đều thuộc về nhà binh. Sang sông rồi anh cũng giơ tay ngang mày chào các chiến sĩ đã hi sinh trên sông thật đẹp. Sen luôn sợ rằng anh là đặc công, là người kinh nghiệm như thế mà k bảo vệ được đồng đội, vào trận tả xung hữu đột mà vẫn nhanh nhẹn cứu các em. Mồm thì mắng các em chê các em vụ nuôi chim rồi khắc chữ, nhưng thực ra là tâm sự của một người đàn ông quá nội tâm quá nhiều trách nhiệm. Và kết cục là bi kịch khi anh hoá điên. Vai này thực sự là ở bản tiểu thuyết hay bản phim thì cũng là nhân vật được viết hay nhất, khó nhất",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_086c5047b1ba62452d061b428973513856f2ccf44bb6c82ea8df0bb3669006ed",
+      "text_raw": "Mình thì nhớ mãi video mà 1 rạp chiếu phim chiếu lên màn hình lá cờ tổ quốc và phát Quốc ca - sau đó thì cả rạp cùng đứng lên và hòa tiếng hát. Mặc dù không phải là cảnh trong phim nhưng mình ấn tượng mãi tới giờ luôn ❤",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_963a49365595f4f698d39fd4b1a89ee5c3c413a02bf29b6fda8763f068ec0149",
+      "text_raw": "riêng em thấy dàn diễn viên phim đẹp vl, đ ai cũng đẹp, k phải là xem diễn r mới thấy đẹp mà là cái đẹp thị giác đánh ngay vào lúc mới nhìn họ trong phim, đã vậy cả dàn k ai diễn thọt hết, dù có những người truyền hình thì thừa kinh nghiệm nhưng chưa từng đóng điện ảnh và cũng có người tay ngang mới toanh quốc nội tự dưng thơm vãi",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_e4e63fdf20eaeaa34376025be918d6f23edeec090568541788541fb1d3e2a657",
+      "text_raw": "tôi xem phim tôi ko khóc đâu, vì thú thực tôi tìm hiểu lịch sử nhiều và cũng xem nhiều Phil tư liệu nên ít nhiều cũng “chai” rồi ấy. Mà giờ đọc lại những gì bạn ghi chú là tôi lại khóc đấy 🙁",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_7c9850be424ba9f97015e457ba9f12672620c77296b91dafd4042833dbb9f4a2",
+      "text_raw": "Lúc đi xem ngồi bên cạnh mị là 2 bạn trẻ và 1 cụ ông, phim chiếu được vài phút thì bạn gái quay sang hỏi \"ngoại ơi, ngoại nhìn rõ không, nghe rõ ko?\". Tới lúc phim chiếu xong, hầu như cả rạp ai cũng ngồi lặng lại, tới tận khi chiếu hết phần thông tin đoàn phim mn mới ra về. Và mị khóc như choá, về nghe nhạc phim hay bản giao hưởng thôi cũng rưng rưng 🥲",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_ba9a7cf87949b421a90bf12e67e8b04463c71b478ea5a3a1411aaf586073277c",
+      "text_raw": "“Em và con thương nhớ\nAnh sắp đi đây, bữa ni chắc anh sẽ đi xa mãi mãi….”",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_468d08b10cf06c832d804d809041943881aa38be34c80aaafd5974c3a1142202",
+      "text_raw": "đúng nha, lần đầu xem chưa hiểu gì nghe bản giao hưởng nổi lên đã muốn khóc.\nToàn bộ bộ phim là một bản giao hưởng. Tất cả các chiến sĩ (trừ Tấn) đã hi sinh ngay tại thời điểm mở đầu phim, vì phim k được kể theo thời gian thực mà kể bằng linh hồn của Cường, hoá thân bằng bản giao hưởng. Cường hứa trở về nhạc viện, cuối cùng chỉ có âm nhạc của anh trở về, và linh hồn anh hoá thành nốt nhạc, kể lại câu chuyện về những người chiến sĩ đã \"ra đi không tiếc đời mình\"",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_a72e1db2300b68e86c207eaf4f4036443e09b9356d1a65b45a9711a2078e1141",
+      "text_raw": "xem đi xem lại bao nhiêu lần, bao nhiêu câu thoại xúc động, chạm đến trái tim thì cảnh quay t yêu thích nhất, ngay lần đầu xem t bị ấn tượng luôn và xem lại nhiều lần cũng vì cảnh này, nó hào hùng mà nó điện ảnh mà nó thể hiện cho tinh thần còn sống là còn cống hiến, t thề là t hong quên được bóng lưng này😭thêm vài ba câu thoại ‘Má ơi’, ‘Mẹ ơi’, ‘Nhưng mà con hứa, hết chiến tranh con sẽ trở lại nhạc viện’. Thêm cái nhạc giao hưởng nữa, t thích nhất nhạc giao hưởng của phimmm🥰😚",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_93080b16781c358c0f4e461ef677f29ca902f5659058ddc45c9c3fec4b94dbc5",
+      "text_raw": "Mình đã đi xem phim này với một bác cựu binh Mỹ",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_5e8d95f06fd0a29dd153cdb4697b5eacff2178d53991caf0e64f4c8291a994f6",
+      "text_raw": "M đi xem 5 lần, từ lần 2 trở đi ngay cảnh mn tiễn các chiến sĩ lên tàu mình đã khóc, bởi vì đã biết trước kết cục nhưng con người ấy chẳng thể trở về .....",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_b038d65bbab3d1a75a3228806dc054bff1bdf66993f115f32e644fabd8fe8a64",
+      "text_raw": "từ giờ tới 22/12, mình chưa biết bước đi tiếp theo, phim hãy còn nóng hổi dù có bao nhiêu fancam vô ý thức rồi.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_a86b6474b470ae1efdffe21858b3d157817da88162771e78c0685a60a81b2ed3",
+      "text_raw": "Khán giả xem phim xong kiểu: \"Xem phim đâu biết anh tên Thái đâu, toàn kêu thằng 🐶 không hà'. Bảo sao diễn viên lo không biết cuộc đời sẽ đi về đâu luôn. 🤣🤣🤣",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_893ce9032a2d47a060e61c314c5458930316753be2bb794580cd2b740bd0be64",
+      "text_raw": "hình như Cường là người nhảy xuống cứu Hải đầu tiên chứ nhở, tui nhớ là vậy. Anh Sen sau khi cho thuyền chèo vào bờ thành công là nhảy xuống phụ 2 anh em liền",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_bac65fb3228cb3ba972dbfbc12f91878b2980752f1ffa645288f014be4dbb0a4",
+      "text_raw": "má cái bản giao hưởng này nó epic đến mức khi xem lần đầu tôi đã chết lặng vì cảm thấy nghẹn ngào k rõ lý do",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_44136f1593348c54850c92d9d747c083c9d10a0256e158d13b6e3246620f0d52",
+      "text_raw": "À, nói về Cường thì mình còn ấn tượng khoảnh khắc Cường tha chết cho Quang. Đoạn đó nhìn ánh mắt của ảnh là mình hiểu tại sao Quang lại bị Cường ám ảnh, ánh mắt Cường lại lẩn khuất, chui vào trong tâm trí Quang đến thế.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_5c3557cef4aaef0cd3cca754b5fd248884ce08738ddfa1f9114ea779ea7e8a7b",
+      "text_raw": "\"Làm cái mẹ gì mà đánh mãi không thắng nổi mấy thằng nông dân thế?\"=))))",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_e3436595e9af05595e0b7b95390ca66089c1a1ef634502635fc2d48110aa7553",
+      "text_raw": "biểu cảm khổ sở khó chịu lúc Bình hớn hở khắc tên cho anh Tạ là biểu hiện thương đồng đội quá, vì nó bi kịch. Hoạ sĩ mà phải khắc cái miếng nhôm báo tử, nông dân thì k được cày cấy mà phải ra trận. Anh Sen là bị gánh nặng bản thân là đặc công, huấn luyện chuyên nghiệp nên kiểu cứ vơ hết về mình cái khổ, thấy đồng đội toàn những người k phải là lính từ trước phải ra trận nên kiểu biểu cảm bị tuyệt vọng ấy",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_167c3e21f36563e254d275885ff0acf6f86e8a32c7c01d95d0f14512ddadc06d",
+      "text_raw": "anh Cường ở tiểu thuyết là nhân vật phải nói là tinh hoa hội tụ, phim giảm bớt rồi. Có lẽ vì tinh hoa hội tụ nên khán giả hơi khó để nhập tâm vào tâm lý của anh. Nhưng bản thân Cường lại có những phân đoạn diễn sởn cả da gà, mà một trong những đoạn ấy là bất lực nhưng phải nén niềm riêng nằm dưới hào, không thể lên cứu Hải, vì lên là lộ vị trí và có thể thương vong nhiều người. Hai là đoạn khi không thể cứu được Bình. Cường nói \"Thôi, tôi không muốn mất thêm một ai nữa\", cuối cùng lại chỉ có thể ôm Bình hy sinh trước mặt. Vừa bất lực vừa đau khổ khi nhìn thấy kẹp tóc minh chứng cho mối tình câm của bạn, và thấy bức tranh vẽ tiểu đội, Cường đã gào thét và lần đó là lần duy nhất ta không thấy Cường lý trí nữa. Nói chung là Đỗ Nhật Hoàng diễn tinh tế ý",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_b87d719d1b76a09f4dfce35c83a2715dce13c1f10cd6cfe5346fce3dec1d8c38",
+      "text_raw": "Phim này vẫn còn có sức trụ rạp nhưng nhà sản xuất muốn rời rạp sớm thì phải. Xem thống kê những suất chiếu cuối tỉ lệ bán vé vẫn ok hơn khối phim mới ra mắt. \nNếu trụ rạp lâu hơn (cỡ 15-20 ngày nữa) có khi chinh phục đc mốc 750 hoặc hơn đấy",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_f80da556276ac482c5b0d1232a12a78b28f29b0455cca9d0ed7fbc7b55dc0d4a",
+      "text_raw": "hint trước là mn đều deadflag hết vì lời bài hát là \nĐoàn Vệ quốc quân một lần ra đi\nNào có mong chi đâu ngày trở về\nRa đi ra đi bảo tồn sông núi\nRa đi ra đi thà chết chưa lui\"",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_13d4a2536ff0f24b85de0cf8d593f192e0944f81ba8b47b6ac8f302e5e7acbf7",
+      "text_raw": "lần đầu xem phim mình cũng tưởng Hải sẽ nói thế mà ko có. Thật ra câu này là của cụ Nguyễn Văn Trỗi, ko thêm vào là hợp lý rồi",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_563d5c6719b2bf8dcde6749032e0d636df74f30ba051987066395064354bf969",
+      "text_raw": "Mưa đỏ mang đến không chỉ một bộ phim mà là cả một hành trình trọn vẹn, đồng hành với từng suất chiếu, từng câu chuyện của diễn viên, ekip.. Điều đặc biệt là nó rất tự nhiên chứ không hề có kịch bản truyền thông nào, mà đúng thật vì làm gì có kịch bản nào tạo ra được hiệu ứng như vậy",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_c4eb5cfaeefc65c9cacea5f3fe0dcfd216dcaac2d4b4cd6876cf2025733d1213",
+      "text_raw": "Yêu tất cả mọi thứ thuộc về Mưa Đỏ ạ❤",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_25a235192fb242cdd132e2c87da15e99467bdac496620961061cb39297b8ae90",
+      "text_raw": "\"Mình ơi\"",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_23bd3b839700c190cd7d13083cdcb493bd1c7866db65c1042b012dff97be2d70",
+      "text_raw": "Xem 2 lần rồi, nhưng vẫn muốn xem nữa, mong đến khi chiếu rạp xong được chiếu sớm trên tivi",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_4d52a008d28317b72066f4b6f171f9ba4cb40b0d0b97a4989e3142529507a2fb",
+      "text_raw": "Trước giờ rất lười ra rạp xem phim nhưng MƯA ĐỎ là ngoại lệ. Đã đi xem 5 lần",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_d8d12e31bd02634d7f3153b2b87c55e16c7586943616258f884ca7dac2f5449a",
+      "text_raw": "khi nào kiếm đủ 1000 tỷ hãy dừng chiếu",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_c93006c39dc299737808d830ed344fc33a66ce1008c51017a97fbd736a73d570",
+      "text_raw": "quả này tên tuổi thành cry nát 😂, dám xét lại lịch sử cơ, mà ai, ai lại bênh vực gã, ngoài fan trung thành và giới gừng sĩ ké fame. Được đà này khéo lại thấy thêm anti thành cry trong cộng đồng, người ta đâu thể làm con bòa trong chuồng cry mãi.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_4fb5e4603ce106ce57bcb11926a15334bc8575530e51591e4de2fc0b087311bd",
+      "text_raw": "ban đầu Hải có tự nói vào bộ đàm tên, tiểu đội 1, K3 Tam Sơn luôn í",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_0312f5ae182c0b59111bbd0403d8aa330f01dc6dd612b11adb990196db7c74f8",
+      "text_raw": "nếu để ý thì khi diễn biến trong phim có biến đổi, phim chọn ánh mắt của ba nhân vật, một là Cường - trung tâm, Sen - để khắc hoạ đôi mắt nhìn sâu vào chiến tranh đầy bi kịch, và Bình - con mắt người hoạ sĩ nhìn chiến tranh, và cái cách Bình nhìn chiến tranh cũng gần gũi với cách ta nhìn chiến tranh. Bình thấy pháo sáng thật đẹp như thánh nữ trên sông, y hệt chúng ta hậu thế không hiểu gì về chiến trận, rồi ánh mắt run rẩy của Bình khi lần đầu ra trận, rồi cuối cùng mới phẫn nộ xả cả băng đạn lên trời, hoàn toàn đồng nhất với tâm lý của chính khán giả trẻ. Bản thân anh Lâm Thanh Nhã có đôi mắt ưu tư và thuộc về nghệ thuật nên chắc chắn là diễn viên phù hợp nhất để đóng vai này",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_c9fb8f4a0480a709abfe70fa81108294cccd6edc36b4b04f7418b3293c607183",
+      "text_raw": "ngại thí :)))",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_1fb66c6f6b46a7c6423de65c4c04573c2d7e7265ed5592c8307e1ee1e9c288ba",
+      "text_raw": "đây cũng là người được xem là tiểu đội phó bên cạnh tiểu đội trưởng Tạ, mỗi khi k thấy thành viên đâu, anh sẽ nhắc \"Thằng Hải thằng Cường đi đâu sao không thấy, Tú, đi tìm hai thằng đi\"\nAnh Tạ là gà mẹ, có tính chất của người mẹ, thì anh Sen giống một ông bố nghiêm khắc, có thể vặc lại các em \"Hết cái để hỏi à?\"",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_7150750b496b5199774a77ebb2b472c621381c7ed647bce3ab2cc407334676b9",
+      "text_raw": "Đoạn đọc thư anh Tạ và câu nói cuối của Hải 😭Đừng nản lòng, đừng bỏ cuộc, chúng ra sẽ giành chiến thắng 🔥",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_f7238b10f856898f24cec223c002ea72f89e3060e9082807f84af193038d9c02",
+      "text_raw": "xem mà cứ nghĩ trong phim đã giảm tải khá nhiều độ tàn khốc so với thực tế, thực tế thì nó phải liên tục như 10’ cuối phim cả máy bay rải bom lẫn tăng lẫn súng nã vào mới thấy đúng như đứt từng khúc ruột 🥹",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_b5b3fd8b85ec1e88fa37f995944b2e315add6df0f749b5fd2d4fb9ab93792fef",
+      "text_raw": "Lúc Sen vừa solo với 6 7 tên địch xong thì qua cứu Bình, Bình và Tú thấy tên địch bị Sen hạ gục liền vồ tới đánh hắn túi bụi. Sen thì chạy tới can 2 người em \"rút đi, bom súng bắn chết bỏ m* bây giờ\". Đoạn này tui xem mà thấy Sen kiểu vừa chiến đấu tinh nhuệ nhưng vẫn rất biết quan sát xung quanh và bảo vệ anh em í. Nếu như anh Tạ quan tâm các em bằng lời nói và để ý cảm xúc và trạng thái của các em, thì tui thấy Sen ít nói nhưng lại để ý tới sự an toàn của các em.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_0c7099f32617ae32283fc4d1b99231c110ea3f6d775bd76e2d2e6a5be9c4ea9e",
+      "text_raw": "Bóng lưng của người chiến sĩ trở về đơn vị để sát cánh cùng anh em dù trước đó đã được cho phép trở về Bắc, bản giao hưởng Mưa đỏ cùng lúc đó vang lên, chỉ vậy thôi cũng đủ để rơi nước mắt rồi. Hòa bình hôm nay là món quà được đánh đổi bằng máu xương, bằng những bước chân đi không trở lại như thế. Nghĩ đến mà thương các ông các bác ngày xưa vô cùng :(((",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_e0bddd7a6609e1fb518273774b097ba28e0811bbc395efdcf53a442a0e3275ae",
+      "text_raw": "Anh Thành là cấp tá bạn nhé",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_c215563713638ef1194784c98018c56770191daf03939d5ade962909bef87724",
+      "text_raw": "Đoạn bạn bảo đánh túi bụi mình nhớ là Hải và Tú lao vào đánh ấy (Hải bị Hoàng đánh quăng vào hàng rào kẽm gai). Cường là người lao tới lôi 2 thằng em né đạn. Còn Sen là người cứu Bình đúng roài á.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_eb9c2ac064d8be0bf31c79ea712602f5dc1884579b5f8736814c418574be33d4",
+      "text_raw": "chị vẫn ấn tượng cái đoạn lia máy đến từng mặt chiến sĩ lúc Hẻ bị đốt ấy moá điện ảnh zl thật mặt khứa nào khứa nấy nét căng",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_79ba72dbbd2c2cd516aa2fc572b3d35a521669f48d7d9eb5226d78873d25d602",
+      "text_raw": "\"Nhưng mà con hứa, hết chiến tranh, con sẽ quay trở lại nhạc viện\"\nCó nhiều người nghĩ rằng Cường đã không giữ lời hứa với mẹ. Nhưng cá nhân, theo góc nhìn của bản thân mình, Cường đã giữ trọn lời hứa ấy của mình. Anh thật sự đã quay về nhạc viện, chỉ là anh không quay về bằng một thân mình bằng xương bằng thịt, mà anh đã hòa linh hồn và máu thịt mình vào từng nốt nhạc trong bản giao hưởng hùng ca bất diệt và vĩnh cửu còn vang mãi trong trái tim của mỗi người, trong đó có mẹ anh, có vợ anh, có những người ở lại và nhịp đập con tim trong hàng triệu khán giả.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_74657eb133daf9d5bf58785adbaca239ffd0912d3a6dc4b7d4177dfe3eab1aa4",
+      "text_raw": "\"Nếu đây là thời bình thì tao và mày đã là hai thằng bạn chơi được\"",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_bb793afc074034bc8b0ea9ff4ea63a23a9908944bf7461ab4e8c6226e09e2d50",
+      "text_raw": "riêng đội ủng hộ cry, họ nhiều cơ cấu lắm, mà ăn ké là nhiều, đặc trưng người làm ngành gừng sĩ. Với đám luật sư, kiểu gì cũng chung ruột mấy người chuyên bảo lãnh cho gừng sĩ từ thiện, lạ gì nữa, có lợi là làm hết.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_8c5f194882df0f56010866c74cbc302150a64ce8a8ff9cd65a225313508e27d2",
+      "text_raw": "ngay cả ngồi trên thuyền lúc sang sông ở đầu phim, Sen cũng ngồi trước mũi thuyền mắt đảo liên tọi, quan sát ko chừa góc nào, Hải rớt xuống sông, Sen cũng là ng lao xuống vớt lên đầu tiên. Xứng đáng là đội phó sau anh Tạ",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_11cbc49f27058bec86a966b478c5ed08824b917d72aefd70285ee72b9e8815ab",
+      "text_raw": "Cảnh anh Tạ hấp hối. \nẢnh vẫn dụi vài tờ tiền lẻ và dặn đóng tiền Đảng phí.\n😭",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_1d794f736fe2eb9419635c164a1ecd0733d4d6f28f4d801515e79189fffffc64",
+      "text_raw": "ảnh nhập đoàn chưa siết cân các anh em ai nấy đều đã điện ảnh hết r (Steven hơi bếu) điện ảnh sinh cả đám",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_82bbfbb8a5b3de0781f6502830a2fc477bd8b0513ab7dd26d7d61188bd17f02e",
+      "text_raw": "Fact: Quang = Sáng = Raito\nCường = to, mạnh = Large = L\nRaito vs L.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_07ec263a0c540d59ba863be109370247712aaa8a8ffa9ce551250ffa22f4c707",
+      "text_raw": "trong phim có nói á \"K3 Tam Sơn là mật danh\"",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_918b16658b8fbd6dd6cb15c640c57600fcf6c4439c3892df3b08c73cf4812cbb",
+      "text_raw": "Không biết sau khi chiếu xong rạp phim có chiếu onl không? Mình xem 2 lần rồi nhưng vẫn muốn xem lại lần nữa =))",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_9f8f14060cf2dfcdcad997a01eaaa7690956f354dfbdda1d522f003c52893398",
+      "text_raw": "“Tao là Tạ, còn mày là Tấn thì kinh òi” - Tạ said 🤡",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_4458b1635d1f5a3b38afc0280061b6e60bd082beb98bffb4feabd0b3e1429439",
+      "text_raw": "tui lướt toptop thấy bài đó là có thể sụt sùi được ngay đó ;'(",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_93c906c2bb7bc4537901501bd1df6393ce79f53d899b8132a2140fe1aa91afc3",
+      "text_raw": "Cảm xúc lần 1 xem là bàng hoàng, hỗn loạn, chả nhớ mặt ai với ai (mình vốn rất kém trong khoản nhớ mặt nhớ tên người khác) nhưng khi từng người hi sinh vẫn khiến mình khóc không thở nổi, cả người run lên vì bi thương, căm phẫn. Kết thúc phim mình đã mất khá lâu để bình tĩnh lại, cơ thể ngừng run để mà đi về\nLần 2: mò đi xem lại sau khi lướt kha khá video tuyên truyền phim trên mạng, đã nhớ mặt hòm hòm các nhân vật rồi, nhưng tâm lý chưa thực sự sẵn sàng lắm để khóc lần nữa, mà vì rủ mãi phụ huynh mới đi nên nhắm mắt kệ luôn, khóc thì khóc sợ gì 😅 Ừm và đúng là khóc từ đầu đến cuối phim luôn ạ. Xem lại hiểu hơn từng tình tiết, từng hành động của các nhân vật, thấu hiểu hơn lại càng đau đớn hơn. Khóc vì căm phẫn với từng quả bom đạn quân địch cày xới lên mảnh đất thành cổ. Khóc vì đau lòng cho từng mảnh thi thể của các chiến sĩ đã nằm lại. Khóc cho từng vệt máu trong hầm quân y. Khóc cho từng khoảnh khắc quân ta chiến đấu gian khổ. Khóc cả khi các chiến sĩ của ta vui đùa với nhau vì biết sau đó sẽ chẳng thể nữa. Kết phim mình vẫn khóc mãi, dân mình sao lại khổ đến thế, mà sao dân mình vẫn lương thiện đến thế.\nTuổi 20 của họ bi tráng quá, anh hùng quá, còn mình tuổi 20 trôi đi quá vô nghĩa. Tự dưng thấy mình chả có tư cách gì mà trầm cảm luôn, thế mà chả hiểu sao trầm cảm mấy năm trời, mình sống nhảm ruồi thực sự",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_4690aa8ec0665567bfc921622a459543a50af93e3c5a271e21490edb113226c9",
+      "text_raw": "Phân cảnh Sen bị vùi trong đất cũng cực kì ám ảnh với mình. Bởi ngoại mình từng đi bộ đội, thần trí ông cũng không còn tỉnh táo, sau khi trở về, mn vẫn gọi ông mình là “Vinh điên” nhưng ai biết được ông đã trải qua những gì ở chiến trường bom đạn giống như nhân vật Sen. Nhưng ông mình may mắn hơn Sen vì cuối cùng ông vẫn có thể trở về 🥺",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_4faa35f6214729c86fc29fdd4b75eb349a7c66830a78e35d33692f427aaeceac",
+      "text_raw": "Hôm mình đi xem, phim chiếu cũng hơn 20 ngày rồi nên suất chiếu ít lắm với cũng trễ, tưởng rạp sẽ vắng ai dè full rạp luôn, hết phim mọi người vẫn nán lại đến khi mở đèn mới đứng lên chứ không ai ra về trước. Phim hay thật sự",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_5221242b50578ef1b3ead54e0d494e273baddd18786e3b81ec91d4e47221a827",
+      "text_raw": "Về Cường, thật ra xem phim và sau này đọc tiểu thuyết, mình không quá ấn tượng về nhân vật này, vì hoàn hảo và lý tưởng quá. Duy chỉ có hai khoảnh khắc là mình rung động và thấy nhân vật đời hơn, là cảnh Cường quay đi, không dám nhìn Hải bị địch bắt, cảm xúc dồn nén trên gương mặt của Cường rất đẹp; cuối cùng là cảnh Cường không xử Thái bằng s*ng luôn khi có cơ hội mà chọn đấu trực tiếp tay không, vì nỗi đau cũng như sự căm thù của Cường với Thái đã quá lớn, lớn đến mức chỉ xé xác băm vằm mới hả dạ, đó là khoảnh khắc mà mình thấy đời nhất, dễ đồng cảm nhất.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_90b6919d5a6361165076f71e7217a69565722bd71048436748dc3208bf1173a2",
+      "text_raw": "Có thể là đọc đến đâu load phim đến đấy luôn 🥺",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_7390619c1330ea76e0a0c78cd30308217a0327cbf2603a29d3149662de3bce00",
+      "text_raw": "Lần cuối đi xem phim Mưa đỏ là vào ngày chiếu cuối cùng\nVẫn khóc mờ cả mắt, 1 số cảnh vẫn không dám nhìn trực diện. Cũng may là xem xong vẫn bình tĩnh tự đi về nhà được 🥲 chứ lần 1 xem chỉ thiếu điều khóc ngất moẹ luôn\nNhưng mà hơi tuột mood vì bác kế bên ạ. Bác ngồi ghế E5 phòng chiếu 6 rạp Beta Giải Phóng, suất chiếu 20h30 ngày 28/9 ơi, mình xem phim thấy không hay lắm thì mình có thể đi về cho đỡ tốn thời gian chứ bác ngồi chê thì ảnh hưởng người xung quanh lắm ạ",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_0c6eb8692e6ca3f649147983ca2f958640271316d6d359a3966022ea28578406",
+      "text_raw": "Nhớ lần xem đầu tiên, thỉnh thoảng ở hàng A đầu tiên có lóe lên ánh sáng màn hình đt ai đấy giơ lên chụp hình phim, khiến mình hơi khó chịu. Đến lúc phim hết, đèn bật sáng lên, bất giác lại đưa mắt đến chỗ ngồi đấy thì mới biết là một bác mặc áo lính tóc bạc trắng, tự dưng lại thấy hết sạch khó chịu trong lòng lúc đấy.\nCó hình ảnh bác lính yêu thích muốn giữ lại các hình ảnh phim, rồi về xem phỏng vấn các bác cựu chiến binh tọa đàm phim, nên sau gặp mấy bài chê phim bịa đặt lại càng thấy chíu khọ 🙄",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_1e3a3b05daa9f5e4659ac9bb8976d654c05eb3a0db876305d747304caeb9cdec",
+      "text_raw": "Sen là nhân vật có nhiều cảnh nặng tâm lý và cảnh nặng nhất là cảnh bị lôi từ dưới đất đá lên, nhưng các cảnh khác ánh mắt anh ấy cũng rất ám ảnh, do bị dồn nén tâm tư k biết giãi bày, mà có thì cũng là những lời cục súc với các em (là cục nhưng quan tâm). Mà càng nội tâm, càng dồn nén mới dễ phát tiết bằng phát điên, anh Lê Hoàng Long diễn tả vai Sen bằng giọng nói cục súc, biểu cảm có vẻ khó ở lạnh lùng, và thân hình thoăn thoắt nhanh nhẹn rất tốt, mà đỉnh cao là ở phần hoá điên, diễn như bị điên thật. Từ giọng nói, thể hình, chiều cao, gương mặt của anh ấy là sinh ra để diễn vai này",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_27da4f69f318a0131f9b7bb0a9bf60528808c6f6db0c9e2c3ae9243c90e2a3f3",
+      "text_raw": "Anh Tạ nhìn ổng như đang thấy 1 người lính nào đó có thật chứ ko phải là 1 nhân vật trong film,trong sách",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_464163f65747949fdeba88bc8e585c28a4a2932db77176a13216e9dda32533c3",
+      "text_raw": "đúng rồi, cái hint rõ luôn nhưng chính nó cũng nói lên việc các chiến sĩ biết rõ điều gì đang chờ đợi mình, mình sẽ phải đánh đổi cái gì và chiến đấu vì những gì đó. Nhưng họ vẫn sẵn sàng đánh đổi để ra mặt trận, những sinh viên hồn nhiên còn ca vang tiếng hát, nào đã biết chiến trường ra sao đâu 🥲",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_090cf6d62afa4d271c678ad7bef1f539a1fa3235c8fea78a880868252247bc0e",
+      "text_raw": "\"Tôi ở lại\"",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_94f8eacbf295c2fa8aebdab62c28efcca5f9e1e42b7baaafde80acb17864d638",
+      "text_raw": "Qua tui mới đi xem lần 3, rạp starium nhưng vẫn full 🥹 Mưa đỏ là một trong những bộ đem lại trải nghiệm điện ảnh và cảm xúc rất tuyệt vời cho mình, xứng đáng để ra rạp nhiều lần. Càng xem càng thấy hay. Mình cũng phát hiện thêm các diễn viên có diễn xuất tuyệt vời nữa. Mong sớm ngày được xem online 🤘",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_e129b749daf0b6e885935a36fc726e58de6e97bda6183cdc5c7f90e994ab5aea",
+      "text_raw": "👏👏😭😭",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_1d59a883b14593fa27f7595d7ef70f70564d9b50a68b9fc25df36ddcfecf7a53",
+      "text_raw": "tui xem mấy lần rồi, chưa dứt được đoạn Mình ơi của Hạ Anh luôn á.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_752f5c0744f8e8b9cd38a6487bfa492da800c10dbf15c2603c63a4f8ac5412d4",
+      "text_raw": "đọc tới đâu âm thanh chạy trong đầu tới đó 😭",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_f8bc8d4b79525651fe7c7a5f89d01377a8c9a25d30171463d3c795a23750f29e",
+      "text_raw": "Ban đầu nghe “ Còn gì đẹp hơn” ko hề có tí cảm nhận nào, rất bth cho tới khi coi phim về, nghe mà thấm từng câu từng chữ, tới bh dù nghe đi nghe lại hàng trăm lần vẫn cứ nổi da gà đoạn “ hết kháng chiến nếu con còn chưa về…”. Tới khi phim thông báo rời rạp là lướt gặp MĐ tới đâu là khóc tới đó, thích mọi thứ thuộc về Mưa Đỏ",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_e24e6af728e3c8d45918d32378f4760c0cd2acf24851a7442a4ed5f09ec4d2d4",
+      "text_raw": "tôi chỉ tiếc đoạn anh Hải bẻ lái khúc bị đốt. Kiểu thoại nó chưa đẩy được cái tinh thần bất khuất, kiên cường của chiến sĩ mình ấy. Cụ Phó Đức Chính nói lúc bị xử chém: \"Cho ta nằm ngửa để nhìn lưỡi dao tội ác của thực dân Pháp\", anh hùng Võ Thị Sáu lúc bị bắn: \"Không cần bịt mắt tôi. Hãy để cho đôi mắt tôi được nhìn đất nước thân yêu đến giây phút cuối cùng và tôi có đủ can đảm để nhìn thẳng vào họng súng các ngươi!\". Hay giá như câu cuối của anh Hải là \"Đảng Cộng Sản Việt Nam muôn năm\" \"Chủ tịch Hồ Chí Minh muôn năm\" thì nó peak vcll",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_983253b7c55654b17d3b001223c5e8ec2998c4ea421df827b90b5ee888544aa0",
+      "text_raw": "Ấn tượng\n1. Ánh mắt Quang nhìn Hồng lần đầu\n2. Tú rơi xuống biển\n3. Tạ chết, thả theo thuyền\n4. Cảnh Hải bị đốt\n5. K3 Tam Sơn còn, Thành cổ còn",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_56bdae5c6408adbbe018b1090cafdd518a4496e2db3d4bad1e6b8f6fc8e1ca30",
+      "text_raw": "Về Bình. Đây cũng là một nhân vật mà đi xem lần thứ hai mình mới để ý được nhiều hơn. Mình thích ở nhân vật này vì có sự lớp lang, phát triển, nhưng trái với Sen ấn tượng từ đầu đến cuối, mình có hai khoảnh khắc không thể nào quên về Bình. Một là cảnh Bình trêu Cường rồi khi không ai để ý, môi cậu tắt dần nụ cười, khoảnh khắc ấy với mình “đời” và thật lắm. Hai là cảnh Bình cầm súng lần cuối, gom hết dũng khí và uất ức để chiến đấu lần cuối cùng rồi hi sinh.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_296107018d4e5a547b16ea36c4210def41a74a4fc11e8708a606a67d07b479c1",
+      "text_raw": "ủa dị hả🤣 thế chắc sạn nhỏ nhỏ rồi",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_58af9a858a9847f754e856c10692d4a69f4e35061799394e97c8975146d0932a",
+      "text_raw": "Còn có một cảnh mà hơi ngại để nói ra. Nhưng quả thực thì với mình, cảnh Quang nhìn thấy Hồng đứng giữa bom đạn loạn lạc đẹp lắm, thậm chí mình còn hiểu phần nào cảm giác rung động của Quang trong khoảnh khắc đó. Đẹp thật.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_45818f74479ac3d7cbfb3dffdadefb7f551aff93388a2d93c782b18d48a005eb",
+      "text_raw": "Nếu bảo mình dùng từ gì để miêu tả Mưa Đỏ thì đó là từ vừa vặn. Vừa vặn hay, vừa vặn tạo cảm xúc, vừa vặn nuông chiều thị hiếu ngày nay, vừa vặn để lại không gian cho ng xem suy nghĩ và nuôi dưỡng cảm xúc sau khi xem phim. \nDiễn xuất của các diễn viên cũng vừa vặn tạo nên nhân vật và để lại dấu ấn riêng. \nMưa Đỏ xứng đáng với tất cả những gì mà bộ phim nhận được.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_c3fc0fe0f717da58a392752abf57ee81eeaafd35c8361de228610cd973c73ec3",
+      "text_raw": "Có quá nhiều điều để nói về Mưa Đỏ. Mình thì không giỏi xâu chuỗi thành một bài cảm nhận hoàn chỉnh, cũng chẳng có nơi nào để giãi bày nên mượn bài này để “xả” vậy.\nMình thích bản giao hưởng của Mưa Đỏ. Ngay từ lần đầu xem phim, khi chưa đọc tiểu thuyết và mọi thứ về phim như tờ giấy trắng, mình đã khóc khi bản giao hưởng cất lên cùng với khung cảnh chiến trường ngập trong màu đỏ. Từ khoảnh khắc đó, mình xem phim với một đôi mắt tuôn nước không ngừng.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_08852dfd0fd7604c402627b0b61369658498fbfe5bc1ebd15695445730297c8d",
+      "text_raw": "đã thế ảnh lúc nào cũng khẳng định là mọi người sẽ còn sống trở về, chắc đấy cx là 1 trong những lý do mà lúc nhìn từng người ngã xuống tâm lý của ảnh mới sụp đổ",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_b21420a0a4ac387c6c71f0dd61f447704e520740b9929b18b188d91cf281d035",
+      "text_raw": "Bộ phim đầu tiên đi xem 7 lần",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_52b583ba9ebcca3537407d0006349f11acf073758b7b2a41be6299ac2be7de62",
+      "text_raw": "Chắc là mình sẽ khóc cả phim, nhưng cái cảnh này thực sự ở trong tâm trí mình chắc phải là sâu đậm nhất, nhìn giống như người anh cả và đàn em thơ ấy...",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_f85d4fdc838fe7b935b121c72a440cd5133b2a91cc062c12834759af381a6bba",
+      "text_raw": "Nhớ đủ thứ hết 😭",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_0eb3930b2486daae17c10fd8421a0a20ac4ecc13b13d5462abaefd6806a6aef2",
+      "text_raw": "Bản giao hưởng cuối phim, lần nào xem tới đoạn này cũng khóc🥹",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_2da413526147b9832cbab90799acb8f55be436769521d6b309a1edf5107de66e",
+      "text_raw": "40kg cả cớt ",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_724a7b6a0cbadbd0c8080d18e764dc5a8c61b5afc3b14a7fab9ef698b2aedbea",
+      "text_raw": "Mình bị ám ảnh bởi những tiếng gọi \"Mẹ ơi\" của Tú, của Cường trước lúc hy sinh. Thương vô vàn!",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_147f623d880ef5e1fececf5da5fe1686625b8ad0ef9bff56ec18a10ea3db6f78",
+      "text_raw": "Chắc là có hai phân cảnh mà ở lần xem thứ 2 mình mới được cảm nhận sâu sắc hơn cả ngoài những đoạn quá nổi tiếng, đầu tiên là cảnh Cường chọn quay lại với thành cổ, với đồng đội sau khi hồi phục dù đã được phép tập kết về Bắc. Ôi cái bóng lưng giữa trời đất xám xịt, cảnh vật đổ nát ấy nó hào hùng, hiên ngang vô cùng. Cảnh thứ hai chắc là gần cuối phim, khi Bình ngã xuống hố bom toàn đồng đội nằm thoi thóp, cậu ấy gần như điên cuồng lao lên, ánh mắt đầy hận thù xả súng vào máy bay trên trời. Hành động trước khi hy sinh gần như là lấy trứng chọi đá, nhưng ánh mắt căm hờn ấy nó ám ảnh thật sự.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_ced9bbcd6e62b2c336c66a150b387eac2bbe65b735d68e7e53c9f93f5f55bdd7",
+      "text_raw": "về kế hoạch lên sóng VTV thì chưa nghe, cơ mà đợi Mưa Đỏ được phát hành online trên Galaxy Play được đó bạn, nhà phat hành và đoàn làm phim đã thông báo lúc ra mắt phim. Hi vọng người xem không tung fancam lên làm ảnh hưởng đến tập thể.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_527384fd64310b764cf241ea79a341b723f33eba1839fb61700d80b41c6b84bd",
+      "text_raw": "- Chào các anh em, chúng tôi đi nhớ \n- Ngày hoà bình, em cùng anh về Bắc thăm mẹ nhé\nNgày cuối đi xem lần cuối, cảnh Cường khóc cho Bình cũng làm tui khóc hết nước mắt 🥺",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_e4c1f53ea5cc078ebb05d3e51e96fefe91eac96a3a0c67f12afab9e5bf3fb88b",
+      "text_raw": "Bộ phim duy nhất ra rạp xem lần thứ 2. Lần 1 ngồi hơi gần, lệch phải nên xem phim chưa trọn vẹn. Lần 2 chọn ghế ở giữa nên trải nghiệm tốt hơn. Cơ mà vị trí xem là phụ, đi ngắm anh Steven Nguyễn là chính 😛\nVà cả 2 lần xem đều rơi nước mắt ở đoạn anh Tạ hi sinh",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_0ca98a424888d36cbc04e11b839fe84415e0fb8bf0a413b692ebabf15cf73ef5",
+      "text_raw": "Bài Đoàn Vệ Quốc Quân đầu phim á 😢 nó hoài cổ mà nó dũng cảm điên",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_db6ba5ef162a4ea40d4bceb2f46c1e348503fff9fc14ae2b202f58006ec064ea",
+      "text_raw": "uh, vì phim cúng cụ mà, phim Mưa là con cháu đc hưởng hương hoa trước các cụ hơi lâu rồi đó 🤣 chứ 2 ngày cuối cùng dthu hơn 12 tỏi lận",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_31f35e340587941eed3729f61fab7725a0d9fa69de508a63a300fdea21d986e9",
+      "text_raw": "thấy siết cân ghê thật ó mà siết gấp nên mấy ông bị chê skip leg đây =)))",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_86bd449e1799d40a9d663a880d373b239ea47e29830779d7bb9a6b86ab898f89",
+      "text_raw": "Thích tất cả những thứ thuộc về Mưa Đỏ",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_dc61af740bdaf6dc930684e96201ba2cc7e62d2c942f8fab6700ec5a6f243746",
+      "text_raw": "Raito là phiên âm tiếng Nhật của Light hả",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_8a1e3c0bf61950e488df3b9c0cfb3c6380ab2e0264a8b51f3ea563f77fe3e0ab",
+      "text_raw": "Anh Long dồn cả quãng đời và những nỗi đau trước đó vào khoảnh khắc đầu tiên Sen xuất hiện nên nếu mới xem lần đầu thì dễ lướt qua lắm, cũng sẽ khiến nhiều người không hiểu là cùng ra trận như nhau, Sen còn là đặc công mà sao còn hoá điên trước cả đám em. Nhưng xem kĩ mới thấy Sen đã mang sẵn nỗi đau rồi, ánh mắt của ảnh khi anh em nhắc đến cái chết đều nói lên rằng tất cả đã có sẵn, chất chứa và dồn nén đến một khi nào đó vỡ ra thôi. Như Bình sau này cũng có khoảnh khắc đó.",
+      "split": "train",
+      "cohort": "group"
+    },
+    {
+      "id": "c_564c7667fd7cc60c5c420c5788ebe4cd8871ce57310feec004cd39136d654d34",
+      "text_raw": "Xem 3 lần và lần nào cũng khóc từ đầu đến cuối. Ngay giây phút đầu tiên đã rưng rưng rồi. Khi đoạn ở sân ga tiễn đưa các chiến sĩ lên đường chiến đấu, những lời hẹn “hoà bình gặp lại”, “hoà bình về nhé”… đã khiến mình thổn thức rồi. Mình đã viếng hương Nghĩa trang Trường Sơn, Nghĩa trang đường 9, Nghĩa trang Vị Xuyên và các Nghĩa trang Liệt sĩ nơi mình đến, nên khi nghe những lời hẹn ấy mình chỉ nghĩ đến những nấm mộ đã thấy, nghĩ đến các anh vẫn còn nằm nơi nào đó xa xôi, lạnh lẽo hay như mùa hè đỏ lửa ấy, cối xay người ở Quảng Trị thì thần thể nào còn vẹn nguyên? \nLời hẹn ấy cũng khiến mình đau đớn xót xa. Đất nước mình có chiều dài bờ biển hơn 3 ngàn km, chiều dài đường chim bay hơn 2 ngàn km, mà hơn 1 triệu người con dân tộc đi mãi chưa về trong 2 cuộc kháng chiến và chiến tranh biên giới. Nỗi đau của người ở lại, mẹ mất con, vợ mất chồng, con mất cha… \nNên đối với mình, Mưa đỏ là bộ phim của cảm xúc và những lời thoại, những cảnh đều rất ấn tượng, nhưng ám ảnh nhất với mình đó là lời hẹn ước gặp nhau khi hoà bình ấy.",
+      "split": "train",
+      "cohort": "group"
+    }
+  ],
+  "quality_audit_only": true,
+  "labels_created": false,
+  "sampling": "Stratified random without replacement by source_kind, 70 fanpage + 130 group; movie mua_do in both strata. No sentiment or length filtering.",
+  "note": "Independent blind human annotation using the existing Phase C import/agreement contract. Includes every sampled row for quality audit; no ML holdout or gold release. Source cohorts are coordinator-only."
+}

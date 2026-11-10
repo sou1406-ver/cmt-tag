@@ -400,7 +400,7 @@ spacer chưa render; fixture có spacer 10.000px xác minh điểm dừng ở ta
 `dom_text_v2` ghi thêm `text_without_mentions`, `mention_count`,
 `non_text_media_count`, `text_extraction_version` bên cạnh `text_raw` trong raw
 journal. Bản không tag loại đúng node link danh tính Facebook trong message
-(profile.php?id, people/.../ID hoặc username). Link này có thể trỏ tới người
+(profile.php?id, people/.../ID, groups/ID/user/ID hoặc username). Link này có thể trỏ tới người
 hoặc trang; không nhận dạng tên người bằng regex chữ hoa. Tên phim, diễn viên,
 nhân vật được viết bằng văn bản thường và link ngoài Facebook được giữ nguyên.
 Không thu header tên tác giả, URL profile của tác giả hay cookie.
@@ -417,6 +417,14 @@ text là string và counts là số nguyên không âm. Export chuẩn giữ c�
 không tag để đối chiếu; bản xem dữ liệu mới dùng text_without_mentions làm cột
 text và vẫn liên kết theo comment_id/run_id về raw gốc. Không đoán lại tag từ
 CSV cũ đã mất node DOM.
+
+Ngày 10/11/2026 đã xác minh trực tiếp link `/groups/<số>/user/<số>/` nằm trong
+body reply của group. Thêm đúng pattern số này vào `accountLink()`; không thêm
+author_name/author_id hoặc suy đoán từ comment cha. So sánh cùng DOM trước/sau:
+`text_raw` không đổi, số mention được bỏ tăng từ 0 lên 1.401. Regression trước
+vá: ca group-user thất bại, ca link thường thành công; sau vá toàn bộ **121 test
+pass**. Test bảo vệ link ngoài Facebook, group/post, đường dẫn user không đầy
+đủ, permalink comment, tên text thường, tên phim và emoji.
 
 Collector chờ thay đổi số container trong đúng scope, kể cả aria-label không
 role article. Click nút không làm thay đổi dữ liệu/cuộn không được coi là tiến

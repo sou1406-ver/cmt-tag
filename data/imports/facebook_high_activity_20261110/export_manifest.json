@@ -1,0 +1,158 @@
+{
+  "run_id": "fb_1c5e839302294c23a80244ea4315320d",
+  "source": "facebook",
+  "source_run_count": 1,
+  "merged": false,
+  "raw_records": 2929,
+  "exported_text_records": 2277,
+  "by_movie": {
+    "mai": 2277
+  },
+  "by_group": {
+    "youneverwatchedthismovie": 2277
+  },
+  "record_types": {
+    "reply": 1042,
+    "comment": 1235
+  },
+  "source_posts": [
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/permalink/1909400102999925",
+      "movie_id": "mua_do",
+      "group": "youneverwatchedthismovie",
+      "group_name": "Maybe You Never Watched This Movie",
+      "group_members_display": "1,6 triệu thành viên",
+      "public_verified": true,
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "engagement_observed": [
+        "118 bình luận",
+        "35 lượt chia sẻ"
+      ],
+      "observed_at": "2026-11-09T23:29:26.112237+00:00",
+      "selection_reason": "Snapshot sau sửa mention cho pool pilot cùng phim Mưa Đỏ với fanpage; lấy ngẫu nhiên sau khi thu, không chọn theo sentiment. Số tương tác được quan sát trong phiên trước khi thu."
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1898631627410106",
+      "movie_id": "mua_do",
+      "group": "youneverwatchedthismovie",
+      "group_name": "Maybe You Never Watched This Movie",
+      "group_members_display": "1,6 triệu thành viên",
+      "public_verified": true,
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "engagement_observed": [
+        "46 bình luận",
+        "8 lượt chia sẻ"
+      ],
+      "observed_at": "2026-11-09T23:29:58.527401+00:00",
+      "selection_reason": "Bài review Mưa Đỏ trong nhóm 1,6 triệu thành viên; bổ sung pool pilot cùng phim, không suy ra sentiment từ quan điểm bài gốc. Số tương tác được quan sát trong phiên trước khi thu."
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1488490685090871",
+      "movie_id": "mai",
+      "group": "youneverwatchedthismovie",
+      "group_name": "Maybe You Never Watched This Movie",
+      "group_members_display": "1,6 triệu thành viên",
+      "public_verified": true,
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "engagement_observed": [
+        "2.212 bình luận",
+        "680 lượt chia sẻ"
+      ],
+      "observed_at": "2026-11-09T23:30:58.686096+00:00",
+      "selection_reason": "Bài phê bình kịch bản và nhịp phim Mai, nhóm 1,6 triệu thành viên. Cào mới bằng bản sửa group/user mention; giới hạn 3000, loại ID đã chia sẻ khi xuất dữ liệu mới; không suy ra nhãn từ bài gốc."
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1486195815320358",
+      "movie_id": "mai",
+      "group": "youneverwatchedthismovie",
+      "group_name": "Maybe You Never Watched This Movie",
+      "group_members_display": "1,6 triệu thành viên",
+      "public_verified": true,
+      "source_kind": "public_discussion_group",
+      "post_kind": "review_or_discussion",
+      "engagement_observed": [
+        "767 bình luận",
+        "94 lượt chia sẻ"
+      ],
+      "observed_at": "2026-11-09T23:42:13.317056+00:00",
+      "selection_reason": "Review Mai ở nhóm 1,6 triệu thành viên, có 767 bình luận quan sát trong phiên. Thu lại bằng bản vá group/user mention và trần 3000, không tính lại ID đã chia sẻ, không suy ra nhãn comment từ bài gốc."
+    }
+  ],
+  "post_results": [
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/permalink/1909400102999925",
+      "movie_id": "mua_do",
+      "status": "partial",
+      "reason": "unparsed_comments",
+      "at": "2026-11-09T23:29:58.521246+00:00",
+      "attempt": 1
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1898631627410106",
+      "movie_id": "mua_do",
+      "status": "success",
+      "reason": "visible_dom_exhausted",
+      "at": "2026-11-09T23:30:22.610912+00:00",
+      "attempt": 1
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1488490685090871",
+      "movie_id": "mai",
+      "status": "partial",
+      "reason": "unparsed_comments",
+      "at": "2026-11-09T23:42:13.308087+00:00",
+      "attempt": 1
+    },
+    {
+      "post_url": "https://www.facebook.com/groups/youneverwatchedthismovie/posts/1486195815320358",
+      "movie_id": "mai",
+      "status": "partial",
+      "reason": "unparsed_comments",
+      "at": "2026-11-09T23:44:04.824705+00:00",
+      "attempt": 1
+    }
+  ],
+  "per_post_exported": {
+    "1488490685090871": 1753,
+    "1486195815320358": 524
+  },
+  "removed_account_mentions": 1863,
+  "omitted_non_emoji_image_alts": 54,
+  "context_review_records": 82,
+  "excluded_reason_counts": {
+    "ALREADY_SHARED_ID": 432,
+    "NO_TEXT_AFTER_REMOVING_ACCOUNT_TAGS": 220
+  },
+  "raw_sha256": "f29f14cf44653670e98cc9b000baa9b81758a9ff780d77d1927bd6b642bc9523",
+  "csv_sha256": "8c2fe34de75e91437548c6d85ca5f10dabb07f20512adfb7401b81799a640dcd",
+  "raw_storage": "local_only; original messages and browser profile are not published",
+  "raw_validation_errors": 0,
+  "dom_parse_observations": 1224,
+  "extractor_js_sha256": "4c766c5dfcb90ae224b4a9ea864181d5c4e32be3b1169077c1ea249c43e5cfca",
+  "coverage_verified": false,
+  "labels_created": false,
+  "evaluation_split_frozen": false,
+  "selection_method": "Targeted convenience sample of public film review/discussion posts. Groups selected by visible public status and member counts; review/discussion posts prioritized by visible comment counts within inspected candidates. Previously shared IDs excluded from this export. Not a verified ranking of all group posts.",
+  "limits": {
+    "interactive": true,
+    "max_posts": 25,
+    "max_comments": 3000,
+    "max_rounds": 1000,
+    "post_timeout": 900,
+    "max_actions": 30,
+    "wait_ms": 30000,
+    "settle_ms": 2000,
+    "idle_rounds": 8,
+    "retries": 0,
+    "source_dataset": null
+  },
+  "cleaning_policy": "Existing dom_text_v2 only: remove identifiable account-link nodes, including verified numeric groups/user paths; preserve ambiguous plaintext names, emoji, negation and line breaks. No author_name/author_id fields.",
+  "clean_text_field": "text",
+  "disjoint_from_previous_exports": true,
+  "xlsx_sha256": "9c2685c6a20c9c6940b4ea81afd492ef379f6042da2a52730d4f32955900756d",
+  "verified_xlsx_cells": 43282,
+  "artifact_validation": "passed"
+}

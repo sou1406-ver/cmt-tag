@@ -166,6 +166,7 @@
         if (u.pathname==='/profile.php') return /^\d+$/.test(u.searchParams.get('id')||'');
         if (/\.php$/i.test(u.pathname)) return false;
         if (/^\/people\/[^/]+\/\d+\/?$/.test(u.pathname)) return true;
+        if (/^\/groups\/\d+\/user\/\d+\/?$/.test(u.pathname)) return true;
         // A Facebook identity link can refer to a person or page. Strip only
         // that linked mention, never guess names from capitalized plain text.
         return /^\/[A-Za-z0-9.]+\/?$/.test(u.pathname) &&

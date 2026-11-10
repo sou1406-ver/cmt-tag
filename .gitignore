@@ -20,6 +20,25 @@
 !/data/imports/facebook_group_pilot_20261110/comments.xlsx
 !/data/imports/facebook_group_pilot_20261110/import_config.json
 !/data/imports/facebook_group_pilot_20261110/export_manifest.json
+!/data/imports/facebook_high_activity_20261110/
+/data/imports/facebook_high_activity_20261110/*
+!/data/imports/facebook_high_activity_20261110/comments.csv
+!/data/imports/facebook_high_activity_20261110/comments.xlsx
+!/data/imports/facebook_high_activity_20261110/import_config.json
+!/data/imports/facebook_high_activity_20261110/export_manifest.json
+!/data/tasks/
+/data/tasks/*
+!/data/tasks/source_quality_pilot_20261110/
+/data/tasks/source_quality_pilot_20261110/*
+!/data/tasks/source_quality_pilot_20261110/annotator_a.csv
+!/data/tasks/source_quality_pilot_20261110/annotator_b.csv
+!/data/tasks/source_quality_pilot_20261110/README.md
+!/data/tasks/source_quality_pilot_20261110/coordinator/
+/data/tasks/source_quality_pilot_20261110/coordinator/*
+!/data/tasks/source_quality_pilot_20261110/coordinator/input.csv
+!/data/tasks/source_quality_pilot_20261110/coordinator/task.json
+!/data/tasks/source_quality_pilot_20261110/coordinator/selection_manifest.json
+!/data/tasks/source_quality_pilot_20261110/coordinator/prepare_config.json
 /outputs/
 /crawl/*.csv
 # Retain protection for legacy local media; no media is present in this clone.

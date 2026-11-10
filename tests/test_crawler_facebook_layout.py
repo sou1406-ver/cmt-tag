@@ -229,6 +229,35 @@ class FacebookLayoutTests(unittest.TestCase):
         self.assertEqual(rows[0]['text_without_mentions'],'Diễn viên X diễn hay, xem review chưa?')
         self.assertEqual(rows[0]['mention_count'],1)
 
+    def test_group_user_mention_in_reply_removed_without_author_lookup(self):
+        html=self.fixture().replace('Đúng vậy 👍',
+            '<a href="/groups/123456/user/987654/">Bạn được tag</a>: '
+            'Mong đạo diễn giữ tên phim Mưa Đỏ, phim hay 👍')
+        self.load(html)
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,0)
+        reply=next(row for row in rows if row['comment_id']=='102')
+        self.assertEqual(reply['text_raw'],'Bạn được tag: Mong đạo diễn giữ tên phim Mưa Đỏ, phim hay 👍')
+        self.assertEqual(reply['text_without_mentions'],'Mong đạo diễn giữ tên phim Mưa Đỏ, phim hay 👍')
+        self.assertEqual(reply['mention_count'],1)
+        self.assertEqual(reply['parent_comment_id'],'101')
+
+    def test_group_non_identity_links_and_plain_names_preserved(self):
+        for href in ('https://example.org/groups/123/user/456/',
+                     '/groups/123/posts/456/', '/groups/123/',
+                     '/groups/123/user/456/posts/789/',
+                     '/groups/123/user/not-a-numeric-id/',
+                     '/groups/123/user/456/?comment_id=789'):
+            with self.subTest(href=href):
+                html=self.fixture().replace('Đúng vậy 👍',
+                    f'Mong đạo diễn đọc <a href="{href}">đối chiếu</a>; Thanh Phương nói phim hay 👍')
+                self.load(html)
+                rows,errors=observations(dom(self.driver,GROUP),GROUP)
+                self.assertEqual(errors,0)
+                reply=next(row for row in rows if row['comment_id']=='102')
+                self.assertEqual(reply['text_without_mentions'],reply['text_raw'])
+                self.assertEqual(reply['mention_count'],0)
+
     def test_emoji_alt_is_unicode_not_generated_image_caption(self):
         html=self.fixture().replace('Phim hay 😍!<br>ko dở.',
             'Phim hay <img alt="😂"><img alt="❤️"><img alt="👍🏽"><img alt="1️⃣">'

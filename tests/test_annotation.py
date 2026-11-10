@@ -6,6 +6,7 @@ import unittest
 
 from src.annotation.core import GUIDELINE, agreement, export_tasks, import_human, load_release, prepared, release
 from src.annotation.silver import annotate
+from src.annotation.guidelines import GUIDELINE_VERSION, LEGACY_VERSION, LEGACY_SHA256
 from src.data.importers import digest
 from src.data.pipeline import prepare_data
 from src.data.validation import read_jsonl
@@ -49,6 +50,26 @@ class AnnotationTests(unittest.TestCase):
         with (self.root/'edit.csv').open('w',encoding='utf-8-sig',newline='') as f:
             w=csv.DictWriter(f,fieldnames=rows[0]); w.writeheader(); w.writerows(rows)
         with self.assertRaises(ValueError): import_human(task/'task.json',self.root/'edit.csv',self.root/'c.jsonl','c',True)
+
+    def test_current_guide_and_legacy_task_provenance(self):
+        task=self.task()
+        path=task/'task.json'
+        contract=json.loads(path.read_text(encoding='utf-8'))
+        self.assertEqual(contract['guideline_version'],GUIDELINE_VERSION)
+        contract.update(guideline_version=LEGACY_VERSION,guideline_sha256=LEGACY_SHA256)
+        path.write_text(json.dumps(contract),encoding='utf-8')
+        events=self.fill(task)
+        result=release(self.data,self.version,[events],self.root/'legacy')
+        meta=load_release(result)[2]
+        self.assertEqual(meta['guideline_version'],LEGACY_VERSION)
+        self.assertEqual(meta['guideline_sha256'],LEGACY_SHA256)
+        current=self.fill(self.task('current'),'current')
+        with self.assertRaisesRegex(ValueError,'Mixed guidelines'):
+            release(self.data,self.version,[events,current],self.root/'mixed')
+        contract['guideline_sha256']='0'*64
+        path.write_text(json.dumps(contract),encoding='utf-8')
+        with self.assertRaisesRegex(ValueError,'Guideline'):
+            import_human(path,self.root/'a.csv',self.root/'tampered.jsonl','a',True)
 
     def test_agreement_disagreements_and_adjudication_required(self):
         t=self.task(); a=self.fill(t,'a','POS'); b=self.fill(t,'b','NEG')

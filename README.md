@@ -5,6 +5,44 @@
 là comment về phim với ba sentiment `POS / NEG / NEU`.
 `REVIEW` và `EXCLUDE` là trạng thái, không phải lớp huấn luyện.
 
+## Guideline và dữ liệu đang chuẩn bị
+
+Dùng duy nhất [guideline gán nhãn](docs/guidelines/MOVIE_SENTIMENT.md).
+Nội dung hiện theo 2.1: sự đồng cảm và trải nghiệm cảm xúc tích cực, đáng giá do
+phim mang lại có thể là POS; cảm xúc đơn thuần chưa rõ thái độ vẫn là REVIEW.
+Mã REVIEW của CLI gồm `REV_MIXED`, `REV_SARCASM`, `REV_TARGET`, `REV_CONTEXT`,
+`REV_OTHER`; bất định cảm xúc/phủ định/media ghi chi tiết trong `reason`.
+
+Lịch sử ngắn: bản 2.0 gốc nằm trong Git tại
+`89ec79a:docs/guidelines/MOVIE_SENTIMENT_V2_0.md` (SHA-256
+`b094bcffc28f5099b6aa0278f95eaf4ee35cba1ee4f3965afa7009d26bd43844`).
+Không giữ nhiều file guideline theo phiên bản; task cũ giữ nguyên hash và nhãn,
+không được tự đổi thành đã gán theo guideline mới.
+
+Hai đợt 200 Mưa Đỏ và 200 đa phim được chuẩn bị thành **một bộ 400 dòng** ở
+`outputs/development/`, nguồn XLSX giữ nguyên. Bản Excel làm việc là
+`outputs/development/annotations.xlsx`: sheet `Duyet nhan` để duyệt đề xuất,
+`400 binh luan` để tra nhãn đã chuẩn hóa, `Thong ke` để xem theo phim.
+Nhãn cảm xúc đã xác nhận vẫn giữ POS. Đề xuất trong sheet chờ duyệt chưa được
+áp dụng; sau khi người gán lưu quyết định cần nhập và kiểm tra lại trước khi train.
+
+Chuẩn bị từ hai workbook local đã khóa checksum (không ghi đè output có sẵn):
+
+```powershell
+python scripts/prepare_development.py
+python scripts/development_baseline.py
+```
+
+Bước thứ hai chỉ tạo kế hoạch, **không fit model**. Cấu hình
+`configs/baseline_development.json` chuẩn bị TF-IDF + NB/LR/LinearSVC,
+3-fold theo nhóm bài đăng và cụm trùng/gần trùng; hai biến thể dùng cùng fold.
+`configs/entity_mask.json` liệt kê alias che tên phim/nhân vật, giữ văn bản gốc;
+danh sách có giới hạn, tránh tự đoán tên người hoặc che các từ đơn mơ hồ.
+Kế hoạch hiện còn 19 quyết định chờ người gán, nên `--run` bị chặn.
+Đây là dữ liệu phát triển đã tiếp xúc và được chọn có chủ đích, không phải gold
+test độc lập; chưa train dữ liệu thật, chưa có kết quả so sánh hai biến thể.
+Chi tiết số liệu và giới hạn: [chuẩn bị baseline](docs/DEVELOPMENT_BASELINE.md).
+
 Phase 0 đã audit nguồn local 29k: [quyết định dùng fixture trước](docs/PHASE_0_DATA_AUDIT.md).
 Phase C có workflow CLI blind annotation, agreement/Kappa, silver provider và
 annotation release: [hướng dẫn Phase C](docs/PHASE_C_REPORT.md). Chưa có gold

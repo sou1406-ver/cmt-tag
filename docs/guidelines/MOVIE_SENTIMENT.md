@@ -1,13 +1,13 @@
-# GUIDELINE V2.0 — GÁN NHÃN SẮC THÁI BÌNH LUẬN VỀ PHIM
+# GUIDELINE — GÁN NHÃN SẮC THÁI BÌNH LUẬN VỀ PHIM
 
 **Dùng cho:** gán nhãn tự động bằng GPT / Claude / Qwen và kiểm tra độc lập bằng con người  
-**Ngày:** 07/11/2026  
+**Cập nhật:** 10/11/2026  
 **Đơn vị phân loại:** 1 bình luận văn bản → tối đa 1 nhãn chính  
 **Nhãn huấn luyện:** `POS`, `NEG`, `NEU`  
 **Trạng thái xử lý, KHÔNG phải lớp học:** `REVIEW`, `EXCLUDE`  
 **Đầu ra:** JSON hợp lệ; giữ văn bản gốc, nguồn nhãn và phiên bản guideline.
 
-> **Nguyên tắc trung tâm:** Đây là **comment-level sentiment classification trong miền bình luận phim**, không phải nhận dạng cảm xúc vui/buồn/sợ/tức giận, không phải toxic detection, cũng không phải phân tích riêng bộ phim *Mưa Đỏ*. Mục tiêu là xác định sắc thái đánh giá chủ đạo của người viết **về phim/những khía cạnh trực tiếp của phim** thể hiện trong bình luận. Không lấy cảm xúc từ các chuyện ngoài lề để quyết định nhãn. Không tự suy luận thiện cảm/ác cảm với phim khi comment chỉ kể một cảm xúc hoặc một sự kiện.
+> **Nguyên tắc trung tâm:** Đây là **comment-level sentiment classification trong miền bình luận phim**, không phải nhận dạng cảm xúc vui/buồn/sợ/tức giận, không phải toxic detection, cũng không phải phân tích riêng bộ phim *Mưa Đỏ*. Mục tiêu là xác định sắc thái đánh giá chủ đạo của người viết **về phim/những khía cạnh trực tiếp của phim** thể hiện trong bình luận. Không lấy cảm xúc từ các chuyện ngoài lề để quyết định nhãn. Tác động cảm xúc tích cực, sự đồng cảm và trải nghiệm cảm xúc đáng giá do phim mang lại có thể thể hiện thiện cảm với phim, dù không khen trực tiếp chất lượng nghệ thuật. Cảm xúc đơn thuần chưa rõ thái độ vẫn cần REVIEW; không tự suy luận từ một sự kiện.
 
 ---
 
@@ -28,7 +28,7 @@
 
 | Nhãn | Đặt khi | KHÔNG đặt khi |
 |---|---|---|
-| `POS` | Có sự yêu thích, hài lòng, ngợi khen, đề xuất xem, ủng hộ hoặc kỳ vọng tích cực **rõ ràng** đối với phim hoặc khía cạnh nghệ thuật/trải nghiệm do phim đem lại. Có thể khen nhẹ. | Chỉ cảm thấy buồn, khóc, tự hào về lịch sử, thích diễn viên ngoài đời, kể lại người khác khen. |
+| `POS` | Có sự yêu thích, hài lòng, ngợi khen, đề xuất xem, ủng hộ hoặc kỳ vọng tích cực **rõ ràng** đối với phim hoặc khía cạnh nghệ thuật/trải nghiệm do phim đem lại. Có thể khen nhẹ; bao gồm tác động cảm xúc tích cực, sự đồng cảm và trải nghiệm cảm xúc đáng giá do phim tạo ra. | Cảm xúc đơn thuần chưa rõ thái độ, tự hào về lịch sử mà không nói tới trải nghiệm phim, thích diễn viên ngoài đời, kể lại người khác khen. |
 | `NEG` | Có sự chê bai, thất vọng, không hài lòng, phản đối cách làm phim, khuyên không xem, đánh giá trải nghiệm phim kém hoặc kỳ vọng tiêu cực **rõ ràng**. Có thể chê nhẹ. | Chỉ nhắc đến cái chết, chiến tranh, nhân vật xấu, sự cố ở rạp, trích dẫn câu chê mà không đồng tình. |
 | `NEU` | Có nội dung về phim nhưng chỉ cung cấp/thắc mắc/xác nhận thông tin hoặc thuật lại ý kiến/sự kiện mà tác giả **không thể hiện lập trường đánh giá**. | Có khen và chê mạnh ngang nhau; tác giả mỉa mai khó hiểu; thiếu ngữ cảnh; câu đang đánh giá nhưng không rõ cực tính. |
 | `REVIEW` | Có liên quan tới phim, nhưng **không đủ căn cứ đáng tin** để xác định một trong 3 nhãn hoặc không chắc câu có phải nhận xét về phim. | Câu trung tính rõ ràng; câu khó nhưng có kết luận rõ; spam/ngoài phạm vi. |
@@ -85,7 +85,7 @@
 - “Không tệ”, “không đến nỗi”, “không hề chán” → `POS` nhẹ **nếu ngữ cảnh cho thấy đánh giá chấp nhận hoặc tán thành**, không tự coi như lời khen mạnh.
 - “Không hẳn là hay” → thường `NEG` nhẹ hoặc `REVIEW` nếu mục đích chỉ phản bác lời khen, không khẳng định chê.
 - “Chưa xem”, “không biết”, “không nhớ tên” → không phải NEG.
-- Với phủ định kép nhiều tầng, ưu tiên nghĩa cuối cùng rõ ràng; không chắc → `REV_NEGATION`.
+- Với phủ định kép nhiều tầng, ưu tiên nghĩa cuối cùng rõ ràng; không chắc → `REV_OTHER`.
 
 ### R03 — “Nhưng”, “tuy nhiên”, “dù… vẫn”, lời khen nhượng bộ
 - “Phim hay nhưng đoạn cuối hơi dài” → `POS`.
@@ -105,12 +105,14 @@
 - “Đỉnh của chóp, đúng nghĩa đỉnh… của sự thất vọng” → `NEG`.
 - Không suy diễn mỉa mai chỉ vì emoji, giọng văn cộc, dấu ba chấm hoặc từ tục.
 
-### R06 — Cảm xúc do phim gợi ra không đồng nghĩa với đánh giá phim
-- “Khóc hết nước mắt, phim rất cảm động/diễn xuất đỉnh” → `POS`.
-- “Đau lòng vì các nhân vật”, “xem xong khóc suốt” **mà không có đánh giá tác phẩm** → `REVIEW` (`REV_EMOTION`) nếu không thể suy ra lập trường; không tự mặc định POS/NEG.
-- “Phim gây khó chịu vì lạm dụng cảnh bạo lực” → `NEG`.
-- “Ghét nhân vật phản diện” → không mặc định `NEG` đối với bộ phim; nếu khen diễn xuất khiến người xem ghét nhân vật → `POS`.
-- “Tự hào về lịch sử, biết ơn các anh hùng” → ngoài mục tiêu đánh giá phim nếu chỉ nói về lịch sử; `EXCLUDE` nếu không có ý phim, không gán `POS` theo chủ đề yêu nước.
+### R06 — Tác động cảm xúc và trải nghiệm xem phim
+- Tác động cảm xúc tích cực, sự đồng cảm với nhân vật, sự xúc động hoặc trải nghiệm cảm xúc đáng giá do phim mang lại có thể là `POS`, dù người viết không khen trực tiếp kịch bản, diễn xuất hay kỹ thuật. Căn cứ phải nằm trong lời người viết; không cần có đúng từ “hay” hay “đáng xem”.
+- “Cảnh hai cha con làm mình đồng cảm quá, lần nào xem cũng xúc động” → `POS`: người viết thể hiện sự gắn kết tích cực với trải nghiệm phim.
+- “Cứ xem đến đoạn Cooper xem video hai con là lại khóc rưng rức” → có thể `POS` khi toàn câu thể hiện sự xúc động, gắn kết và trải nghiệm xem có giá trị. Giữ các quyết định POS cảm xúc đã được người gán xác nhận; cập nhật guideline không tự đổi nhãn cũ.
+- “Xem xong khóc suốt”, “xem xong buồn cả ngày” đứng một mình, không rõ đang trân trọng hay phàn nàn về trải nghiệm → `REVIEW` (`REV_OTHER`, ghi lý do cảm xúc chưa rõ thái độ). Thiếu ngữ cảnh cụ thể → `REV_CONTEXT`. Không tự mặc định POS/NEG từ buồn, khóc, sợ hoặc emoji.
+- “Phim gây khó chịu vì lạm dụng cảnh bạo lực” → `NEG`: phản ứng được diễn đạt thành phê bình cách làm phim.
+- “Ghét nhân vật phản diện” → không mặc định `NEG` đối với bộ phim; khen diễn xuất khiến người xem ghét nhân vật → `POS`; chưa rõ thái độ với phim → `REVIEW`.
+- “Tự hào về lịch sử, biết ơn các anh hùng” nếu chỉ nói lịch sử, không có ý về phim → `EXCLUDE`. Không gán POS theo chủ đề yêu nước hay tên phim.
 
 ### R07 — Ý kiến khi chưa xem và kỳ vọng
 - “Hóng phim quá”, “trailer cuốn, đặt vé ngay” → `POS` (kỳ vọng tích cực).
@@ -190,9 +192,9 @@
 - “Có ai đi xem chưa?” → `NEU`.
 - “Ai hỏi?” chỉ công kích hội thoại ngoài lề, không đánh giá phim → `EXCLUDE`.
 
-### R19 — Câu mô tả hoặc cảm xúc không có lập trường rõ
+### R19 — Câu mô tả hoặc cảm xúc chưa rõ thái độ
 - “Phim lấy bối cảnh năm 1972” → `NEU`.
-- “Xem xong buồn cả ngày” → `REV_EMOTION` nếu chỉ thuật lại cảm xúc và không rõ đó là lời khen hay chê.
+- “Xem xong buồn cả ngày” → `REV_OTHER` nếu chỉ thuật lại cảm xúc và không rõ thái độ với trải nghiệm phim; áp dụng R06 khi thể hiện đồng cảm hoặc trải nghiệm đáng giá.
 - “Phim rất buồn, rất nặng nề” → `REVIEW` nếu không rõ là mô tả thể loại/tác động hay phê bình trải nghiệm; “nặng nề đến mức không xem nổi, quá mệt” → `NEG`.
 - “Phim có nhiều cảnh chiến đấu” → `NEU`; “cảnh chiến đấu quá giả” → `NEG`.
 
@@ -212,10 +214,7 @@
 | `REV_SARCASM` | Nghi mỉa mai nhưng bằng chứng không đủ | “Hay ghê :))))” trong bối cảnh không rõ |
 | `REV_TARGET` | Không xác định ai/cái gì là đối tượng được đánh giá | “Anh này chán quá” |
 | `REV_CONTEXT` | Thiếu bình luận cha, bài gốc, quy chiếu, slang | “Chuẩn luôn!” không biết đồng ý gì |
-| `REV_EMOTION` | Cảm xúc của người xem không cho biết thái độ với chất lượng phim | “Khóc suốt từ đầu tới cuối” |
-| `REV_NEGATION` | Phủ định/nhượng bộ nhiều tầng không giải nghĩa chắc chắn | “Không phải là không chưa hay…” |
-| `REV_MEDIA` | Cần hình ảnh/sticker/video để hiểu bình luận | “Cảnh này…” + ảnh không truy cập được |
-| `REV_OTHER` | Bất định khác, phải ghi rõ lý do | — |
+| `REV_OTHER` | Bất định khác: cảm xúc chưa rõ thái độ, phủ định khó giải nghĩa, cần ảnh/media; phải ghi rõ lý do | “Khóc suốt” chưa rõ trân trọng hay phàn nàn |
 | `EXC_IRRELEVANT` | Không có nội dung về phim | “Hôm nay tắc đường kinh khủng” |
 | `EXC_PERSONAL_EVENT` | Chỉ nói việc xảy ra lúc đi xem phim | “Đi xem phim bị mất ví” |
 | `EXC_SPAM` | Quảng cáo, spam thuần túy | “Inbox mua hàng giá rẻ” |
@@ -254,10 +253,10 @@
 | 22 | Chưa xem nhưng trailer nhìn chán. | `NEG` | Kỳ vọng tiêu cực |
 | 23 | Chưa xem, không biết có hay không. | `NEU` | Không đánh giá |
 | 24 | Xem phim khóc hết nước mắt, diễn xuất quá xuất sắc. | `POS` | Khen chất lượng |
-| 25 | Xem phim xong khóc suốt. | `REVIEW(REV_EMOTION)` | Chưa rõ đánh giá |
-| 26 | Xem phim buồn quá, tâm trạng nặng nề. | `REVIEW(REV_EMOTION)` | Chưa rõ cảm xúc có phải chê |
+| 25 | Xem phim xong khóc suốt. | `REVIEW(REV_OTHER)` | Chưa rõ đánh giá |
+| 26 | Xem phim buồn quá, tâm trạng nặng nề. | `REVIEW(REV_OTHER)` | Chưa rõ thái độ với trải nghiệm phim |
 | 27 | Bạo lực lạm dụng quá, xem khó chịu. | `NEG` | Phê bình cách làm phim |
-| 28 | Ghét tên phản diện kinh khủng. | `REVIEW(REV_EMOTION)` | Cảm xúc về nhân vật, chưa đánh giá phim |
+| 28 | Ghét tên phản diện kinh khủng. | `REVIEW(REV_OTHER)` | Cảm xúc về nhân vật, chưa đánh giá phim |
 | 29 | Diễn viên đóng phản diện đạt quá, ghét nhân vật thật. | `POS` | Khen diễn xuất |
 | 30 | Tự hào về lịch sử, biết ơn các anh hùng. | `EXCLUDE(EXC_IRRELEVANT)` | Không có đánh giá/thông tin về phim |
 | 31 | Hôm nay mất ví nhưng phim tuyệt vời. | `POS` | Bỏ sự kiện cá nhân |
@@ -360,7 +359,7 @@
 **System/developer instruction cho bộ gán nhãn:**
 
 ```text
-Bạn là bộ gán nhãn sắc thái bình luận phim tiếng Việt, áp dụng chính xác GUIDELINE V2.0.
+Bạn là bộ gán nhãn sắc thái bình luận phim tiếng Việt, áp dụng chính xác GUIDELINE.
 Nhiệm vụ: phân loại lập trường đánh giá chủ đạo của TÁC GIẢ BÌNH LUẬN với phim/khía cạnh của phim.
 Không phải emotion recognition, toxicity classification, không lấy quan điểm bài đăng/bình luận cha làm quan điểm người viết.
 Được dùng post_text và parent_text chỉ để phân giải tham chiếu hoặc hiểu ngữ cảnh có thật.

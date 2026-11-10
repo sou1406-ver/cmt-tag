@@ -11,9 +11,7 @@ from src.data.schema import append_decision, gold_label, validate_decision
 from src.data.quality import mark_exact_duplicates
 from src.data.split import validate_manifest
 from src.data.validation import read_jsonl, verify_prepared
-
-GUIDELINE = Path(__file__).resolve().parents[2]/'docs/guidelines/MOVIE_SENTIMENT_V2_0.md'
-GUIDELINE_VERSION = 'V2.0'
+from .guidelines import GUIDELINE, GUIDELINE_VERSION, validate_guideline
 
 
 def now():
@@ -73,6 +71,7 @@ def export_tasks(root, version, output, seed=42, random_count=150, hard_ids=(), 
 def import_human(task_path, csv_path, output, annotator, blind, adjudication=False):
     if not annotator.strip(): raise ValueError('Annotator ID required')
     task=json.loads(Path(task_path).read_text(encoding='utf-8'))
+    validate_guideline(task['guideline_version'], task['guideline_sha256'])
     expected={r['id']:r for r in task['rows']}
     with Path(csv_path).open(encoding='utf-8-sig',newline='') as f: rows=list(csv.DictReader(f))
     ids=[r['id'] for r in rows]
@@ -140,15 +139,17 @@ def release(root, version, event_paths, output, used_ids=(), synthetic=False):
     original,pairs,manifest=prepared(root,version)
     records=deepcopy(original); lookup={r['id']:r for r in records}
     history=[]
+    guide_contract=None
     for path in event_paths:
         for event in read_jsonl(path):
             if event['dataset_version']!=version or event['id'] not in lookup:
                 raise ValueError('Event dataset/ID mismatch')
-            if event['guideline_sha256']!=digest(GUIDELINE.read_bytes()):
-                raise ValueError('Guideline mismatch')
             r=lookup[event['id']]; d=event['decision']
+            contract=validate_guideline(d['guideline_version'], event['guideline_sha256'])
+            if guide_contract is not None and guide_contract != contract:
+                raise ValueError('Mixed guidelines require explicit human migration')
+            guide_contract=contract
             if d.get('fixture_only') and not synthetic: raise ValueError('Replay events are fixture-only')
-            if d['guideline_version']!=GUIDELINE_VERSION: raise ValueError('Guideline version mismatch')
             if d['label_source']=='human' and r['annotations']['human']:
                 previous=r['annotations']['human'][-1]
                 if (previous['status'],previous['label'])!=(d['status'],d['label']) and not d.get('adjudication'):
@@ -175,8 +176,9 @@ def release(root, version, event_paths, output, used_ids=(), synthetic=False):
         with (output/name).open('x',encoding='utf-8',newline='\n') as f:
             for r in rows: f.write(canonical_json(r)+'\n')
     save(output/'manifest.json',manifest)
-    save(output/'release.json',{'dataset_version':version,'guideline_version':GUIDELINE_VERSION,
-        'guideline_sha256':digest(GUIDELINE.read_bytes()),'created_at':now(),'synthetic':synthetic,
+    guide_version,guide_sha=guide_contract or (GUIDELINE_VERSION,digest(GUIDELINE.read_bytes()))
+    save(output/'release.json',{'dataset_version':version,'guideline_version':guide_version,
+        'guideline_sha256':guide_sha,'created_at':now(),'synthetic':synthetic,
         'status':'ready' if not unresolved else 'draft','unresolved_holdout_ids':unresolved,
         'used_train_tune_ids':sorted(used_ids),'parent_report_sha256':digest((Path(root)/'processed'/version/'report.json').read_bytes()),
         'checksums':{p.name:digest(p.read_bytes()) for p in output.iterdir()}})

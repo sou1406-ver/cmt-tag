@@ -6,6 +6,8 @@ import unittest
 
 from scripts.normalize_annotations import FIELDS, normalize_file
 from src.annotation.core import import_human
+from src.annotation.guidelines import GUIDELINE, GUIDELINE_VERSION
+from src.data.importers import digest
 
 
 class NormalizeAnnotationsTests(unittest.TestCase):
@@ -19,7 +21,7 @@ class NormalizeAnnotationsTests(unittest.TestCase):
         for index, (row, decision) in enumerate(zip(rows, decisions)):
             row.update(id=f'fixture_{index}', movie_id='fixture_film', text_raw=f'=)) fixture {index}')
             row.update(decision)
-        task = dict(dataset_version='fixture', guideline_version='fixture-v1', guideline_sha256='fixture-sha',
+        task = dict(dataset_version='fixture', guideline_version=GUIDELINE_VERSION, guideline_sha256=digest(GUIDELINE.read_bytes()),
                     rows=[dict(id=r['id'], text_raw=r['text_raw'], split='train', cohort='random') for r in rows])
         task_path = self.root / 'task.json'
         task_path.write_text(json.dumps(task), encoding='utf-8')

@@ -2,9 +2,9 @@
 
 Quyết định dữ liệu: [Phase 0](PHASE_0_DATA_AUDIT.md), nhánh B trên fixture.
 Nguồn 29k chưa được phép dùng cho train/API. Không có gold hoặc Kappa người thật.
-Guideline [V2.0](guidelines/MOVIE_SENTIMENT_V2_0.md) sao chép byte nguyên vẹn từ
-workspace (tên file ngoài ghi V2.1, tiêu đề bên trong V2.0); SHA-256
-`b094bcffc28f5099b6aa0278f95eaf4ee35cba1ee4f3965afa7009d26bd43844`.
+Guideline đang dùng: [hướng dẫn gán nhãn](guidelines/MOVIE_SENTIMENT.md).
+Báo cáo Phase C này mô tả triển khai ban đầu. Lịch sử guideline và cách giữ
+hash của task cũ được ghi ngắn trong README; không di trú nhãn tự động.
 
 ## Workflow CLI
 

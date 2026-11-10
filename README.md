@@ -79,6 +79,27 @@ Không xây web, dashboard hoặc giao diện ứng dụng. Tooling C/D đã ki�
 fixture và đã chạy CV thăm dò trên nhãn người; đánh giá gold độc lập vẫn chưa có.
 Baseline CLI và kết quả fixture: [Phase D](docs/PHASE_D_REPORT.md).
 
+## Phase E: thử tiền xử lý tiếng Việt và đặc trưng
+
+Đã thử B0–B6 trên **đúng 346 nhãn và ba fold theo bài đã khóa**, LR/LinearSVC
+với None/balanced, NB làm tham chiếu. So sánh raw word TF-IDF, chuẩn hóa nhẹ,
+tách từ local, char_wb(3–5), word+char, teencode và mask; không thay nhãn/split.
+Char TF-IDF + SVM balanced đạt **Macro-F1 0,5802**; cùng SVM word cũ là 0,4561.
+Recall POS/NEU lên **0,4364 / 0,4239**. B6 chỉ thêm mask là 0,5729, chưa thấy
+cải thiện. Đây vẫn là chọn mô hình trên CV phát triển, chưa có test độc lập.
+[Toàn bộ bảng so sánh, confusion matrices và lỗi theo phim](docs/PHASE_E_REPORT.md).
+
+```powershell
+.\.venv-crawler\Scripts\python.exe -m venv .venv-phase-e
+.\.venv-phase-e\Scripts\python.exe -m pip install -r requirements-phase-e-lock.txt
+.\.venv-phase-e\Scripts\python.exe scripts/run_preprocessing_experiments.py
+```
+
+Run hiện tại ở `outputs/phase_e/`; đầu vào/fold khóa checksum, output không ghi
+đè (dùng `--output` khác khi lặp). Môi trường tách từ riêng, pipeline cũ giữ
+nguyên. Chưa cào thêm hoặc gọi AI gán nhãn; quyết định mở rộng nhãn sẽ dựa
+trên phân tích lỗi và cần test độc lập sau đó.
+
 ## Thu thập Facebook mới (Python CLI)
 
 Dán nhiều link trong cùng run, dùng Brave:

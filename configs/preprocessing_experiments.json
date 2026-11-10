@@ -1,0 +1,38 @@
+{
+  "dataset": "outputs/development/reviewed",
+  "dataset_manifest_sha256": "a4dba6c15c28455661ea84992ad4a19478e90b5dde62abe8acbe5533d2f91d64",
+  "locked_plan": "outputs/development/baseline_reviewed/plan.json",
+  "locked_plan_sha256": "b65dc494e232cc689039d427d68f5ccd72cf5f945d63cb4ce56239e6b78e5080",
+  "reference_metrics": "outputs/development/baseline_reviewed/metrics.json",
+  "reference_metrics_sha256": "7b33a30c2c9b78230781342ac588d1dd84cbe64e05231ed723245da34dd9cd2b",
+  "mask_lexicon": "configs/entity_mask.json",
+  "mask_lexicon_sha256": "78c3f83ae01d2c6467ddd8722b4ee6a54aca8be1d0952cc14f0c167fd83ab44d",
+  "mask_preserve_unmatched_raw": true,
+  "expected_candidates": 346,
+  "seed": 42,
+  "models": ["lr", "svm"],
+  "class_weights": [null, "balanced"],
+  "nb_reference": true,
+  "variants": {
+    "B0": {"feature": "word", "light": false, "segment": false, "teencode": false},
+    "B1": {"feature": "word", "light": true, "segment": false, "teencode": false},
+    "B2": {"feature": "word", "light": true, "segment": true, "teencode": false},
+    "B3": {"feature": "char", "light": false, "segment": false, "teencode": false},
+    "B4": {"feature": "union", "light": true, "segment": false, "teencode": false},
+    "B5": {"feature": "union", "light": true, "segment": false, "teencode": true}
+  },
+  "word_ngrams": [1, 2],
+  "char_ngrams": [3, 5],
+  "char_analyzer": "char_wb",
+  "selection": "Highest pooled development OOF macro-F1 among B0-B5 LR/SVM; deterministic config-order ties. B6 masks that same recipe/model/weight; no reranking after masking.",
+  "preprocessing": {
+    "segmenter": "underthesea",
+    "segmenter_version": "8.3.0",
+    "segmenter_token_normalize": false,
+    "emoji": "literal_unicode_codepoint_tokens",
+    "emoticon": "literal_codepoint_tokens",
+    "teencode_map": {"ko": "không", "khum": "không", "đc": "được", "k": "không"},
+    "k_policy": "standalone_except_after_number",
+    "intensifier_map": {}
+  }
+}

@@ -17,13 +17,15 @@ from sklearn.model_selection import StratifiedGroupKFold
 import sklearn
 
 
-def mask_text(text, aliases, movie_id):
+def mask_text(text, aliases, movie_id, normalize_unicode=True):
     """Literal, curated aliases only; longest match wins in a single substitution."""
-    text = unicodedata.normalize('NFC', text)
+    if normalize_unicode:text = unicodedata.normalize('NFC', text)
     candidates = [a for a in aliases if not a.get('movies') or movie_id in a['movies']]
     patterns = []
     for a in sorted(candidates, key=lambda a: -len(a['text'])):
-        pattern = r'(?<!\w)'+re.escape(unicodedata.normalize('NFC',a['text']))+r'(?!\w)'
+        alias=unicodedata.normalize('NFC',a['text'])
+        spellings=[alias] if normalize_unicode else list(dict.fromkeys([alias,unicodedata.normalize('NFD',alias)]))
+        pattern = r'(?<!\w)(?:'+'|'.join(re.escape(value) for value in spellings)+r')(?!\w)'
         if not a.get('case_sensitive', False):
             pattern = '(?i:'+pattern+')'
         patterns.append((pattern,a['token']))

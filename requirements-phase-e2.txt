@@ -1,0 +1,2 @@
+-r requirements-phase-e-lock.txt
+matplotlib==3.11.2

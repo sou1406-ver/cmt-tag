@@ -126,6 +126,24 @@ Artifact mới ở `outputs/phase_e1/`, từ chối ghi đè; dùng `--output` k
 Report xuất metrics/class/confusion matrix/timing, phân bố movie/post, từng
 seed và transfer support. **174/174 test pass**; chưa thêm data, silver hoặc PhoBERT.
 
+## Phase E.2: cross-domain ranking
+
+Đã giữ nguyên hai transfer/char-SVM của E.1, xuất decision scores theo đúng
+classes_, ROC-AUC OvR, AP/prevalence và ROC/PR/score distributions. Chiều khác
+phim → Mưa Đỏ: AUC POS/NEG/NEU **0,580 / 0,707 / 0,610**; chiều ngược lại
+**0,515 / 0,670 / 0,642**. Classification tái tạo đúng E.1; ranking còn tín
+hiệu yếu–vừa nhưng chưa chứng minh chỉ cần đổi threshold hoặc có prior shift.
+NEG Mưa Đỏ chỉ 10 câu; AP NEG chiều ngược 0,864 cần so prevalence 0,766.
+[Kết quả, biểu đồ và giới hạn](docs/PHASE_E2_REPORT.md).
+
+```powershell
+.\.venv-phase-e\Scripts\python.exe -m pip install -r requirements-phase-e2.txt
+.\.venv-phase-e\Scripts\python.exe scripts/run_ranking_diagnostics.py
+```
+
+Output mới `outputs/phase_e2/`, không ghi đè E/E.1. Không target calibration,
+threshold tuning, AI labeling hoặc Transformer trong bước này.
+
 ## Thu thập Facebook mới (Python CLI)
 
 Dán nhiều link trong cùng run, dùng Brave:

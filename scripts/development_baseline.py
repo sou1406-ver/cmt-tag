@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.prepare_development import grouped_records, load, read_csv, save, sha, write_csv
+from scripts.import_development_review import verify_reviewed_dataset
 from src.baseline.core import LABELS, metrics, model
 from sklearn.model_selection import StratifiedGroupKFold
 import sklearn
@@ -38,7 +39,7 @@ def plan(rows, cfg):
         raise ValueError('Unique IDs and post/source provenance required')
     _,pairs,groups = grouped_records(rows)
     eligible = [r for r in rows if r['status']=='LABELED' and r['label'] in LABELS
-                and not r['validation_issues'] and not r['audit_pending']]
+                and not r['validation_issues'] and not r['audit_pending'] and r.get('review_disposition')!='DEFER']
     if len({groups[r['id']] for r in eligible}) < cfg['folds']:
         raise ValueError('Not enough independent post/duplicate components for CV')
     # Remove exact duplicate observations from scoring, retain all source rows and group bridges.
@@ -107,8 +108,9 @@ def execute(rows, cfg, split_plan, aliases):
     return results,predictions,coefficients
 
 
-def prepare_or_run(config_path, output, run=False):
+def prepare_or_run(config_path, output, run=False, dataset=None):
     cfg=load(config_path)
+    if dataset is not None:cfg['dataset']=str(dataset)
     if cfg['models'] != ['nb','lr','svm'] or cfg['variants'] != ['original','masked']:
         raise ValueError('Expected fixed NB/LR/LinearSVC and original/masked development comparison')
     source=ROOT/cfg['dataset']
@@ -120,10 +122,12 @@ def prepare_or_run(config_path, output, run=False):
         raise ValueError('This entry point accepts exposed development data only')
     rows=read_csv(source/'annotations.csv')
     aliases=load(ROOT/cfg['mask_lexicon'])['aliases']
-    split_plan=plan(rows,cfg)
-    ready=manifest['all_human_review_resolved'] and not manifest['pending_review_ids'] and not any(r['audit_pending'] or r['validation_issues'] for r in rows)
+    ready=manifest['all_human_review_resolved'] and not manifest['pending_review_ids'] and not any(
+        r['audit_pending'] or (r['validation_issues'] and r.get('review_disposition')!='DEFER') for r in rows)
+    if ready:verify_reviewed_dataset(source,rows,manifest)
     if run and not ready:
         raise ValueError('Human review is pending; no estimator was fitted')
+    split_plan=plan(rows,cfg)
     if run and any(not set(LABELS).issubset(f['train_counts']) for f in split_plan['folds']):
         raise ValueError('Every development training fold must contain all three classes')
     output=Path(output)
@@ -133,6 +137,7 @@ def prepare_or_run(config_path, output, run=False):
                       config_sha256=sha(config_path),mask_lexicon_sha256=sha(ROOT/cfg['mask_lexicon']),
                       sklearn_version=sklearn.__version__,pending_human_count=len(manifest['pending_review_ids']),
                       ready_to_run=bool(ready))
+    split_plan['dataset']=str(source.resolve())
     save(output/'plan.json',split_plan)
     if run:
         results,predictions,coefficients=execute(rows,cfg,split_plan,aliases)
@@ -148,10 +153,11 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--config',type=Path,default=ROOT/'configs/baseline_development.json')
     p.add_argument('--output',type=Path,default=ROOT/'outputs/development/baseline_plan')
+    p.add_argument('--dataset',type=Path,help='Reviewed snapshot from import_development_review.py')
     p.add_argument('--run',action='store_true',help='Explicit fitting, only after human review has been resolved')
     args=p.parse_args()
     try:
-        result=prepare_or_run(args.config,args.output,args.run)
+        result=prepare_or_run(args.config,args.output,args.run,args.dataset)
     except (ValueError,OSError,KeyError) as exc:
         p.exit(2,f'{type(exc).__name__}: {exc}\n')
     print(json.dumps({k:result[k] for k in ('candidates','provisional','pending_human_count','ready_to_run','models_trained')}))

@@ -7,24 +7,41 @@ là comment về phim với ba sentiment `POS / NEG / NEU`.
 
 ## Guideline và dữ liệu đang chuẩn bị
 
-Dùng duy nhất [guideline gán nhãn](docs/guidelines/MOVIE_SENTIMENT.md).
-Nội dung hiện theo 2.1: sự đồng cảm và trải nghiệm cảm xúc tích cực, đáng giá do
+Dùng [guideline V2.1](docs/guidelines/MOVIE_SENTIMENT_V2_1.md) cho công việc mới;
+[V2.0](docs/guidelines/MOVIE_SENTIMENT_V2_0.md) giữ nguyên cho các task cũ.
+Nội dung 2.1: sự đồng cảm và trải nghiệm cảm xúc tích cực, đáng giá do
 phim mang lại có thể là POS; cảm xúc đơn thuần chưa rõ thái độ vẫn là REVIEW.
 Mã REVIEW của CLI gồm `REV_MIXED`, `REV_SARCASM`, `REV_TARGET`, `REV_CONTEXT`,
 `REV_OTHER`; bất định cảm xúc/phủ định/media ghi chi tiết trong `reason`.
 
-Lịch sử ngắn: bản 2.0 gốc nằm trong Git tại
-`89ec79a:docs/guidelines/MOVIE_SENTIMENT_V2_0.md` (SHA-256
-`b094bcffc28f5099b6aa0278f95eaf4ee35cba1ee4f3965afa7009d26bd43844`).
-Không giữ nhiều file guideline theo phiên bản; task cũ giữ nguyên hash và nhãn,
-không được tự đổi thành đã gán theo guideline mới.
+Hai file versioned bất biến, kiểm tra checksum cố định trong code. V2.0 được
+khôi phục nguyên byte từ Git; V2.1 giữ nguyên byte của bản ở commit `13b5155`.
+Không sửa nội dung dưới cùng phiên bản; task cũ giữ hash và nhãn, không tự đổi
+thành đã gán theo guideline mới. Đợt duyệt mới ghi riêng hợp đồng V2.1.
 
 Hai đợt 200 Mưa Đỏ và 200 đa phim được chuẩn bị thành **một bộ 400 dòng** ở
 `outputs/development/`, nguồn XLSX giữ nguyên. Bản Excel làm việc là
 `outputs/development/annotations.xlsx`: sheet `Duyet nhan` để duyệt đề xuất,
 `400 binh luan` để tra nhãn đã chuẩn hóa, `Thong ke` để xem theo phim.
-Nhãn cảm xúc đã xác nhận vẫn giữ POS. Đề xuất trong sheet chờ duyệt chưa được
-áp dụng; sau khi người gán lưu quyết định cần nhập và kiểm tra lại trước khi train.
+Nhãn cảm xúc đã xác nhận vẫn giữ POS. Sheet `400 binh luan` là snapshot lúc tạo
+task; dữ liệu sau duyệt được xuất riêng ở `reviewed/`, không ghi đè workbook.
+
+Trong `Duyet nhan`, điền cột E (`decision`) ở dòng 6–24: KEEP giữ nhãn,
+CHANGE cần nhãn mới ở F và lý do ở H, DEFER cần lý do ở H và để ngoài train.
+REVIEW cần mã ở G (kể cả KEEP nếu mã đang thiếu). Cột A là số dòng file gán gốc.
+Không sửa các cột nguồn/đề xuất hoặc sheet snapshot. Lưu Excel rồi nhập:
+
+```powershell
+python scripts/import_development_review.py --annotator annotator_a
+python scripts/development_baseline.py --dataset outputs/development/reviewed --output outputs/development/baseline_reviewed --run
+```
+
+Importer đọc Excel hoặc CSV, nối theo ID, yêu cầu đủ mọi quyết định và kiểm
+tra nhãn/mã/lý do. Nhập thiếu sẽ không tạo output. Cùng file và người duyệt có
+thể nhập lại an toàn; output có quyết định khác không bị ghi đè. `reviewed/`
+giữ đủ 400 dòng, snapshot đầu vào, lịch sử trước/sau và manifest. DEFER giữ
+nhãn/trạng thái gốc nhưng không vào train; không đồng nghĩa đã phân xử sentiment.
+Baseline kiểm tra và phát lại bằng chứng duyệt trước khi fit, không chỉ đọc cờ.
 
 Chuẩn bị từ hai workbook local đã khóa checksum (không ghi đè output có sẵn):
 
@@ -38,7 +55,7 @@ Bước thứ hai chỉ tạo kế hoạch, **không fit model**. Cấu hình
 3-fold theo nhóm bài đăng và cụm trùng/gần trùng; hai biến thể dùng cùng fold.
 `configs/entity_mask.json` liệt kê alias che tên phim/nhân vật, giữ văn bản gốc;
 danh sách có giới hạn, tránh tự đoán tên người hoặc che các từ đơn mơ hồ.
-Kế hoạch hiện còn 19 quyết định chờ người gán, nên `--run` bị chặn.
+File local hiện còn 19 quyết định chờ người gán, nên chưa chạy baseline thật.
 Đây là dữ liệu phát triển đã tiếp xúc và được chọn có chủ đích, không phải gold
 test độc lập; chưa train dữ liệu thật, chưa có kết quả so sánh hai biến thể.
 Chi tiết số liệu và giới hạn: [chuẩn bị baseline](docs/DEVELOPMENT_BASELINE.md).

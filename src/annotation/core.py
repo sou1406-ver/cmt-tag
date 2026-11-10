@@ -40,6 +40,7 @@ def prepared(root, version):
 
 
 def export_tasks(root, version, output, seed=42, random_count=150, hard_ids=(), split=None, count=None):
+    validate_guideline(GUIDELINE_VERSION, digest(GUIDELINE.read_bytes()))
     records,_,manifest=prepared(root,version)
     eligible={e['id']:e for e in manifest['entries'] if e['eligible_for_annotation']}
     lookup={r['id']:r for r in records}
@@ -176,7 +177,7 @@ def release(root, version, event_paths, output, used_ids=(), synthetic=False):
         with (output/name).open('x',encoding='utf-8',newline='\n') as f:
             for r in rows: f.write(canonical_json(r)+'\n')
     save(output/'manifest.json',manifest)
-    guide_version,guide_sha=guide_contract or (GUIDELINE_VERSION,digest(GUIDELINE.read_bytes()))
+    guide_version,guide_sha=guide_contract or validate_guideline(GUIDELINE_VERSION,digest(GUIDELINE.read_bytes()))
     save(output/'release.json',{'dataset_version':version,'guideline_version':guide_version,
         'guideline_sha256':guide_sha,'created_at':now(),'synthetic':synthetic,
         'status':'ready' if not unresolved else 'draft','unresolved_holdout_ids':unresolved,

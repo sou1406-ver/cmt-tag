@@ -19,11 +19,15 @@ EDITABLE = frozenset(('status', 'label', 'review_reason', 'reason'))
 NS = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
 
 
-def read_input(path, sheet_name=None):
+def read_input(path, sheet_name=None, header_row=1, last_column=None):
     """Read literal cell values only; never evaluate workbook formulas."""
     path = Path(path)
+    if type(header_row) is not int or header_row < 1 or (last_column is not None and (type(last_column) is not int or last_column < 1)):
+        raise ValueError('Header row and column bound must be positive integers')
     payload = path.read_bytes()
     if path.suffix.lower() == '.csv':
+        if header_row != 1 or last_column is not None:
+            raise ValueError('CSV uses its first row and all columns')
         reader = csv.DictReader(io.StringIO(payload.decode('utf-8-sig'), newline=''))
         fields, rows = reader.fieldnames, list(reader)
         if any(None in row or any(value is None for value in row.values()) for row in rows):
@@ -66,11 +70,11 @@ def read_input(path, sheet_name=None):
                 for letter in letters:
                     column = column * 26 + ord(letter) - ord('A') + 1
                 grid.setdefault(number, {})[column] = value
-            headers = grid.get(1, {})
-            columns = sorted(c for c, value in headers.items() if value)
+            headers = grid.get(header_row, {})
+            columns = sorted(c for c, value in headers.items() if value and (last_column is None or c <= last_column))
             fields = [headers[c] for c in columns]
             rows = [{headers[c]: values.get(c, '') for c in columns}
-                    for number, values in sorted(grid.items()) if number > 1 and any(values.get(c, '') for c in columns)]
+                    for number, values in sorted(grid.items()) if number > header_row and any(values.get(c, '') for c in columns)]
     else:
         raise ValueError('Input must be CSV or XLSX')
     if not fields or len(fields) != len(set(fields)) or not {'id', 'text_raw', 'label'}.issubset(fields):

@@ -82,6 +82,7 @@ def dependence(rows):
 
 def _prepare(config_path, output):
     cfg = load(config_path)
+    validate_guideline(GUIDELINE_VERSION, sha(GUIDELINE))
     output = Path(output)
     if output.exists():
         raise FileExistsError('Output exists; preserve human work and choose a new empty output directory')

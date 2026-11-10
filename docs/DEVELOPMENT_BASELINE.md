@@ -1,7 +1,8 @@
 # Chuẩn bị dữ liệu và baseline thăm dò
 
-Dùng [guideline chính](guidelines/MOVIE_SENTIMENT.md). Nhãn được giữ theo task
-ban đầu; việc cập nhật hướng dẫn không tự xác nhận lại 400 quyết định cũ.
+Duyệt mới dùng [V2.1](guidelines/MOVIE_SENTIMENT_V2_1.md); nhãn task ban đầu giữ
+hợp đồng [V2.0](guidelines/MOVIE_SENTIMENT_V2_0.md). Hai file khóa checksum bất
+biến. Cập nhật hướng dẫn không tự xác nhận lại 400 quyết định cũ.
 
 ## Bộ dữ liệu làm việc
 
@@ -9,10 +10,12 @@ Một thư mục chính: `outputs/development/`. Excel `annotations.xlsx` có ba
 
 - `Duyet nhan`: 18 đề xuất rà nhãn và một dòng REVIEW thiếu mã. Điền `decision`
   bằng KEEP / CHANGE / DEFER. CHANGE cần quyết định mới và lý do; REVIEW cần mã.
-  Đề xuất và nhãn hiện tại nằm ở các cột riêng. Sau khi lưu, cần nhập các quyết
-  định theo ID, kiểm tra lịch sử và tạo lại bản chuẩn bị trước khi chạy model.
+  Đề xuất và nhãn hiện tại nằm ở các cột riêng. Cột E dòng 6–24 là quyết định;
+  F là nhãn mới, G là mã REVIEW, H là lý do. Cột A là dòng trong workbook gốc.
+  Nhập bằng `scripts/import_development_review.py` sau khi lưu workbook.
 - `400 binh luan`: toàn bộ quyết định đã chuẩn hóa, giữ nguyên văn bản task,
-  emoji, phủ định, ID và nguồn vòng gán. Không sửa trực tiếp sheet này để duyệt.
+  emoji, phủ định, ID và nguồn vòng gán tại thời điểm tạo task. Không sửa trực
+  tiếp sheet này; dữ liệu sau duyệt ở `reviewed/annotations.csv`.
 - `Thong ke`: nhãn đã nhập theo chủ đề phim nguồn, trước khi duyệt đề xuất.
 
 CSV `annotations.csv` giữ đủ provenance gồm comment/post/parent ID, URL,
@@ -88,8 +91,42 @@ Hai biến thể dùng đúng cùng ID/fold, TF-IDF chỉ fit trên phần train
   như “Mai”, “Sen”, “Cường”, “Quang” không bị che toàn cục. Lexicon có giới hạn,
   cần kiểm tra độ phủ trước khi diễn giải so sánh và khóa trước test độc lập.
 
-`--run` là hành động fit rõ ràng và hiện bị chặn bởi 19 quyết định chưa chốt.
-Sau khi nhập quyết định người gán và kiểm tra lại manifest, lệnh này sẽ xuất
+## Nhập quyết định và mở baseline
+
+```powershell
+python scripts/import_development_review.py --annotator annotator_a
+python scripts/development_baseline.py --dataset outputs/development/reviewed --output outputs/development/baseline_reviewed --run
+```
+
+Importer mặc định đọc sheet `Duyet nhan`, header ở dòng 5 của workbook chung.
+Có thể dùng `--input <file.csv>` với cùng cấu trúc cột. Phải có đúng các ID
+đang chờ một lần; thứ tự dòng không quan trọng. Các cột nguồn và sheet snapshot
+được đối chiếu chính xác, không cho sửa text/ID/nhãn gốc để lách bước duyệt.
+Formula không được dùng làm quyết định.
+
+- KEEP giữ status/label. Cho phép điền mã REVIEW còn thiếu; đổi mã đã có cần
+  CHANGE. KEEP không tự chấp nhận nhãn mà Codex đề xuất.
+- CHANGE cần POS/NEG/NEU/REVIEW/EXCLUDE và lý do người gán; REVIEW cần mã hợp lệ.
+  REV_OTHER cần giải thích. Các mã không phù hợp với trạng thái bị từ chối.
+- DEFER cần lý do, để trống nhãn mới và mã REVIEW. Giữ nguyên nhãn/trạng thái
+  gốc và lỗi kỹ thuật còn lại; metadata đánh dấu không được huấn luyện.
+
+Nếu còn ô decision trống hoặc quyết định không hợp lệ, không tạo output dở
+dang. Khi đủ, `reviewed/` là snapshot mới đủ 400 dòng với lịch sử 19 sự kiện,
+actor/time, guideline/hash, checksum input, giá trị trước/sau và ghi chú.
+Snapshot cha và file duyệt được giữ trong provenance. Bản gốc và workbook không
+bị ghi đè. Cùng input/actor nhập lại trả về cùng kết quả; input khác phải chọn
+output mới bằng `--output`, không ghi đè lịch sử đã có.
+
+`all_human_review_resolved` chỉ được đặt sau khi nhập đủ quyết định hợp lệ.
+DEFER là hoàn tất quyết định hoãn, không phải gold sentiment. Baseline kiểm
+checksum và phát lại toàn bộ quyết định để đối chiếu dataset/history trước
+khi fit; chỉ đổi cờ manifest không mở được. Mọi dòng DEFER, REVIEW hoặc EXCLUDE
+đều ngoài supervised train. Các nhóm post/duplicate được tính trên cả 400 dòng,
+kể cả dòng ngoài train, để giữ liên kết bắc cầu. Fold được tính lại sau duyệt.
+
+`--run` là hành động fit rõ ràng; file hiện vẫn còn 19 ô trống nên chưa chạy
+baseline thật. Sau khi nhập quyết định hợp lệ, lệnh này sẽ xuất
 OOF metrics, recall từng lớp, confusion matrix, dự đoán sai và hệ số SVM theo
 fold. Accuracy trong metrics chỉ mô tả mẫu phát triển đã chọn, không phải hiệu
 năng theo phân phối thực tế. Không tạo hoặc mở test độc lập.
@@ -99,7 +136,10 @@ chia nhóm; fixture kiểm NB/LR/LinearSVC, cả hai biến thể, metrics và c
 vocabulary. **Chưa chạy:** train/CV trên 400 dòng thật, so sánh che tên, phân
 tích hệ số/dự đoán sai trên nhãn thật, đánh giá phim mới hoặc gold test độc lập.
 
-Kiểm tra cuối: `python -m unittest discover -s tests` **138/138 pass**;
-`git diff --check` sạch. Đã đối chiếu 400 dòng Excel với CSV, 19 ô quyết định
-chưa điền, native dropdown/filter, không có formula trong dữ liệu comment và
-checksum các input/task không thay đổi.
+Lượt chuẩn bị trước: 138/138 test pass; đã đối chiếu 400 dòng Excel/CSV và
+checksum nguồn. Lượt hoàn thiện importer bổ sung fixture Excel/CSV, KEEP /
+CHANGE / DEFER, thiếu quyết định/mã, dữ liệu bị sửa, tính lặp an toàn, journal
+và receipt, checksum guideline bất biến, cùng chạy baseline đủ sáu tổ hợp bằng
+fixture sau khi mở khóa hợp lệ. Lượt cuối `python -m unittest discover -s tests`
+**145/145 pass** (22,624 giây); `git diff --check` sạch. Workbook local và toàn
+bộ input/task giữ nguyên checksum; chưa có quyết định thật mới hoặc model thật.

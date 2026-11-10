@@ -100,6 +100,32 @@ Run hiện tại ở `outputs/phase_e/`; đầu vào/fold khóa checksum, output
 nguyên. Chưa cào thêm hoặc gọi AI gán nhãn; quyết định mở rộng nhãn sẽ dựa
 trên phân tích lỗi và cần test độc lập sau đó.
 
+## Phase E.1: BoW và độ ổn định grouped CV
+
+Đã thêm CountVectorizer + MNB/ComplementNB, unigram và unigram+bigram.
+So sánh 7 cấu hình trên fold cũ và 5 seed cố định, giữ nguyên mọi nhóm
+post/comment ID/duplicate. Không thay nhãn, dữ liệu hoặc kết quả Phase E.
+
+- Char-SVM: **Macro-F1 0,5593 ± 0,0146** qua 5 pooled OOF scores; mốc seed 42
+  vẫn là 0,5802. Std không tính từ 15 fold độc lập.
+- BoW tốt nhất: ComplementNB unigram **0,4887 ± 0,0157**, nhưng NEU còn yếu.
+- Có 5 partition khác nhau, song các khối Mưa Đỏ không đổi sau căn chỉnh fold.
+  90/110 POS thuộc Mưa Đỏ; chỉ có 20 POS ở các phim khác.
+- Transfer char-SVM khác phim → Mưa Đỏ / ngược lại: **0,0707 / 0,1397**.
+  Cả hai chỉ là diagnostic có giới hạn do Mưa Đỏ có 10 NEG và lệch nguồn/nhãn;
+  không gọi là independent gold test, không dùng để chọn hyperparameter.
+
+[Bảng kết quả, số lớp từng fold, bằng chứng lỗi và giới hạn](docs/PHASE_E1_REPORT.md).
+
+```powershell
+.\.venv-phase-e\Scripts\python.exe scripts/run_bow_robustness.py
+```
+
+Config `configs/bow_robustness.json`, dependencies dùng lockfile Phase E.
+Artifact mới ở `outputs/phase_e1/`, từ chối ghi đè; dùng `--output` khác khi lặp.
+Report xuất metrics/class/confusion matrix/timing, phân bố movie/post, từng
+seed và transfer support. **174/174 test pass**; chưa thêm data, silver hoặc PhoBERT.
+
 ## Thu thập Facebook mới (Python CLI)
 
 Dán nhiều link trong cùng run, dùng Brave:

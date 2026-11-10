@@ -2,8 +2,8 @@
 
 Hai người gán **độc lập**, mỗi người 200 dòng:
 
-- Người A chỉ dùng `annotator_a.csv`.
-- Người B chỉ dùng `annotator_b.csv`.
+- Người A chỉ dùng `annotator_a.csv` hoặc bản `.xlsx` tương ứng nếu đã tạo.
+- Người B chỉ dùng `annotator_b.csv` hoặc bản `.xlsx` tương ứng nếu đã tạo.
 - Không trao đổi nhãn, xem file của người còn lại, nhãn luật hoặc dự đoán máy trước khi nộp.
 - Thư mục `coordinator/` dành cho người điều phối; không đưa cho người gán trước khi hoàn tất.
 
@@ -28,6 +28,39 @@ lời thì dùng REVIEW phù hợp, không tự tìm thêm bài trên mạng.
 Tất cả mẫu thuộc phim Mưa Đỏ; file gán không có nguồn, URL, tên tác giả hoặc
 gợi ý nhãn. Nội dung tự do có thể tự tiết lộ nguồn; phần mềm không chứng minh
 được rằng người gán thực sự làm độc lập. Thứ tự A/B khác nhau; luôn ghép theo ID.
+
+## Chuẩn hóa file gán trước khi import
+
+Sau khi gán xong, có thể dùng bước chuẩn hóa độc lập; importer Phase C giữ nguyên:
+
+```powershell
+python scripts/normalize_annotations.py --input data/tasks/source_quality_pilot_20261110/annotator_a.csv --task data/tasks/source_quality_pilot_20261110/coordinator/task.json --output data/annotations/source_quality_pilot_20261110/a_normalized_v1
+```
+
+`--input` nhận CSV hoặc XLSX; nếu gán trong Excel, trỏ tới chính workbook đã lưu.
+Script điền `LABELED` khi đã có POS/NEG/NEU, hoặc chuyển REVIEW/EXCLUDE từ cột
+`label` sang `status` và để `label` trống. Không suy ra sentiment từ comment,
+không viết hộ lý do, không mặc định mã REVIEW khi người gán chưa chọn.
+
+`normalized.csv` giữ toàn bộ ID, text và quyết định, dùng làm đầu vào
+`import-human` với **task đầy đủ**. `sentiment_candidates.csv` chỉ chứa các dòng
+LABELED có POS/NEG/NEU hợp lệ. `review.csv` và `exclude.csv` giữ riêng hai trạng
+thái ngoài ba lớp; `pending.csv` chỉ xuất khi còn dòng chưa xác định hợp lệ.
+Không đưa file subset vào `import-human` với task 200 ID vì importer kiểm đủ ID.
+
+`original_input.csv` và `normalization_report.json` lưu đầu vào, checksum, mọi
+thay đổi chuẩn hóa và lỗi. Thiếu nhãn, thiếu mã REVIEW, trường mâu thuẫn hoặc
+text bị sửa làm `import_ready=false`, CLI trả mã 2; không xóa dòng để né lỗi.
+Lý do tự do `reason` được giữ nguyên; importer hiện không bắt buộc trường này.
+
+`--restore-task-whitespace` chỉ khôi phục text từ task khi các token cách nhau
+bởi khoảng trắng giống hệt nhau, và ghi lại từng thay đổi. Thay đổi từ ngữ vẫn
+bị chặn. `--overrides` nhận JSON bổ sung do người gán xác nhận, ghép theo ID,
+có giá trị trước/sau và bằng chứng; không dùng để tự đoán nhãn còn thiếu.
+
+Mỗi lần chạy phải dùng thư mục output mới, không ghi đè file gán gốc hoặc kết
+quả cũ. Output nhãn người giữ local. Bước này không tạo gold, không chạy train,
+không thay đổi split; vẫn cần người B để tính agreement/Kappa cho pilot.
 
 ## Lấy mẫu và phạm vi kết luận
 

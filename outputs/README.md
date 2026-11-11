@@ -8,6 +8,8 @@ checkout code trên máy khác không tự có những dữ liệu này.
 
 | Cần làm gì | Đường dẫn |
 | --- | --- |
+| Duyệt chất lượng 200 câu Phase I.1 (để trống sentiment) | [quality_review_200.csv](phase_i1/v2/quality_review_200.csv) |
+| Pilot mới chỉ để xem trước, chưa gửi AI | [pilot_500_candidate.csv](phase_i1/v2/pilot_500_candidate.csv) |
 | 186 nhãn sentiment đã nhập | [sentiment.csv](phase_g2/human_import_01/sentiment.csv) |
 | 64 quyết định EXCLUDE giữ riêng | [excluded.csv](phase_g2/human_import_01/excluded.csv) |
 | Đủ 250 quyết định đã chuẩn hóa | [decisions.csv](phase_g2/human_import_01/decisions.csv) |

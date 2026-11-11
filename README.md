@@ -2,6 +2,12 @@
 
 ## Phase I — dataset và pilot gán nhãn
 
+**Đang chờ quality audit Phase I.1.** Pilot Phase I chưa được duyệt để gửi AI.
+Đọc [báo cáo I.1](docs/PHASE_I1_QUALITY_REPORT.md) và
+[quy tắc/phiếu duyệt](docs/PHASE_I1_PREPROCESSING_RULES.md).
+Phiếu 200 câu nằm ở `outputs/phase_i1/v2/quality_review_200.csv`;
+`pilot_500_candidate.csv` cùng folder chỉ là bản xem trước.
+
 Phase I tạo unified corpus local, các view làm sạch bảo toàn sentiment và pilot
 gán nhãn mù cho Claude/Gemini. File comment, nhãn, danh sách ID, ví dụ before/after
 và manifest chi tiết nằm trong `outputs/phase_i/v5/` và không được commit.

@@ -1,9 +1,16 @@
 # Phân loại sắc thái bình luận phim tiếng Việt
 
-Hiện tại dùng **Phase I.2** để duyệt plain text:
+Hiện tại kiểm định format ở **Phase I.3**:
+[báo cáo và funnel Facebook](docs/PHASE_I3_REPORT.md),
+[spec/cách import](docs/PHASE_I3_PLAIN_TEXT_SPEC.md).
+Mở `outputs/phase_i3/workbook_v3/plain_text_validation_200.xlsx`, điền
+`format_decision` (`ACCEPT/REJECT/UNSURE`) và `human_note`.
+Pilot vẫn `PENDING_HUMAN_FORMAT_APPROVAL`.
+
+Bản **Phase I.2** được giữ để đối chiếu lịch sử:
 [báo cáo](docs/PHASE_I2_REPORT.md), [quy tắc và import](docs/PHASE_I2_PREPROCESSING_SPEC.md).
-Mở `outputs/phase_i2/workbook_v1/quality_review_200.xlsx`, chỉ điền hai cột cuối
-trong sheet Review. Pilot vẫn `PENDING_HUMAN_QUALITY_APPROVAL`.
+Workbook cũ ở `outputs/phase_i2/workbook_v1/quality_review_200.xlsx`.
+Lượt kiểm định hiện tại dùng workbook I.3 ở trên.
 
 ## Phase I — dataset và pilot gán nhãn
 

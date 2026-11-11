@@ -1,5 +1,22 @@
 # Phân loại sắc thái bình luận phim tiếng Việt
 
+## Phase I — dataset và pilot gán nhãn
+
+Phase I tạo unified corpus local, các view làm sạch bảo toàn sentiment và pilot
+gán nhãn mù cho Claude/Gemini. File comment, nhãn, danh sách ID, ví dụ before/after
+và manifest chi tiết nằm trong `outputs/phase_i/v5/` và không được commit.
+Guideline dùng chung là V2.1; legacy `overall` chỉ giữ để audit, không thành nhãn
+human. Phase I không gọi API, không crawl và không train model.
+
+```powershell
+python scripts/prepare_phase_i.py
+```
+
+Đọc [báo cáo tổng hợp Phase I](docs/PHASE_I_DATA_CLEANING_REPORT.md),
+[protocol gán nhãn](docs/PHASE_I_ANNOTATION_PROTOCOL.md) và
+[data dictionary](docs/DATA_DICTIONARY_PHASE_I.md). Hai input mù nằm ở
+`outputs/phase_i/v5/claude_input.csv` và `outputs/phase_i/v5/gemini_input.csv`.
+
 Mở **[cmt-tag.code-workspace](cmt-tag.code-workspace)** trong VS Code để xem
 folder gọn theo việc đang làm: `01 - Nhãn đã nhập`, `02 - Workbook đã gán`,
 và `Repo` cho code/tài liệu. Terminal vẫn ở root repo. Cache/virtualenv/lịch sử

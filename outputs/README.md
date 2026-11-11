@@ -20,6 +20,7 @@ checkout code trên máy khác không tự có những dữ liệu này.
 | Tái lập baseline và bằng chứng blocker fold Phase G.3 (local) | `phase_g3/ablation/` |
 | Audit giant component và ablation theo direct-isolation protocol (local) | `phase_g31/` |
 | Parent/thread audit, error analysis OOF, legacy recheck candidates (local) | `phase_g32/` |
+| Phase I unified corpus, local cleaning audit and 500-row blind pilot | `phase_i/v5/` |
 
 186 nhãn mới ở `human_import_01` chưa tự merge vào release cũ hoặc dùng train.
 Không sửa ID/text trong workbook. Nếu gán lại rồi import, chọn output mới;

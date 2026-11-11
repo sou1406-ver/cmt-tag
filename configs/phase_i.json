@@ -1,0 +1,62 @@
+{
+  "dataset_version": "phase_i_unified_20261111_v5",
+  "master_root": "outputs/phase_g/master",
+  "master_manifest_sha256": "7b66f8aaf08d74bc249ff4d613be08d4a9bb64645f7448f1065a704b81d79af9",
+  "expected_master_rows": 39842,
+  "facebook_annotations": "outputs/development/reviewed/annotations.csv",
+  "legacy_decisions": "outputs/phase_g2/human_import_01/decisions.csv",
+  "legacy_mapping": "outputs/phase_g2/annotation_task/coordinator/coordinator_mapping.json",
+  "human_lineage_config": "configs/unified_dataset.json",
+  "legacy_import_manifest": "outputs/phase_g2/human_import_01/manifest.json",
+  "legacy_source_name": "../data_module1.csv",
+  "guideline": "docs/guidelines/MOVIE_SENTIMENT_V2_1.md",
+  "test_reservation": "outputs/phase_g/blind_test/reservation.json",
+  "test_source_candidates": "outputs/phase_g/blind_test/availability.json",
+  "test_quarantine_root": "outputs",
+  "preprocessing_version": "phase_i_basic_v1",
+  "normalization": {
+    "unicode": "NFC",
+    "html_entities": "semicolon_fixed_point_outside_urls",
+    "whitespace": "collapse",
+    "urls": "preserve",
+    "mentions": "preserve",
+    "emoji": "preserve",
+    "emoticons": "preserve",
+    "negation": "preserve",
+    "punctuation": "preserve",
+    "teencode": "preserve",
+    "repetition": "preserve",
+    "underscores": "preserve",
+    "case": "preserve",
+    "truncate_long_comments": false
+  },
+  "teencode_detection_only": ["ko", "k", "khum", "hok", "đc", "dc", "j", "z", "vch"],
+  "teencode_replacements": {},
+  "exact_ui_strings": [
+    "See more",
+    "Xem thêm",
+    "Trả lời",
+    "Chia sẻ",
+    "Bình luận",
+    "Xem bản dịch",
+    "Viết bình luận",
+    "Tất cả bình luận",
+    "Bình luận hàng đầu",
+    "Mới nhất",
+    "Cũ nhất",
+    "Phản hồi"
+  ],
+  "near_duplicate": {
+    "threshold": 0.9,
+    "min_chars": 40,
+    "shingle_size": 3,
+    "max_posting": 256
+  },
+  "pilot_count": 500,
+  "expected_sentiment_labels": 532,
+  "seed": 20261111,
+  "pilot_source_quota": {
+    "facebook": 250,
+    "legacy_29k_unverified": 250
+  }
+}

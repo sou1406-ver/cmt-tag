@@ -5,6 +5,7 @@
 | Nội dung | Tài liệu |
 | --- | --- |
 | Gán nhãn theo guideline hiện tại | [V2.1](guidelines/MOVIE_SENTIMENT_V2_1.md) |
+| Unified dataset, cleaning và pilot AI mù | [Phase I](PHASE_I_DATA_CLEANING_REPORT.md) · [protocol](PHASE_I_ANNOTATION_PROTOCOL.md) · [data dictionary](DATA_DICTIONARY_PHASE_I.md) |
 | Audit legacy, task 250 và kết quả import 186 sentiment/64 EXCLUDE | [Phase G.2](PHASE_G2_LEGACY_AUDIT.md) |
 | Master và điều kiện independent test | [Phase G](PHASE_G_REPORT.md) |
 | Crawl không count cap, quota test và platform | [Điều chỉnh G.1](PHASE_G1_UPDATE.md) |

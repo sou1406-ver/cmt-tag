@@ -1,0 +1,12 @@
+{
+  "explorer.compactFolders": true,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    ".venv*": true,
+    ".playwright-browsers": true,
+    "data/browser_profile*": true,
+    "data/selenium_cache": true,
+    "outputs": true
+  }
+}

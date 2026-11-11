@@ -1,5 +1,15 @@
 # Phân loại sắc thái bình luận phim tiếng Việt
 
+Mở **[cmt-tag.code-workspace](cmt-tag.code-workspace)** trong VS Code để xem
+folder gọn theo việc đang làm: `01 - Nhãn đã nhập`, `02 - Workbook đã gán`,
+và `Repo` cho code/tài liệu. Terminal vẫn ở root repo. Cache/virtualenv/lịch sử
+outputs được ẩn khỏi Explorer, không bị xóa hoặc chuyển đường dẫn.
+
+Đi nhanh: **[Dữ liệu đang dùng](outputs/README.md)** ·
+**[Mục lục tài liệu](docs/README.md)**. Nhãn mới: 186 sentiment + 64 EXCLUDE
+ở `outputs/phase_g2/human_import_01/`; workbook đã gán giữ trong
+`outputs/phase_g2/annotation_task/`. Các dữ liệu này chỉ có local.
+
 Đặc tả chính thức: [CODEX_HANDOFF_MOVIE_SENTIMENT.md](CODEX_HANDOFF_MOVIE_SENTIMENT.md).
 Đã triển khai **Phase A/B**, **Phase C tooling** và baseline thăm dò trên nhãn người. Phạm vi chỉ
 là comment về phim với ba sentiment `POS / NEG / NEU`.

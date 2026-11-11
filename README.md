@@ -235,7 +235,7 @@ test Facebook. [Chi tiết điều chỉnh G.1 và hai CSV nguồn](docs/PHASE_G
 Đăng ký quarantine post trước crawl và component sau reservation; không dùng
 các nguồn này cho train/pseudo-label, kể cả khi đợt thu thập chưa đủ quota.
 
-## Phase G.2: audit legacy và 250 câu train chờ gán
+## Phase G.2: audit legacy và nhãn train đã nhập
 
 Ưu tiên khai thác `../data_module1.csv`, **không crawl thêm** trong G.2.
 Đã đọc đủ 29.688 dòng: exact duplicate 0, near-duplicate 192 cặp; 1.646
@@ -260,7 +260,17 @@ thay holdout. [Báo cáo số liệu và giới hạn](docs/PHASE_G2_LEGACY_AUDI
 python scripts/import_legacy_train_annotations.py --task outputs/phase_g2/annotation_task --input outputs/phase_g2/annotation_task/legacy_train_candidates.xlsx --output outputs/phase_g2/human_import_01 --annotator annotator_a
 ```
 
-Chỉ chạy sau khi gán đủ. Import ghi output/history mới, giữ REVIEW/EXCLUDE,
+Đã nhập task 250 câu vào `outputs/phase_g2/human_import_01/`: **79 POS /
+77 NEG / 30 NEU**, tổng 186 sentiment; **64 EXCLUDE** giữ riêng. Người gán
+đã xác nhận giữ reason trống cho 64 EXCLUDE; history ghi rõ thiếu lý do,
+không tự bịa lý do hoặc sửa workbook. `sentiment.csv` và `excluded.csv`
+tách riêng, còn `decisions.csv` giữ cả 250 dòng. Output này đã tồn tại;
+không chạy lại ghi đè. Khi nhập bản khác, dùng output mới.
+
+Mặc định EXCLUDE vẫn cần reason. Chỉ với phê duyệt rõ dùng
+`--allow-missing-exclude-reason --authorization-note '<xác nhận của người gán>'`;
+receipt lưu quyền cho phép, ID thiếu reason và checksum snapshot đầu vào.
+Import ghi output/history mới, giữ REVIEW/EXCLUDE,
 không tự tạo gold, không train. Nguồn/quyền sử dụng, chất lượng ngữ nghĩa và
 độ đa dạng cần xác minh tiếp. Không gọi API AI ngoài hoặc train Transformer
 trong G.2; raw, 400 nhãn người và kết quả E/E.1/E.2 giữ nguyên.

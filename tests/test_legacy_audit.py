@@ -96,5 +96,23 @@ class LegacyAuditTests(unittest.TestCase):
             with (coordinator/'task.json').open('a') as f:f.write(' ')
             with self.assertRaises(ValueError):import_labels(task,workbook,root/'bad','fixture')
 
+    def test_missing_exclude_reason_requires_approval_and_stays_blank_in_output(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);task=root/'task';coordinator=task/'coordinator';coordinator.mkdir(parents=True)
+            rows=[dict(id='1',text_view='fixture',status='',label='',review_reason='',reason='')]
+            save(coordinator/'task.json',dict(rows=rows,guideline_version='V2.1',guideline_sha256='fixture'))
+            save(coordinator/'coordinator_mapping.json',rows);seal(task,dict(status='READY_FOR_HUMAN_TRAIN_ANNOTATION'))
+            labels=copy.deepcopy(rows);labels[0]['label']='EXCLUDE';path=root/'labels.csv';write_csv(path,labels,BLIND_FIELDS)
+            before=sha(path)
+            with self.assertRaises(ValueError):import_labels(task,path,root/'strict','fixture')
+            with self.assertRaises(ValueError):import_labels(task,path,root/'no_approval','fixture',True)
+            result=import_labels(task,path,root/'approved','fixture',True,'User explicitly approved preserving missing reason')
+            self.assertEqual((result['excluded'],result['sentiment'],result['missing_exclude_reason_count']),(1,0,1))
+            event=load(root/'approved/history.json')[0]
+            self.assertEqual(event['after']['reason'],'');self.assertEqual(event['after']['label'],'')
+            self.assertEqual(event['after']['status'],'EXCLUDE');self.assertTrue(event['exclude_reason_missing'])
+            self.assertEqual(event['audit_note'],'Người gán không cung cấp lý do')
+            self.assertEqual(sha(path),before);self.assertEqual(sha(root/'approved/input_snapshot.csv'),before)
+
 
 if __name__=='__main__':unittest.main()

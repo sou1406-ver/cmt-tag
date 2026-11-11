@@ -157,7 +157,8 @@ không sửa metadata bằng tên phim đoán từ text.
 Mục tiêu 150–200 sentiment hợp lệ sau duyệt chỉ là kỳ vọng của task, chưa
 phải kết quả. Dùng V2.1, người gán quyết định POS/NEG/NEU/REVIEW/EXCLUDE.
 REVIEW/EXCLUDE là trạng thái, không ép thành NEU và không bỏ khỏi nguồn gốc.
-Hiện **0 nhãn người mới**; task chưa được nhập vào gold hoặc dùng train model.
+Tại thời điểm tạo task có **0 nhãn người mới**; cập nhật gán/import bên dưới.
+Không dùng các ứng viên hoặc nhãn legacy để tự tạo gold/train model.
 
 Coordinator mapping, source row/label gốc, methods/selected IDs và checksum
 nằm riêng tại `annotation_task/coordinator/`. Chỉ giao workbook cho người
@@ -230,3 +231,40 @@ hiện có **0 ứng viên đủ bằng chứng**; giữ danh sách Facebook/MoM
 phòng, không crawler mới và không trộn MoMo vào test Facebook. Chỉ khi khôi
 phục provenance thật hoặc chọn/khóa nguồn mới đúng protocol mới giải quyết
 được test. Không thay exposure ledger để hợp thức hóa dữ liệu cũ.
+
+## 9. Người dùng hoàn thành 250 quyết định và cho phép thiếu EXCLUDE reason
+
+Ngày 11/11/2026, đã nhập workbook người dùng gán vào
+`outputs/phase_g2/human_import_01/`, giữ nguyên toàn bộ lựa chọn:
+
+| Quyết định | Dòng |
+| --- | ---: |
+| POS | 79 |
+| NEG | 77 |
+| NEU | 30 |
+| EXCLUDE | 64 |
+| REVIEW / chưa quyết định | 0 |
+
+**186 sentiment**, 64 EXCLUDE. Người gán xác nhận rõ: “Giữ EXCLUDE, ghi thiếu
+lý do”. Cả 64 `reason` vẫn là chuỗi trống, không gán lý do spam/unrelated
+hoặc lý do suy đoán khác. History có cờ `exclude_reason_missing` và ghi chú
+“Người gán không cung cấp lý do”. Receipt lưu nguyên phê duyệt và các ID
+liên quan. Mặc định importer vẫn từ chối reason thiếu; ngoại lệ cần flag và
+authorization note riêng. Không sửa guideline hoặc workbook để vượt kiểm tra.
+
+Output giữ `decisions.csv` đủ 250 dòng, tách `sentiment.csv` (186) và
+`excluded.csv` (64), có history, receipt, input snapshot và manifest checksum.
+ID/text vẫn khớp hợp đồng task. SHA workbook người dùng và snapshot:
+`3a50ac3f61f9e23bee0804ec4eafb056676a190dc5578bd8d135535b64063362`.
+Không ghi đè file user hoặc snapshot cũ.
+
+Kiểm tra thực tế: output manifest hợp lệ, đủ 64 reason rỗng và 64 audit
+notes, phân phối sentiment đúng 79/77/30, hash workbook không đổi. Toàn bộ
+tests sau thay đổi **236/236 pass**, 40,552 giây, log
+`outputs/phase_g_support/tests_human_import.log`. Có regression test default
+strict, từ chối flag khi chưa có authorization note, giữ reason trống và
+snapshot nguyên vẹn khi ngoại lệ được duyệt.
+
+Chưa train, merge vào release cũ hoặc tạo independent gold test. Nguồn và
+quyền sử dụng legacy vẫn chưa xác minh; 400 quyết định/model artifacts cũ
+giữ nguyên. Chỉ code/docs/tests được commit, mọi nhãn thật giữ local.

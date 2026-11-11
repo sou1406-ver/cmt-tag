@@ -1,0 +1,20 @@
+{
+  "protocol": "direct_fold_isolation_v1",
+  "audit": "outputs/phase_g31/audit",
+  "audit_manifest_sha256": "12aa612461b17f7112fad47e33b94f58aadbc18d5cc63d8e2a6f59621c59eaa7",
+  "unified": "outputs/phase_g3/unified",
+  "unified_manifest_sha256": "482c136884a40c24f63d29250002af99bf934154734350c53a9098703ec8784a",
+  "phase_e_run_id": "B3_svm_balanced",
+  "phase_e_macro_f1_reference": 0.580159145656276,
+  "model": {"feature": "char_wb", "ngram_range": [3, 5], "C": 1, "class_weight": "balanced", "seed": 42, "extra_l2": true},
+  "trials": [
+    {"id": "A", "augment": false, "view": "original"},
+    {"id": "B", "augment": true, "view": "original"},
+    {"id": "C", "augment": false, "view": "basic"},
+    {"id": "D", "augment": true, "view": "basic"}
+  ],
+  "legacy_source_identity": "unverifiable; use only as development augmentation, not independent evaluation",
+  "hyperparameter_search": false,
+  "threshold_tuning": false,
+  "independent_test": false
+}

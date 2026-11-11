@@ -62,7 +62,7 @@ should not be interpreted as comparable difficulty by themselves.
 
 The required old folds are retained unchanged. The full Phase G master graph
 places Facebook examples from both sides of every fold in the same connected
-component. The shared component contains 10,275 master records, 14 Facebook
+component. The shared component contains 10,275 master records, 17 Facebook
 posts, and 259 of the original 400 development rows; 222 of the 346 supervised
 Facebook examples are in it. Shared train/validation component rows by fold are
 90/132, 148/74, and 206/16. Each fold is therefore blocked.

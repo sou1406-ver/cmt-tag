@@ -77,10 +77,12 @@ def seal(directory, metadata):
     return metadata
 
 
-def verify(directory):
+def verify(directory, mutable_files=()):
     directory = Path(directory).resolve(); manifest = load(directory/'manifest.json')
     for relative, checksum in manifest['output_sha256'].items():
         path = (directory/relative).resolve()
-        if not path.is_relative_to(directory) or not path.is_file() or sha(path) != checksum:
+        if not path.is_relative_to(directory):raise ValueError('Invalid manifest path: '+relative)
+        if relative in set(mutable_files):continue
+        if not path.is_file() or sha(path) != checksum:
             raise ValueError('Manifest checksum mismatch: '+relative)
     return manifest

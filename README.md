@@ -235,6 +235,36 @@ test Facebook. [Chi tiết điều chỉnh G.1 và hai CSV nguồn](docs/PHASE_G
 Đăng ký quarantine post trước crawl và component sau reservation; không dùng
 các nguồn này cho train/pseudo-label, kể cả khi đợt thu thập chưa đủ quota.
 
+## Phase G.2: audit legacy và 250 câu train chờ gán
+
+Ưu tiên khai thác `../data_module1.csv`, **không crawl thêm** trong G.2.
+Đã đọc đủ 29.688 dòng: exact duplicate 0, near-duplicate 192 cặp; 1.646
+dòng nối component đã tiếp xúc được giữ ngoài task. Còn 28.042 ứng viên có
+thể đem gán, chưa phải số câu sentiment đã xác minh. `overall` vẫn là nhãn
+legacy chưa rõ nguồn/ý nghĩa; không tự đổi sang gold.
+
+Đã xuất **250 câu nhãn trống** ở:
+`outputs/phase_g2/annotation_task/legacy_train_candidates.xlsx`.
+Chỉ mở workbook này để gán theo V2.1; coordinator chứa nhãn gốc/methods nên
+giữ riêng. Sáu cột `id,text_view,status,label,review_reason,reason`; điền
+POS/NEG/NEU ở label, REVIEW thêm mã, EXCLUDE thêm reason. Không sửa ID/text.
+View giữ literal legacy text, kể cả underscore hoặc emoji alias có sẵn.
+
+125 câu random + 125 câu theo cue luật cho train annotation, seed cố định,
+không lặp component và không dùng overall chọn mẫu. Không tuyên bố đã cân
+bằng theo phim: chưa xác minh movie/post/platform provenance. **0 legacy
+candidate đủ bằng chứng independent test**; không random lấy 180 câu để
+thay holdout. [Báo cáo số liệu và giới hạn](docs/PHASE_G2_LEGACY_AUDIT.md).
+
+```powershell
+python scripts/import_legacy_train_annotations.py --task outputs/phase_g2/annotation_task --input outputs/phase_g2/annotation_task/legacy_train_candidates.xlsx --output outputs/phase_g2/human_import_01 --annotator annotator_a
+```
+
+Chỉ chạy sau khi gán đủ. Import ghi output/history mới, giữ REVIEW/EXCLUDE,
+không tự tạo gold, không train. Nguồn/quyền sử dụng, chất lượng ngữ nghĩa và
+độ đa dạng cần xác minh tiếp. Không gọi API AI ngoài hoặc train Transformer
+trong G.2; raw, 400 nhãn người và kết quả E/E.1/E.2 giữ nguyên.
+
 ## Thu thập Facebook mới (Python CLI)
 
 Dán nhiều link trong cùng run, dùng Brave:

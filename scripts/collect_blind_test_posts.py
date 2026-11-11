@@ -17,6 +17,8 @@ def main():
     c.add_argument('--data-root',type=Path,default=Path('data'))
     c.add_argument('--channel',choices=['brave','chrome','chromium'],default='brave')
     c.add_argument('--profile',type=Path);c.add_argument('--resume')
+    c.add_argument('--post-timeout',type=int,default=300);c.add_argument('--max-rounds',type=int,default=50)
+    c.add_argument('--settle-ms',type=int,default=1500);c.add_argument('--max-actions',type=int,default=20)
     r=sub.add_parser('reserve',help='Rebuild duplicate graph in a new master, apply fixed quotas, lock before labeling')
     r.add_argument('--plan',type=Path,required=True);r.add_argument('--run',required=True)
     r.add_argument('--data-root',type=Path,default=Path('data'));r.add_argument('--output',type=Path,required=True)
@@ -26,7 +28,8 @@ def main():
             result=preflight(a.input,a.master,a.output)
             print({k:result[k] for k in ('status','rows','ready_rows','blocked_rows','comments_inspected_for_selection')})
             return 0 if result['status']=='READY_FOR_CRAWL' else 2
-        if a.command=='crawl':return crawl(a.plan,a.data_root,a.channel,a.profile,a.resume)
+        if a.command=='crawl':return crawl(a.plan,a.data_root,a.channel,a.profile,a.resume,
+            post_timeout=a.post_timeout,max_rounds=a.max_rounds,settle_ms=a.settle_ms,max_actions=a.max_actions)
         result=reserve(a.plan,a.data_root,a.run,a.output)
         print({k:result[k] for k in ('status','target','selected','attainable_under_quota')})
         return 2 if result['status']=='PARTIAL' else 0

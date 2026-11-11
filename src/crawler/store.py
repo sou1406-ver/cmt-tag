@@ -207,6 +207,8 @@ def validate(path):
             'post_status_counts':{k:statuses[k] for k in ('success','failed','partial','blocked')},
             'posts_without_result':len(config['posts'])-len(posts),
             'total_records':len(rows), 'record_types':dict(Counter(r['record_type'] for r in rows)),
+            'coverage_verified':False,'record_count_cap':config.get('max_comments'),
+            'collection_scope':'accessible visible comments and replies; safety budgets apply; total coverage unknown',
             'with_comment_id':sum(bool(r['comment_id']) for r in rows),
             'with_post_id':sum(bool(r['post_id']) for r in rows),
             'missing_metadata_records':sum(any(not r[k] for k in ('comment_id','post_id','comment_created_at')) for r in rows),

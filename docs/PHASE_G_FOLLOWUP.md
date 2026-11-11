@@ -135,7 +135,8 @@ active learning/prompt/guideline/threshold tuning.
 Lệnh crawl chỉ gọi lại CLI `src.crawler crawl-batch`, do đó vẫn dùng Store,
 run_posts và Selenium hiện tại. Không tạo crawler khác, không gọi API AI.
 URL nằm trong CSV, không ghép vào shell command. Terminal kế thừa để người
-dùng tự đăng nhập. Giới hạn thử nghiệm: 100 comment/bài, 50 vòng, 300 giây;
+dùng tự đăng nhập. G.1 đã bỏ count cap, dùng `--max-comments all`; mặc định
+50 vòng, 300 giây, thời gian settle 1500 ms và tối đa 20 action/vòng;
 đây là thứ tự crawl DOM, không phải mẫu ngẫu nhiên toàn bộ Facebook.
 `--resume` chỉ chấp nhận run có đúng source_dataset, danh sách bài/phim và
 thời gian sau preflight, không có interactive post bổ sung ngoài kế hoạch.

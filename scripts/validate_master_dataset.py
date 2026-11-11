@@ -26,7 +26,7 @@ def validate(master, reservation, output):
             if observation['input_sha256']!=index[observation['source_file']]['sha256']:
                 raise ValueError('Observation source checksum mismatch')
             if observation['text_raw'] not in row['text_variants']:raise ValueError('Raw text variant lost')
-    expected=sum(r['rows'] or 0 for r in inventory if r['role'] in {'raw_journal','export','archive_export','legacy_unverified'}
+    expected=sum(r['rows'] or 0 for r in inventory if r['role'] in {'raw_journal','export','archive_export','legacy_unverified','platform_export'}
                  and r.get('text_column') and r['status']=='indexed')
     if len(seen)!=expected or len(seen)!=manifest['observations']:raise ValueError('Source row coverage mismatch')
     cfg=load(master/'config.json');source=ROOT/cfg['reviewed_root']
@@ -59,7 +59,7 @@ def validate(master, reservation, output):
     roles=Counter(r['role'] for r in inventory)
     with staged(output) as work:
         write_csv(work/'sources_by_post.csv',summaries,['source_platform','post_id','post_urls','movie_ids','master_records','human_decisions','connected_groups','source_datasets'])
-        source_files=[r for r in inventory if r['role'] in {'raw_journal','export','archive_export','legacy_unverified'}]
+        source_files=[r for r in inventory if r['role'] in {'raw_journal','export','archive_export','legacy_unverified','platform_export'}]
         write_csv(work/'source_files.csv',source_files,['path','role','format','rows','movies','posts','metadata','sha256'])
         result=dict(status='PASS',master_records=len(rows),provenance_observations=len(seen),
             original_decisions_preserved=len(preserved),review_history_events_preserved=len(history),

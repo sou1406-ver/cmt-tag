@@ -33,6 +33,25 @@ def post_url(value):
     except ValueError: return ''
 
 
+def source_platform(row, role):
+    """Explicit platform first; never identify a comment's platform from a movie name."""
+    explicit=str(row.get('platform') or row.get('source_platform') or row.get('source') or '').strip().casefold()
+    if explicit in {'facebook','momo','unknown'}:return explicit
+    host=urlsplit(row.get('post_url') or row.get('url') or '').hostname
+    if host in {'momo.vn','www.momo.vn'}:return 'momo'
+    if host in {'facebook.com','www.facebook.com','m.facebook.com','web.facebook.com'}:return 'facebook'
+    return 'unknown' if role in {'legacy_unverified','platform_export'} else 'facebook'
+
+
+def platform_url(value, platform):
+    if platform=='facebook':return post_url(value)
+    if platform=='momo' and value:
+        parts=urlsplit(value)
+        if parts.scheme=='https' and parts.hostname in {'momo.vn','www.momo.vn'} and not parts.username and not parts.password:
+            return urlunsplit(('https','www.momo.vn',parts.path.rstrip('/'),'', ''))
+    return ''
+
+
 def safe_files(roots, excluded=()):
     """Never descend into browser profiles, credentials, environments or symlinks."""
     excluded = [Path(p).resolve() for p in excluded]
@@ -59,6 +78,8 @@ def source_role(path, root, archive=False):
     if archive: return 'archive_export'
     if name == 'raw_comments.jsonl' and '/data/crawl_runs/' in rel: return 'raw_journal'
     if name == 'comments.csv' and ('/data/imports/' in rel or '/data/crawl_runs/' in rel): return 'export'
+    if '/data/imports/' in rel and name in {'reviews.csv','reviews.json','reviews.jsonl','comments.json','comments.jsonl'}:
+        return 'platform_export'
     if name == 'data_module1.csv' or (path.parent == root/'crawl' and path.suffix == '.csv'):
         return 'legacy_unverified'
     return 'derived_or_support_not_new_source'
@@ -99,23 +120,25 @@ def inventory(roots, root, excluded):
                 if not isinstance(row.get(key), str): raise ValueError('Nonliteral comment text')
                 clean = row.get('text_without_mentions')
                 mention = isinstance(clean, str) and row.get('text_extraction_version') == 'dom_text_v2'
+                platform=source_platform(row,role)
                 pid = str(row.get('post_id') or '')
-                url = post_url(row.get('post_url') or '')
-                parsed = url_post_id(url) if url else None
+                url = platform_url(row.get('post_url') or row.get('url') or '',platform)
+                parsed = url_post_id(url) if url and platform=='facebook' else None
                 identity_error = bool(pid and parsed and pid != parsed)
                 source = str(row.get('source_dataset') or row.get('crawl_run_id') or path)
                 observations.append(dict(text_raw=row[key], text_view=clean if mention else row[key],
                     mention_policy='existing_dom_text_v2' if mention else 'unchanged_no_name_guess',
                     source_dataset=source, source_file=path, source_row=number,
                     input_sha256=entry['sha256'], role=role,
-                    **{k: str(row.get(k) or '') for k in META if k not in {'post_id', 'post_url'}},
+                    **{k: str(row.get(k) or '') for k in META if k not in {'post_id', 'post_url','comment_id'}},
+                    comment_id=str(row.get('comment_id') or (row.get('review_id') if platform=='momo' else '') or ''),
                     post_id=pid or (parsed or ''), post_url=url, metadata_identity_error=identity_error,
                     original_internal_id=str(row.get('internal_record_id') or ''),
                     original_label=row.get('overall', row.get('nhan_may', '')),
                     original_label_source='unverified_external' if 'overall' in row else ('legacy_machine' if row.get('nhan_may') else ''),
                     extraction_version=row.get('text_extraction_version', ''),
                     extraction_status=row.get('extraction_status', ''),
-                    source_platform='unknown' if role == 'legacy_unverified' else 'facebook'))
+                    source_platform=platform,platform=platform,source=platform))
         except (ValueError, UnicodeError, csv_error()) as exc:
             entry['status'] = type(exc).__name__; entry['reason'] = 'Invalid or incomplete data; not silently repaired'
             # A malformed source must not contribute a partially read prefix.
@@ -166,9 +189,9 @@ def reconcile(observations, development, near_config):
         pid = row.get('post_id') or row.get('post_url', '')
         if row.get('metadata_identity_error'):
             key = ('identity_error', row['source_file'], row['source_row'])
-        elif platform == 'facebook' and row.get('comment_id') and pid:
+        elif platform in {'facebook','momo'} and row.get('comment_id') and pid:
             key = (platform, 'cid_post', row['comment_id'], pid)
-        elif platform == 'facebook' and row.get('original_internal_id') and pid:
+        elif platform in {'facebook','momo'} and row.get('original_internal_id') and pid:
             key = (platform, 'internal_post', row['original_internal_id'], pid)
         else: key = (platform, 'observation', row['source_file'], row['source_row'])
         buckets[key].append(row)
@@ -185,6 +208,7 @@ def reconcile(observations, development, near_config):
         variants = sorted({r['text_raw'] for r in rows})
         rid = 'm_'+digest(json.dumps(key, ensure_ascii=False, separators=(',', ':')))
         record = {k: chosen.get(k, '') for k in (*META, 'text_raw', 'source_dataset', 'source_file', 'source_row', 'source_platform')}
+        record.update(platform=chosen['source_platform'],source=chosen['source_platform'])
         record.update(id=rid, text_view=chosen['text_view'], mention_policy=chosen.get('mention_policy', ''),
             annotation_status='UNLABELED', label='', label_source='', human_decisions=[], development_ids=[],
             development_groups=[], development=False, observations=rows, text_variants=variants,
@@ -279,6 +303,7 @@ def reconcile(observations, development, near_config):
         movies=len({r['movie_id'] for r in records if r['movie_id']}),
         posts=len({(r['source_platform'], r['post_id']) for r in records if r['post_id']}),
         source_datasets=len({o['source_dataset'] for r in records for o in r['observations']}),
+        by_platform=dict(Counter(r['source_platform'] for r in records)),
         provenance_observations=sum(len(r['observations']) for r in records),
         label_counts=dict(Counter(r['label'] if r['annotation_status']=='LABELED' else r['annotation_status'] for r in records)))
     return records, mapping, pairs, conflicts, stats
@@ -331,7 +356,7 @@ def build(config_path, output):
         row['exposure_status'] = 'exposed_development_component' if row['group_id'] in exposed_groups else 'unknown_not_attested_unused'
     with staged(output) as work:
         write_jsonl(work/'master.jsonl', records)
-        fields = ['id','text_raw','source_dataset','source_file','source_row',*META,'annotation_status','label','label_source','group_id',
+        fields = ['id','text_raw','platform','source','source_platform','source_dataset','source_file','source_row',*META,'annotation_status','label','label_source','group_id',
                   'text_view','mention_policy','development_ids','exposure_status','review_flags']
         write_csv(work/'master.csv', records, list(dict.fromkeys(fields)))
         write_csv(work/'inventory.csv', entries, ['path','format','sha256','bytes','role','status','rows','movies','posts','metadata'])

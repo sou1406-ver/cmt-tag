@@ -70,6 +70,8 @@
 # Local blind-test source lists/receipts; never publish candidate URLs or evidence.
 /test_posts.csv
 /test_posts.xlsx
+/test_posts_draft.csv
+/review_source_inventory.csv
 /crawl/*.csv
 # Retain protection for legacy local media; no media is present in this clone.
 /media/

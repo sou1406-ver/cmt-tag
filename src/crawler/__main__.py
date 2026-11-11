@@ -19,6 +19,11 @@ def positive(value):
     return value
 
 
+def comment_limit(value):
+    """An explicit 'all' removes only the row cap; time/action budgets remain."""
+    return None if value.lower()=='all' else positive(value)
+
+
 def single_post(url=None, movie_id=None, ask=None):
     ask = ask or input
     if url is None:
@@ -165,7 +170,8 @@ def main():
             ('post-timeout',300,'Seconds per post attempt'),('max-rounds',100,'Expansion/scroll rounds per post'),
             ('max-actions',20,'Button clicks per round'),('wait-ms',10000,'Navigation/action timeout in milliseconds'),
             ('settle-ms',1500,'DOM polling timeout per scroll'),('idle-rounds',3,'Idle rounds before stopping')]:
-            p.add_argument('--'+flag,type=positive,default=default,help=help_text)
+            p.add_argument('--'+flag,type=comment_limit if flag=='max-comments' else positive,
+                           default=default,help=help_text+('; use all for no record-count cap' if flag=='max-comments' else ''))
         p.add_argument('--retries',type=int,choices=range(0,6),default=2,help='Retries for transient browser exceptions (0..5)')
     p = sub.add_parser('validate',help='Validate raw rows and show collection quality')
     p.add_argument('--run',required=True)
@@ -230,7 +236,8 @@ def main():
             if args.command=='interactive' and not store.config.get('interactive'):
                 raise ValueError('Use an interactive run ID with interactive --resume')
             print('Run: '+store.run_id,flush=True)
-            print(f"Giới hạn mỗi bài: {store.config['max_comments']} comment, "
+            cap='không giới hạn số' if store.config['max_comments'] is None else store.config['max_comments']
+            print(f"Giới hạn mỗi bài: {cap} comment/reply, "
                   f"{store.config['max_rounds']} vòng tải, {store.config['post_timeout']} giây."
                   + (' Resume dùng cấu hình đã lưu; muốn tăng giới hạn hãy tạo run mới.' if args.resume else ''),flush=True)
             if lock is None:

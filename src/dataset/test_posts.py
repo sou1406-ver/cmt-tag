@@ -140,18 +140,22 @@ def require_registration(plan,registry):
         raise ValueError('Candidate posts must be registered for quarantine before collection')
 
 
-def crawl(plan, data_root, channel='brave', profile=None, resume=None, runner=subprocess.run, registry=REGISTRY):
+def crawl(plan, data_root, channel='brave', profile=None, resume=None, runner=subprocess.run, registry=REGISTRY,
+          post_timeout=300,max_rounds=50,settle_ms=1500,max_actions=20):
     manifest,rows=verified_plan(plan);data_root=Path(data_root)
     require_registration(plan,registry)
     live=live_crawl_references(data_root,{r['post_id'] for r in rows})
     if any(set(runs)-({resume} if resume else set()) for runs in live.values()):
         raise ValueError('Posts were scheduled/crawled after preflight; review before continuing')
     if resume:verify_run(plan,data_root,resume)
+    if any(type(v) is not int or v<=0 for v in (post_timeout,max_rounds,settle_ms,max_actions)):
+        raise ValueError('Positive collection safety budgets required')
     args=[sys.executable,'-m','src.crawler','crawl-batch','--data-root',str(data_root),'--channel',channel]
     if profile:args+=['--profile',str(profile)]
     if resume:args+=['--resume',resume]
     else:args+=['--input',str(Path(plan).resolve()/'crawl_posts.csv'),'--source-dataset',manifest['source_dataset'],
-                '--max-comments','100','--max-rounds','50','--post-timeout','300']
+                '--max-comments','all','--max-rounds',str(max_rounds),'--post-timeout',str(post_timeout),
+                '--settle-ms',str(settle_ms),'--max-actions',str(max_actions)]
     # Same crawler, Store and run_posts; inherited terminal allows manual login. No shell URL interpolation.
     return runner(args,cwd=ROOT,check=False).returncode
 
@@ -164,6 +168,8 @@ def verify_run(plan, data_root, run_id):
     actual={(url_post_id(post_url(r['post_url'])),post_url(r['post_url']),r['movie_id']) for r in config['posts']}
     if config.get('source_dataset')!=manifest['source_dataset'] or actual!=expected or len(config['posts'])!=len(rows):
         raise ValueError('Crawler run does not match this preflight selection')
+    if config.get('max_comments','missing') is not None:
+        raise ValueError('Phase G.1 requires an uncapped run; preserve old capped runs and create a new run with --max-comments all')
     created=datetime.fromisoformat(config['created_at'].replace('Z','+00:00'))
     if created<datetime.fromisoformat(manifest['created_at']):raise ValueError('Run predates blind preflight')
     if (path/'interactive_inputs.jsonl').exists():raise ValueError('Blind run cannot append unapproved interactive posts')
@@ -173,7 +179,7 @@ def verify_run(plan, data_root, run_id):
 def reserve(plan, data_root, run_id, output, registry=REGISTRY):
     """New master + full duplicate graph against all development; never edit old snapshots."""
     from .master import build
-    from .blind import prepare
+    from .blind import prepare,quarantine_posts
     from src.crawler.locking import RunLock
     manifest,posts=verified_plan(plan);run=verify_run(plan,data_root,run_id)
     require_registration(plan,registry)
@@ -197,16 +203,20 @@ def reserve(plan, data_root, run_id, output, registry=REGISTRY):
         cfg['exposure_ledger']=str((work/'exposure_ledger.json').resolve())
         save(work/'master_config.json',cfg)
         build(work/'master_config.json',work/'master')
+        master_rows=read_jsonl(work/'master/master.jsonl')
+        save(work/'post_quarantine.json',quarantine_posts(master_rows,{r['post_id'] for r in posts}))
         blind_cfg=dict(master_root=str((work/'master').resolve()),master_manifest_sha256=sha(work/'master/manifest.json'),
                        target=180,max_per_post=10,max_per_movie=20,seed=20261111,second_annotator_count=50)
         save(work/'blind_config.json',blind_cfg);result=prepare(work/'blind_config.json',work/'blind_test')
         if sha(run/'raw_comments.jsonl')!=raw_sha:raise ValueError('Crawler journal changed during reservation')
         seal(work,dict(status=result['status'],selected=result['selected'],run_id=run_id,raw_sha256=raw_sha,
             plan_manifest_sha256=sha(Path(plan)/'manifest.json'),parent_master_manifest_sha256=sha(old/'manifest.json'),
-            comments_selected_using_sentiment=False,quotas_relaxed=False))
+            comments_selected_using_sentiment=False,quotas_relaxed=False,master_records=len(master_rows),
+            entire_master_retained=True,sampling_does_not_filter_master=True))
     registry=Path(registry);registry.mkdir(parents=True,exist_ok=True)
     save(registry/('reservation_'+sha(Path(output)/'manifest.json')+'.json'),dict(plan_root=str(Path(plan).resolve()),
         plan_manifest_sha256=sha(Path(plan)/'manifest.json'),post_ids=sorted({r['post_id'] for r in posts}),
+        collection_root=str(Path(output).resolve()),collection_manifest_sha256=sha(Path(output)/'manifest.json'),
         reservation_root=str((Path(output)/'blind_test').resolve()),reservation_manifest_sha256=sha(Path(output)/'blind_test/manifest.json')))
     return result
 
@@ -219,6 +229,12 @@ def assert_intakes_allowed(rows,purpose,registry=REGISTRY):
         verify(plan);quarantine=load(plan/'candidate_quarantine.json')
         deny_reserved(rows,purpose,dict(ids=[],groups=[],comment_ids=[],text_hashes=[],
             post_ids=quarantine['post_ids'],post_urls=quarantine['post_urls']))
+        if entry.get('collection_root'):
+            collection=Path(entry['collection_root']);m=load(collection/'manifest.json')
+            if (sha(collection/'manifest.json')!=entry['collection_manifest_sha256'] or
+                    sha(collection/'post_quarantine.json')!=m['output_sha256']['post_quarantine.json']):
+                raise ValueError('Whole-post component quarantine changed')
+            deny_reserved(rows,purpose,load(collection/'post_quarantine.json'))
         if entry.get('reservation_root'):
             directory=Path(entry['reservation_root']);m=verify(directory)
             if sha(directory/'manifest.json')!=entry['reservation_manifest_sha256']:raise ValueError('Registered reservation changed')

@@ -45,7 +45,7 @@ class TestPostIntakeTests(unittest.TestCase):
     def run_config(self,plan,rows,run_id='fb_fixture',**overrides):
         path=self.data/'crawl_runs'/run_id;path.mkdir(parents=True)
         manifest=load(plan/'manifest.json')
-        cfg=dict(source_dataset=manifest['source_dataset'],posts=[dict(post_url=r['post_url'],movie_id=r['movie_id']) for r in rows],
+        cfg=dict(source_dataset=manifest['source_dataset'],max_comments=None,posts=[dict(post_url=r['post_url'],movie_id=r['movie_id']) for r in rows],
                  created_at=(datetime.now(timezone.utc)+timedelta(seconds=1)).isoformat())
         cfg.update(overrides);save(path/'config.json',cfg)
         return path
@@ -67,6 +67,7 @@ class TestPostIntakeTests(unittest.TestCase):
         argv=runner.call_args.args[0]
         self.assertEqual(argv[1:4],['-m','src.crawler','crawl-batch'])
         self.assertNotIn(rows[0]['post_url'],argv);self.assertIn('--input',argv)
+        self.assertEqual(argv[argv.index('--max-comments')+1],'all')
         self.assertFalse(runner.call_args.kwargs.get('shell',False));self.assertEqual(sha(path),before)
         for purpose in ('train','validation','pseudo_labeling','threshold_tuning'):
             with self.assertRaises(ValueError):assert_intakes_allowed([dict(post_id=rows[0]['post_id'])],purpose,self.registry)

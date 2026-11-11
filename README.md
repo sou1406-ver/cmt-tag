@@ -223,10 +223,15 @@ python scripts/collect_blind_test_posts.py reserve --plan outputs/phase_g/test_p
 Chỉ chạy crawl khi preflight READY. Preflight kiểm syntax/ID từ URL, bài
 trùng, master, lịch sử metadata và receipt; không tự xác minh nội dung phim
 hoặc khả năng truy cập từ xa. Crawl gọi lại **`python -m src.crawler crawl-batch`**,
-giới hạn 100 comment/bài; không đọc comment để lọc/chọn bài. Resume dùng
+G.1 dùng `--max-comments all`, không giới hạn số comment/reply theo quota test;
+timeout, số vòng, tốc độ và resume vẫn áp dụng. Không đọc comment để lọc/chọn bài. Resume dùng
 `crawl --plan <plan> --resume <run_id>` và phải đúng run của kế hoạch.
 Sau crawl, reserve tạo master mới, nối toàn bộ duplicate/component với dữ
 liệu cũ rồi áp quota 10/bài, 20/phim; thiếu 180 vẫn PARTIAL, không có file gán.
+Master giữ mọi quan sát đã crawl; quota chỉ áp cho sampling test. Quarantine
+giữ toàn bộ component của bài đã đăng ký, kể cả comment không được chọn.
+Nguồn Facebook và MoMo có namespace platform riêng; MoMo không thuộc protocol
+test Facebook. [Chi tiết điều chỉnh G.1 và hai CSV nguồn](docs/PHASE_G1_UPDATE.md).
 Đăng ký quarantine post trước crawl và component sau reservation; không dùng
 các nguồn này cho train/pseudo-label, kể cả khi đợt thu thập chưa đủ quota.
 

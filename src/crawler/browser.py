@@ -36,7 +36,8 @@ def collect(page, store, post):
     deadline = time.monotonic() + cfg['post_timeout']
     session = uuid4().hex
     start_count = store.post_counts[post['post_url']]
-    if start_count >= cfg['max_comments']:
+    cap=cfg['max_comments']
+    if cap is not None and start_count >= cap:
         return 'partial', 'comment_limit', []
     trace, pending, idle = ['NAVIGATE'], {}, 0
     parse_errors_seen=False
@@ -109,7 +110,7 @@ def collect(page, store, post):
         added = 0
         for row in parsed:
             count = store.post_counts[post['post_url']]
-            if count >= cfg['max_comments']:
+            if cap is not None and count >= cap:
                 reason = 'comment_limit'
                 break
             if row['extraction_status']=='truncated':
@@ -141,7 +142,7 @@ def collect(page, store, post):
             reason = ('unparsed_comments' if parse_errors_seen else 'visible_dom_exhausted') if parsed else 'no_recognized_comments'
             break
     for row in pending.values():
-        if store.post_counts[post['post_url']] < cfg['max_comments']:
+        if cap is None or store.post_counts[post['post_url']] < cap:
             store.add(row,post,session)
     if pending and status=='success':
         status, reason = 'partial','truncated_comments'
@@ -156,9 +157,12 @@ def run_posts(store, page, collector=collect, posts=None, finalize=True):
             if post['post_url'] in done:
                 continue
             for attempt in range(store.config['retries']+1):
+                started=time.monotonic();before=store.post_counts[post['post_url']]
                 try:
                     status, reason, trace = collector(page,store,post)
-                    store.finish_post(post,status,reason,state_trace=trace,attempt=attempt+1)
+                    store.finish_post(post,status,reason,state_trace=trace,attempt=attempt+1,
+                        elapsed_seconds=time.monotonic()-started,new_records=store.post_counts[post['post_url']]-before,
+                        total_records_for_post=store.post_counts[post['post_url']],coverage_verified=False)
                     break
                 except KeyboardInterrupt:
                     raise
@@ -167,7 +171,8 @@ def run_posts(store, page, collector=collect, posts=None, finalize=True):
                     store.append('errors.jsonl', {'code':'browser_error','error_type':type(exc).__name__,
                                  'post_url':post['post_url'],'attempt':attempt+1})
                     if attempt == store.config['retries']:
-                        store.finish_post(post,'failed','retry_exhausted',attempt=attempt+1)
+                        store.finish_post(post,'failed','retry_exhausted',attempt=attempt+1,
+                            elapsed_seconds=time.monotonic()-started,total_records_for_post=store.post_counts[post['post_url']],coverage_verified=False)
         return store.finish() if finalize else None
     except BaseException:
         store.checkpoint('interrupted')

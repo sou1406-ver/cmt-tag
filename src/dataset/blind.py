@@ -67,6 +67,8 @@ def eligible(rows, development_ids, ledger):
                 or url_post_id(post_url(row.get('post_url'))) != row.get('post_id')):
             reasons.append('SOURCE_IDENTITY_NOT_CORROBORATED_BY_POST_URL')
         if row.get('source_platform') != 'facebook': reasons.append('NOT_VERIFIED_FACEBOOK_IDENTITY')
+        if row.get('platform',row.get('source_platform')) != 'facebook' or row.get('source',row.get('source_platform'))!='facebook':
+            reasons.append('PLATFORM_NOT_IN_FACEBOOK_TEST_PROTOCOL')
         if set(row.get('review_flags', [])) - {'TEXT_VARIANTS_RETAINED'}:
             reasons.append('UNRESOLVED_IDENTITY_OR_LABEL_REVIEW')
         if (row['post_id'], post_url(row['post_url'])) not in attestations:
@@ -115,6 +117,7 @@ def prepare(config_path, output):
             # Reserve all aliases and ALL members of selected connected components, not just 180 IDs.
             reserved_rows = [r for r in rows if r['group_id'] in groups]
             reservation = dict(status='reserved_blind_test', entries=entries, groups=sorted(groups),
+                platform='facebook',source='facebook',
                 ids=sorted({r['id'] for r in reserved_rows} | {x for r in reserved_rows for x in r['development_ids']}),
                 comment_ids=sorted({r['comment_id'] for r in reserved_rows if r['comment_id']}),
                 post_ids=sorted({r['post_id'] for r in reserved_rows if r['post_id']}),
@@ -138,6 +141,7 @@ def prepare(config_path, output):
             max_per_movie=cfg['max_per_movie'], algorithm='seeded_movie_post_round_robin_without_replacement_v1',
             quota_sample_not_natural_facebook_distribution=True, guideline_version=GUIDELINE_VERSION,
             guideline_sha256=sha(GUIDELINE), gold_created=False, labels_imported=False, predictions_opened=False,
+            platform='facebook',source='facebook',
             blind_text_field='text_view', blind_text_policy='existing_dom_text_v2_when_available_else_unchanged_raw',
             blocker='' if enough else 'Insufficient provably unused sources; no quota relaxed and no annotation files emitted'))
     return result
@@ -166,9 +170,30 @@ def deny_reserved(rows,purpose,reserved):
     if purpose not in PROHIBITED: raise ValueError('Explicit prohibited use required at this boundary')
     keys = {k: set(reserved[k]) for k in ('ids','groups','comment_ids','post_ids','post_urls','text_hashes')}
     from .common import digest
+    typed_comments=set(reserved.get('platform_comment_keys',[]));typed_posts=set(reserved.get('platform_post_keys',[]))
     for row in rows:
+        platform=row.get('platform') or row.get('source_platform') or 'facebook'
+        same_platform=platform==reserved.get('platform','facebook')
         if (row.get('id') in keys['ids'] or row.get('group_id') in keys['groups']
-            or row.get('comment_id') in keys['comment_ids'] or row.get('post_id') in keys['post_ids']
-            or post_url(row.get('post_url')) in keys['post_urls']
+            or platform+':'+str(row.get('comment_id','')) in typed_comments
+            or platform+':'+str(row.get('post_id','')) in typed_posts
+            or (same_platform and (row.get('comment_id') in keys['comment_ids'] or row.get('post_id') in keys['post_ids']
+                or post_url(row.get('post_url')) in keys['post_urls']))
             or any(digest(normal(row[k])) in keys['text_hashes'] for k in ('text_raw','text','text_view') if row.get(k))):
             raise ValueError('Reserved blind-test component cannot be used for '+purpose)
+
+
+def quarantine_posts(rows,post_ids,platform='facebook'):
+    """Entire post components, including unsampled comments and cross-platform duplicates."""
+    from .common import digest
+    groups={r['group_id'] for r in rows if r['source_platform']==platform and r['post_id'] in set(post_ids)}
+    members=[r for r in rows if r['group_id'] in groups]
+    return dict(platform=platform,source=platform,groups=sorted(groups),
+        ids=sorted({r['id'] for r in members}|{d for r in members for d in r.get('development_ids',[])}),
+        comment_ids=sorted({r['comment_id'] for r in members if r['source_platform']==platform and r['comment_id']}),
+        post_ids=sorted({r['post_id'] for r in members if r['source_platform']==platform and r['post_id']}),
+        post_urls=sorted({r['post_url'] for r in members if r['source_platform']==platform and r['post_url']}),
+        platform_comment_keys=sorted({r['source_platform']+':'+r['comment_id'] for r in members if r['comment_id']}),
+        platform_post_keys=sorted({r['source_platform']+':'+r['post_id'] for r in members if r['post_id']}),
+        text_hashes=sorted({digest(normal(t)) for r in members for t in [r['text_view'],*r['text_variants']] if normal(t)}),
+        member_records=len(members),quarantine_scope='all approved post components, not only sampled test IDs')

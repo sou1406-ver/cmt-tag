@@ -1,5 +1,13 @@
 # Phân loại sắc thái bình luận phim tiếng Việt
 
+**Patch I.4.1: chờ duyệt normalization `plain_text_v3_1`.**
+Mở `outputs/phase_i4_1/workbook_v2/final_normalization_review_150.xlsx`,
+điền `human_decision` (ACCEPT/REJECT/UNSURE) và `human_note` trong Review.
+Bản đề xuất từ raw giữ nguyên nhãn người và `text_annotation` I.3.
+[Báo cáo](docs/PHASE_I4_1_NORMALIZATION_REPORT.md) ·
+[quy tắc và import](docs/PHASE_I4_1_NORMALIZATION_SPEC.md).
+Không chuyển approval cũ; format/domain phía dưới vẫn cần duyệt riêng.
+
 **Phase I.4 đang chờ người duyệt format và domain/spam.**
 Mở `outputs/phase_i4/workbook_v2/semantic_quality_review_200.xlsx`, điền hai cột
 cuối trong Review. Workbook format I.3 vẫn còn 200 quyết định trống.

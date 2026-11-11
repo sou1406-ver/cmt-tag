@@ -8,6 +8,9 @@ checkout code trên máy khác không tự có những dữ liệu này.
 
 | Cần làm gì | Đường dẫn |
 | --- | --- |
+| Duyệt normalization I.4.1, 150 câu, chưa duyệt | [final_normalization_review_150.xlsx](phase_i4_1/workbook_v2/final_normalization_review_150.xlsx) |
+| Đề xuất normalized từ raw, events, source audit và manifest I.4.1 | `phase_i4_1/v2/` |
+| Kiểm chứng bất biến, idempotence và workbook I.4.1 | `phase_i4_1/verification_v1/` |
 | Workbook domain/spam I.4, chưa có nhãn người | [semantic_quality_review_200.xlsx](phase_i4/workbook_v2/semantic_quality_review_200.xlsx) |
 | Format summary, sampling probabilities, readiness và holdout I.4 | `phase_i4/v5/` |
 | Workbook kiểm định format I.3, 200 câu | [plain_text_validation_200.xlsx](phase_i3/workbook_v3/plain_text_validation_200.xlsx) |

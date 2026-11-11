@@ -78,6 +78,7 @@
 /media/
 .venv/
 .venv-*/
+data/local_models/
 __pycache__/
 *.py[cod]
 *.npz

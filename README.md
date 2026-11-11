@@ -154,6 +154,20 @@ NEG Mưa Đỏ chỉ 10 câu; AP NEG chiều ngược 0,864 cần so prevalence 
 Output mới `outputs/phase_e2/`, không ghi đè E/E.1. Không target calibration,
 threshold tuning, AI labeling hoặc Transformer trong bước này.
 
+## Phase H: PhoBERT-v2 và ViSoBERT
+
+Đã chuẩn bị CLI fine-tuning trên ba frozen Facebook folds, chạy độc lập từng
+fold cho bốn cấu hình Facebook / Facebook+legacy. G3.1 direct audit và G3.2
+parent/thread audit được kiểm tra trước khi fit; legacy chỉ vào train và vẫn
+thiếu provenance cấp bài. Không dùng independent test. PhoBERT gọi local
+VnCoreNLP RDR segmenter; ViSoBERT dùng tokenizer riêng trên `text_view`.
+
+**Trạng thái hiện tại: ViSoBERT synthetic smoke và pilot fold 0 đã qua.** Pilot
+Macro-F1 là 0,3895 (FB train) và 0,5191 (FB + legacy), chưa phải grouped CV
+hoàn chỉnh. Môi trường Phase H CPU không có CUDA; PhoBERT còn thiếu Java/RDR
+assets. Xem [Phase H report](docs/PHASE_H_REPORT.md).
+Weights, cache, data và predictions giữ local/gitignored.
+
 ## Phase G: master dataset và chuẩn bị test mù
 
 **PARTIAL, chưa có independent test.** Đã kiểm kê nguồn local và tạo master

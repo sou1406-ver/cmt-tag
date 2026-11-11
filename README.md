@@ -1,5 +1,13 @@
 # Phân loại sắc thái bình luận phim tiếng Việt
 
+**Phase J: DATASET_FREEZE_PENDING — đang chờ quality review.**
+9.788 câu mới ở mức proposed, **0 approved**, chưa chọn/phát hành pilot 500.
+Làm bản semantic v3.1 trên cùng 200 ID cũ và quality holdout 40 ID đã giữ;
+format/normalization vẫn cần duyệt riêng.
+[Báo cáo readiness](docs/DATASET_QUALITY_READINESS_REPORT.md) ·
+[file cần điền và lệnh import](docs/QUALITY_REVIEW_HANDOFF.md).
+Không crawl, train hoặc gọi AI trong bước này.
+
 **Patch I.4.1: chờ duyệt normalization `plain_text_v3_1`.**
 Mở `outputs/phase_i4_1/workbook_v2/final_normalization_review_150.xlsx`,
 điền `human_decision` (ACCEPT/REJECT/UNSURE) và `human_note` trong Review.

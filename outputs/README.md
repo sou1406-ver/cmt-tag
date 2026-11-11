@@ -8,6 +8,10 @@ checkout code trên máy khác không tự có những dữ liệu này.
 
 | Cần làm gì | Đường dẫn |
 | --- | --- |
+| Domain/spam v3.1, cùng 200 ID I.4, bản cần điền hiện tại | [semantic_quality_review_v31_200.xlsx](phase_j/semantic_workbook_v1/semantic_quality_review_v31_200.xlsx) |
+| Quality holdout, đúng 40 ID reservation, chưa có quyết định | [quality_holdout_40.xlsx](phase_j/holdout_workbook_v1/quality_holdout_40.xlsx) |
+| Readiness, status, eligibility funnel, delta và coordinator Phase J | `phase_j/v2/` |
+| Full-corpus/workbook/protected-input verification Phase J | `phase_j/verification_v1/` |
 | Duyệt normalization I.4.1, 150 câu, chưa duyệt | [final_normalization_review_150.xlsx](phase_i4_1/workbook_v2/final_normalization_review_150.xlsx) |
 | Đề xuất normalized từ raw, events, source audit và manifest I.4.1 | `phase_i4_1/v2/` |
 | Kiểm chứng bất biến, idempotence và workbook I.4.1 | `phase_i4_1/verification_v1/` |

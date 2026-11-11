@@ -5,6 +5,12 @@ The original Phase G master graph remains immutable. This phase introduces a
 separate, explicitly narrower evaluation protocol and does not relabel the old
 full-component rule or change the frozen folds.
 
+**G.3.2 correction:** the G.3.1 overlap checker listed `parent_comment_id`, but
+the unified rows did not carry that source field. Its earlier zero count was
+therefore not evidence about reply threads. Phase G.3.2 verifies it from each
+exact source observation and adds the thread-level result; see
+`docs/PHASE_G3_2_REPORT.md`.
+
 ## Why the full-master graph became giant
 
 The pinned Phase G master contains 39,842 records. The component cited in G.3

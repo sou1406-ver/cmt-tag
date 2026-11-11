@@ -5,6 +5,7 @@
 | Nội dung | Tài liệu |
 | --- | --- |
 | Gán nhãn theo guideline hiện tại | [V2.1](guidelines/MOVIE_SENTIMENT_V2_1.md) |
+| Human format/domain quality gates hiện tại | [Phase I.4](PHASE_I4_REPORT.md) · [protocol/import](PHASE_I4_QUALITY_PROTOCOL.md) |
 | Format recovery và sửa source sampling hiện tại | [Phase I.3](PHASE_I3_REPORT.md) · [spec/import](PHASE_I3_PLAIN_TEXT_SPEC.md) |
 | Plain text từ raw và workbook review hiện tại | [Phase I.2](PHASE_I2_REPORT.md) · [spec/import](PHASE_I2_PREPROCESSING_SPEC.md) |
 | Quality audit đang chờ người duyệt; tạm dừng pilot AI | [Phase I.1](PHASE_I1_QUALITY_REPORT.md) · [quy tắc và cách duyệt](PHASE_I1_PREPROCESSING_RULES.md) |

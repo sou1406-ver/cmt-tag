@@ -8,6 +8,8 @@ checkout code trên máy khác không tự có những dữ liệu này.
 
 | Cần làm gì | Đường dẫn |
 | --- | --- |
+| Workbook domain/spam I.4, chưa có nhãn người | [semantic_quality_review_200.xlsx](phase_i4/workbook_v2/semantic_quality_review_200.xlsx) |
+| Format summary, sampling probabilities, readiness và holdout I.4 | `phase_i4/v5/` |
 | Workbook kiểm định format I.3, 200 câu | [plain_text_validation_200.xlsx](phase_i3/workbook_v3/plain_text_validation_200.xlsx) |
 | Token audit, Facebook funnel và candidate I.3 chưa duyệt | `phase_i3/v3/` |
 | Workbook plain text I.2 giữ làm lịch sử | [quality_review_200.xlsx](phase_i2/workbook_v1/quality_review_200.xlsx) |

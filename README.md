@@ -1,5 +1,11 @@
 # Phân loại sắc thái bình luận phim tiếng Việt
 
+**Phase I.4 đang chờ người duyệt format và domain/spam.**
+Mở `outputs/phase_i4/workbook_v2/semantic_quality_review_200.xlsx`, điền hai cột
+cuối trong Review. Workbook format I.3 vẫn còn 200 quyết định trống.
+[Báo cáo I.4](docs/PHASE_I4_REPORT.md) · [hướng dẫn và import](docs/PHASE_I4_QUALITY_PROTOCOL.md).
+Chưa có corpus được duyệt hoặc file chính thức để gửi AI.
+
 Hiện tại kiểm định format ở **Phase I.3**:
 [báo cáo và funnel Facebook](docs/PHASE_I3_REPORT.md),
 [spec/cách import](docs/PHASE_I3_PLAIN_TEXT_SPEC.md).

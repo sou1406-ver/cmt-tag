@@ -16,6 +16,8 @@ checkout code trên máy khác không tự có những dữ liệu này.
 | Audit toàn bộ 29.688 dòng legacy | [legacy_quality_report.json](phase_g2/legacy_audit/legacy_quality_report.json) |
 | Master 39.842 records, gồm nguồn chưa xác minh | [master.csv](phase_g/master/master.csv) |
 | 400 quyết định development ban đầu | [annotations.csv](development/reviewed/annotations.csv) |
+| Corpus hợp nhất 532 nhãn và audit chuẩn hóa (local, immutable) | `phase_g3/unified/` |
+| Tái lập baseline và bằng chứng blocker fold Phase G.3 (local) | `phase_g3/ablation/` |
 
 186 nhãn mới ở `human_import_01` chưa tự merge vào release cũ hoặc dùng train.
 Không sửa ID/text trong workbook. Nếu gán lại rồi import, chọn output mới;
@@ -30,6 +32,7 @@ không dùng thay workbook để gán mù.
 | Mô hình và thí nghiệm khóa | `phase_e/`, `phase_e1/`, `phase_e2/` |
 | Master, exposure, blind test preparation | `phase_g/`, `phase_g1/` |
 | Legacy audit, task và import hiện tại | `phase_g2/` |
+| Unified human dataset và normalization ablation | `phase_g3/` |
 | Crawl/export các đợt trước | `fresh_fb_*`, `group_*`, `high_activity_*`, `diverse_sources_*`, `diversity_*`, `facebook_5k_*` |
 | Pilot và chọn mẫu cũ | `source_quality_pilot_*`, `pilot_format_*`, `negative_annotation_*` |
 | Kiểm tra, demo, support và snapshot thử | `*_support/`, `*_smoke/`, `scope_diagnosis/`, `cleanup_audit_*`, `merge_fb_*`, `phase_d_demo/`, `release_fix_wip/` |

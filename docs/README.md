@@ -20,6 +20,7 @@
 | Thử tiền xử lý tiếng Việt | [Phase E](PHASE_E_REPORT.md) |
 | BoW và repeated grouped CV | [Phase E.1](PHASE_E1_REPORT.md) |
 | Cross-domain ranking diagnostic | [Phase E.2](PHASE_E2_REPORT.md) |
+| Unified 532 human labels and normalization ablation (PARTIAL; frozen-fold isolation blocker) | [Phase G.3](PHASE_G3_REPORT.md) |
 
 ## Hợp đồng và lịch sử
 

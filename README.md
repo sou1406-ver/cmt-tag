@@ -1,5 +1,10 @@
 # Phân loại sắc thái bình luận phim tiếng Việt
 
+Hiện tại dùng **Phase I.2** để duyệt plain text:
+[báo cáo](docs/PHASE_I2_REPORT.md), [quy tắc và import](docs/PHASE_I2_PREPROCESSING_SPEC.md).
+Mở `outputs/phase_i2/workbook_v1/quality_review_200.xlsx`, chỉ điền hai cột cuối
+trong sheet Review. Pilot vẫn `PENDING_HUMAN_QUALITY_APPROVAL`.
+
 ## Phase I — dataset và pilot gán nhãn
 
 **Đang chờ quality audit Phase I.1.** Pilot Phase I chưa được duyệt để gửi AI.

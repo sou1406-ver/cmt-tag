@@ -5,6 +5,7 @@
 | Nội dung | Tài liệu |
 | --- | --- |
 | Gán nhãn theo guideline hiện tại | [V2.1](guidelines/MOVIE_SENTIMENT_V2_1.md) |
+| Plain text từ raw và workbook review hiện tại | [Phase I.2](PHASE_I2_REPORT.md) · [spec/import](PHASE_I2_PREPROCESSING_SPEC.md) |
 | Quality audit đang chờ người duyệt; tạm dừng pilot AI | [Phase I.1](PHASE_I1_QUALITY_REPORT.md) · [quy tắc và cách duyệt](PHASE_I1_PREPROCESSING_RULES.md) |
 | Unified dataset, cleaning và pilot AI mù | [Phase I](PHASE_I_DATA_CLEANING_REPORT.md) · [protocol](PHASE_I_ANNOTATION_PROTOCOL.md) · [data dictionary](DATA_DICTIONARY_PHASE_I.md) |
 | Audit legacy, task 250 và kết quả import 186 sentiment/64 EXCLUDE | [Phase G.2](PHASE_G2_LEGACY_AUDIT.md) |

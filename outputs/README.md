@@ -8,6 +8,8 @@ checkout code trên máy khác không tự có những dữ liệu này.
 
 | Cần làm gì | Đường dẫn |
 | --- | --- |
+| Workbook plain text hiện tại, 200 câu để duyệt | [quality_review_200.xlsx](phase_i2/workbook_v1/quality_review_200.xlsx) |
+| Corpus/candidate/audit Phase I.2 chưa duyệt | `phase_i2/v2/` |
 | Duyệt chất lượng 200 câu Phase I.1 (để trống sentiment) | [quality_review_200.csv](phase_i1/v2/quality_review_200.csv) |
 | Pilot mới chỉ để xem trước, chưa gửi AI | [pilot_500_candidate.csv](phase_i1/v2/pilot_500_candidate.csv) |
 | 186 nhãn sentiment đã nhập | [sentiment.csv](phase_g2/human_import_01/sentiment.csv) |

@@ -48,9 +48,34 @@ def validate_cleaning(path,coordinator,complete=False):
     return rows
 
 
-def import_cleaning(path,coordinator,output):
-    rows=validate_cleaning(path,coordinator,complete=True)
+def import_cleaning(path,coordinator,output,convention=None):
+    """Strict by default; a separate hash-bound human receipt may define blanks."""
+    policy=load(convention) if convention is not None else None
+    if policy is not None:
+        if (policy.get('status')!='EXPLICIT_HUMAN_REVIEW_CONVENTION' or
+            policy.get('workbook_sha256')!=sha(path) or policy.get('coordinator_sha256')!=sha(coordinator) or
+            policy.get('blank_decision_and_note')!='ACCEPT' or not policy.get('authorization')):
+            raise ValueError('Explicit checksum-bound human convention required')
+    rows=validate_cleaning(path,coordinator,complete=policy is None)
+    if policy is not None:
+        enriched=[]
+        for r in rows:
+            original=r['decision'];note=r['note'].strip()
+            if not original and note:raise ValueError('Note-only decision not authorized by this convention')
+            r=dict(r,decision=original or 'ACCEPT',original_decision=original,
+                decision_basis='EXPLICIT_CELL' if original else 'EXPLICIT_HUMAN_BLANK_CONVENTION',
+                review_issue=policy.get('reject_without_note_issue','') if original=='REJECT' and not note else 'HUMAN_NOTE' if note else '')
+            enriched.append(r)
+        rows=enriched
     with staged(output) as out:
-        write_csv(out/'human_normalization_decisions.local.csv',rows,['id','text_truoc','text_sau','decision','note'])
+        fields=['id','text_truoc','text_sau','decision','note']
+        if policy is not None:
+            import shutil
+            from .common import save
+            fields+=['original_decision','decision_basis','review_issue']
+            save(out/'human_convention.local.json',policy)
+            shutil.copyfile(path,out/'reviewed_workbook.xlsx')
+        write_csv(out/'human_normalization_decisions.local.csv',rows,fields)
         return seal(out,dict(status='HUMAN_V3_2_REVIEW_IMPORTED_NOT_CORPUS_APPROVAL',rows=len(rows),input_sha256=sha(path),
-            coordinator_sha256=sha(coordinator),normalization_version='plain_text_v3_2',annotation_pointer_updated=False,canonical_approved=False))
+            coordinator_sha256=sha(coordinator),normalization_version='plain_text_v3_2',annotation_pointer_updated=False,canonical_approved=False,
+            **(dict(convention_sha256=sha(convention),decision_counts={k:sum(r['decision']==k for r in rows) for k in ('ACCEPT','REJECT')}) if policy is not None else {})))

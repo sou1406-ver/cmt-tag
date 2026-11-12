@@ -4,6 +4,30 @@ Ngày 12/11/2026. **Candidate, QUALITY_REVIEW_PENDING, approved = 0.** Không tr
 API, crawl, đổi guideline/nhãn/split, phát hành annotation input hoặc chuyển
 active pointer. Corpus mới và mọi comment/event/provenance chỉ giữ local.
 
+## Human review follow-up — 12/11/2026
+
+Người dùng đã hoàn tất workbook và xác nhận riêng convention cho **đúng file
+đã lưu**: decision/note đều trống = ACCEPT; explicit REJECT không note là lỗi
+dấu nối còn sót. Nhập **57 ACCEPT /43 REJECT**, gồm42 REJECT/no-note đều có `_`
+và1 REJECT có note emoticon. Không biến ACCEPT sample thành corpus approval.
+Workbook không bị importer sửa; reviewed snapshot, original cell decision,
+decision basis và issue lưu immutable tại `outputs/canonical/quality_import_v32_01/`.
+Receipt có hash workbook/coordinator và lời xác nhận ở
+`outputs/canonical/review_receipts/v32_20261112/convention.local.json`.
+
+Default importer vẫn yêu cầu decision đầy đủ; chỉ opt-in `--human-convention`
+với receipt đúng hash mới diễn giải ô trống. Workbook mới khác không kế thừa
+convention này; note-only chưa được cho phép sẽ bị chặn. Authoring manifest ban
+đầu mô tả template trống; hash bản người dùng đã sửa được ghi ở receipt mới.
+
+Trường hợp emoticon được đối chiếu raw: raw đã có closing parentheses tách rời,
+không có bằng chứng dấu colon bị v3.2 xóa. Giữ REJECT và
+NO_SAFE_AUTOMATIC_EMOTICON_RECONSTRUCTION; không tự biến `))` thành `:))`, không
+đoán lại biểu cảm hoặc bỏ `_` toàn cục. Chưa sửa normalization engine/corpus.
+Các số liệu build, workbook trống và kiểm thử ở phần dưới là snapshot trước
+human review; follow-up này cập nhật trạng thái task review, không đổi snapshot.
+Regression sau importer opt-in: **392 tests, 391 pass, 0 fail, 1 skip**.
+
 ## 1. Input và checksums
 
 Đọc đầy đủ local lineage, không rebuild từ public CSV thay thế journals:

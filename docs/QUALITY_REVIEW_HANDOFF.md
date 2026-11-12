@@ -1,5 +1,11 @@
 # Việc cần làm với canonical candidate mới
 
+**V3.2 đã nhập review:** 57 ACCEPT /43 REJECT theo convention được người dùng
+xác nhận riêng cho workbook đã lưu. Ledger: `outputs/canonical/quality_import_v32_01/`.
+42 REJECT không note là separator issue (thực tế còn `_`), 1 note về emoticon
+đã lỗi ngay trong raw. Không cần điền lại100 câu; chưa tự sửa text hoặc duyệt corpus.
+Default blank vẫn pending ở các workbook mới; receipt mới là opt-in đúng hash.
+
 **Review normalization v3.2 mới:**
 `outputs/canonical/versions/cleaning_v3_2_candidate/review/cleaning_review.xlsx`.
 100 câu, cột B/C là trước/sau; chỉ điền D/E: ACCEPT hoặc REJECT và note.

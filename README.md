@@ -89,6 +89,28 @@ Hiện chưa có approved release cho dataset filtered, nên không đưa trực
 vào train. Output đã tồn tại không được ghi đè. Clone repo không tự có toàn bộ
 raw, coordinator và model local cần cho các lệnh trên.
 
+## Candidate mới: lọc tag-only và URL
+
+```powershell
+python scripts/build_master_dataset.py --quality-filter outputs/canonical/versions/filtered_20261112_final --output outputs/canonical/versions/filtered_20261113_quality_v1
+```
+
+Chỉ tạo version dẫn xuất; không đổi active pointer. Raw/minimal/human decisions
+được giữ nguyên. `text_annotation_view` dùng chung cho future annotation;
+model opt-in nhận `text_model(text_annotation_view)`. Tag-only chỉ tự EXCLUDE khi
+metadata nguồn/DOM và phép xóa khớp; tên chưa xác minh chỉ REVIEW. URL-only tự
+EXCLUDE; URL kèm nội dung giữ lại hoặc REVIEW. Human decisions chỉ nhận flags,
+không bị loại hoặc thay text. DOM aggregate chỉ gọi `DOM_RULE_MATCH`.
+
+Trong version mới, `candidate.local.jsonl` giữ mọi record với metadata quyết định;
+`annotation_candidates.local.csv` chỉ gồm KEEP từ pool eligible cũ, không tự duyệt.
+Version quality_v1 flag 315 tag-only EXCLUDE và 154 REVIEW; không có URL-only
+trong dữ liệu thật. 315 câu vốn ngoài pool cũ; pool KEEP còn 6.967/6.968, một câu
+chuyển REVIEW do reservation guard. Giữ đủ 425 nhãn sentiment; chưa duyệt AI pool.
+REVIEW ở `review_candidates.local.jsonl`; audit/ví dụ local tại
+`outputs/quality_filter_review/REPORT.md`. Các file đã tồn tại không ghi đè;
+lần chạy khác cần output/review path mới. Không AI labeling hoặc evaluate lại gold.
+
 ## Thử nghiệm tiền xử lý trên nhãn phát triển
 
 ```powershell

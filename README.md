@@ -1,95 +1,125 @@
-# Sentiment bình luận phim tiếng Việt
+# Phân loại sắc thái bình luận phim tiếng Việt
 
-Python CLI cho **POS / NEG / NEU**. Luồng chính:
-**Crawl Facebook + dữ liệu được cung cấp → Lọc/tiền xử lý → Gán nhãn → Train → Đánh giá**.
+Bài tập lớn Xử lý dữ liệu văn bản: xây dựng pipeline Python CLI để phân loại
+bình luận phim thành **tích cực (POS)**, **tiêu cực (NEG)** và **trung lập (NEU)**.
 
-Dataset hiện tại: **25.810 comment**, **425 nhãn sentiment người**, **6.968 ứng viên gán nhãn chưa duyệt**.
-Bản local: `outputs/canonical/versions/filtered_20261112_final/comments.csv`.
-`text_raw` giữ nguyên; `text_minimal` là cột riêng. Candidate chưa quality-approved,
-không tự đổi active pointer hoặc coi các nhãn development là independent gold test.
+**Thu thập dữ liệu → Lọc và tiền xử lý → Kiểm tra chất lượng → Gán nhãn → Huấn luyện → Đánh giá**
 
-## Quy trình dự án
+## Quy trình thực hiện
 
-| Bước | Công việc và trạng thái |
-| --- | --- |
-| Thu thập | Crawl Facebook theo phim/bài đăng, giữ ID và provenance; bổ sung bộ CSV khoảng 29k được bạn cung cấp. Nguồn ban đầu/nhãn `overall` của CSV chưa xác minh. |
-| Lọc dữ liệu | Canonical 38.642 → 25.810 dòng; loại legacy có `_`, quá 1.000 ký tự, lỗi rõ ràng, human EXCLUDE và exact duplicates. Không xóa raw. |
-| Tiền xử lý | NFC, HTML entities hợp lệ, CRLF/NBSP và trim; giữ emoji, emoticon, dấu câu, phủ định và teencode. Kiểm quality/leakage trước khi dùng. |
-| Gán nhãn | POS/NEG/NEU theo guideline V2.1; REVIEW/EXCLUDE giữ trong lịch sử. Hiện có 425 nhãn sentiment còn lại, 6.968 ứng viên chưa duyệt. |
-| Huấn luyện | BoW/TF-IDF với NB/LR/SVM; fit đặc trưng trên train, chia theo nhóm bài và chống trùng. Chỉ chạy khi có release hợp lệ. |
-| Đánh giá | Macro-F1, precision/recall/F1 từng lớp và confusion matrix; phân biệt development CV với test độc lập. |
+1. **Thu thập dữ liệu:** crawl bình luận Facebook từ các bài thảo luận/review phim bằng Selenium, kết hợp bộ CSV khoảng 29.000 dòng được cung cấp. Bình luận Facebook được lưu cùng mã phim, mã bài đăng, mã bình luận và thông tin nguồn.
+2. **Lọc và tiền xử lý:** loại dữ liệu không sử dụng được và bình luận trùng hoàn toàn; chuẩn hóa Unicode NFC, HTML entities hợp lệ và một số khoảng trắng kỹ thuật. Giữ riêng văn bản gốc, bảo toàn emoji, emoticon, dấu câu, phủ định và teencode.
+3. **Kiểm tra chất lượng:** kiểm tra nội dung, nguồn, trùng lặp và nguy cơ dữ liệu cùng bài hoặc gần trùng xuất hiện ở cả train và test. Những trường hợp chưa rõ tiếp tục chờ người duyệt.
+4. **Gán nhãn:** người gán quyết định POS/NEG/NEU theo guideline V2.1. REVIEW dành cho câu chưa đủ căn cứ; EXCLUDE dành cho câu ngoài phạm vi hoặc không sử dụng được. Lịch sử quyết định được giữ lại.
+5. **Huấn luyện:** biểu diễn văn bản bằng BoW hoặc TF-IDF, thử Naive Bayes, Logistic Regression và Linear SVM. Vectorizer chỉ được fit trên phần train.
+6. **Đánh giá:** báo cáo Macro-F1, Accuracy, Precision/Recall/F1 từng lớp và confusion matrix. Chia dữ liệu theo nhóm bài đăng, kiểm tra trùng lặp và phân biệt kết quả phát triển với test độc lập.
 
-Đây là quy trình chính để trình bày BTL. Các hướng thử rồi bỏ và số đo cũ
-chỉ nằm trong [lịch sử dự án](docs/PROJECT_HISTORY.md); không cần kể lại từng phase.
-**Chưa train lại trên 25.810 dòng** vì candidate chưa được duyệt; không lấy kết quả
-baseline cũ làm kết quả của dataset này.
+Nguồn gốc ban đầu và cách tạo nhãn `overall` của bộ CSV được cung cấp chưa được
+xác minh. Nhãn này **không được dùng làm ground truth**.
 
-## Setup
+## Dữ liệu hiện tại
 
-Chạy PowerShell tại root repo; dùng Python 3.12 và **một `.venv` duy nhất**:
+| Hạng mục | Số lượng |
+| --- | ---: |
+| Bình luận sau lọc | **25.810** |
+| Facebook | 7.146 |
+| Bộ dữ liệu được cung cấp | 18.664 |
+| Bình luận còn nhãn sentiment người | **425** |
+| Ứng viên gán nhãn chưa duyệt | **6.968** |
+
+Dữ liệu local nằm tại `outputs/canonical/versions/filtered_20261112_final/`:
+
+- `comments.csv`: dữ liệu sau lọc; `text_raw` và `text_minimal` là hai cột riêng.
+- `exclusions.csv`: ID bị loại và lý do.
+- `annotation_candidates.local.csv`: danh sách ứng viên gán nhãn, chưa phải bộ nhãn đã duyệt.
+- `manifest.json`: checksum các artifact; lịch sử nhãn và thông tin chống leakage nằm cùng thư mục.
+
+Chính sách lọc: loại bình luận legacy có `_` trong raw hoặc dài **trên 1.000 ký tự**;
+Facebook trên 1.000 ký tự được giữ để review. Không loại chỉ vì câu ngắn, có emoji
+hay teencode. Near-duplicates được đánh dấu/bảo vệ, không tự xóa ý kiến độc lập.
+
+**Dataset này đang chờ duyệt chất lượng, chưa được dùng để train lại.** 425 nhãn
+người là dữ liệu phát triển còn lại sau lọc, không phải independent gold test.
+Các kết quả thí nghiệm trước đây được ghi riêng trong [lịch sử dự án](docs/PROJECT_HISTORY.md).
+
+## Cài đặt và chạy trong VS Code
+
+Dùng Python 3.12, mở terminal PowerShell tại root repository:
 
 ```powershell
+# Chỉ tạo môi trường nếu chưa có .venv
 py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements/classical-base.txt
-.\.venv\Scripts\python.exe -m pip install -r requirements/crawler.txt
-.\.venv\Scripts\python.exe -m unittest discover -s tests
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements/classical-base.txt
+python -m pip install -r requirements/crawler.txt
 ```
 
-Máy làm việc đã có `.venv`; không cần tạo lại. Trong VS Code chọn interpreter
-`.venv/Scripts/python.exe`; mở `cmt-tag.code-workspace` để thấy repo và dữ liệu sau lọc.
-Không cần các môi trường mang tên phase cũ.
+Nếu máy đã có `.venv`, chỉ cần kích hoạt. Trong VS Code, chọn interpreter
+`.venv/Scripts/python.exe`. Mở `cmt-tag.code-workspace` để xem repo và thư mục
+dữ liệu sau lọc. Chỉ dùng một môi trường cho workflow hiện tại.
 
-Build/filter và xử lý nhãn dùng standard library. Các test DOM cần Selenium và
-Chrome/Brave; test model cần sklearn. Không nâng package/pin trong lần dọn này.
-`requirements/locks/classical-windows-py312.txt` giữ nguyên để tái lập môi trường cũ.
+## Các lệnh chính
 
-## Sáu lệnh chính
+Chạy sau khi kích hoạt `.venv`. Những giá trị viết hoa là placeholder cần thay
+bằng đường dẫn hoặc ID thực tế; thêm `--help` để xem đầy đủ tham số.
 
-Dùng Python của môi trường đã cài dependencies. Trước tiên có thể thêm `--help`.
+```powershell
+# 1. Crawl: nhập mã phim rồi dán lần lượt các link Facebook
+python -m src.crawler interactive --channel brave
 
-| Việc | Lệnh |
-| --- | --- |
-| Crawl | `python -m src.crawler interactive --channel brave` |
-| Build/filter | `python scripts/build_master_dataset.py --filter-canonical outputs/canonical/versions/rebuild_20261112 --legacy-max-characters 1000 --output outputs/canonical/versions/NEW_FILTERED` |
-| Export annotation | `python -m src.annotation export --data-root DATA_ROOT --version VERSION --split train --count 150 --output NEW_TASK` |
-| Import annotation | `python -m src.annotation import-human --task TASK_JSON --csv LABELS_CSV --annotator NAME --blind --output NEW_EVENTS` |
-| Train | `python -m src.models train --release APPROVED_RELEASE --train-mode gold-only --output NEW_RUN` |
-| Evaluate | `python -m src.models evaluate --run NEW_RUN --output NEW_EVALUATION` |
+# 2. Tạo bản lọc mới từ canonical nguồn đã xác minh
+python scripts/build_master_dataset.py --filter-canonical outputs/canonical/versions/rebuild_20261112 --legacy-max-characters 1000 --output outputs/canonical/versions/NEW_FILTERED
 
-Các placeholder phải thay bằng artifact đúng contract. Export nhận **prepared records/split**;
-train nhận **release đã qua kiểm tra**. Candidate filtered chưa được duyệt nên chưa có
-approved release tương ứng; không đưa thẳng CSV vào train để bỏ qua quality/leakage guards.
-Build cũng nhận `--config CONFIG --output-root DATA_ROOT` cho prepared records/split;
-chỉ dùng cấu hình nguồn được phê duyệt, không dùng `overall` legacy làm ground truth.
-Các gate `agreement`/`release` thuộc cùng CLI annotation, không phải pipeline phase mới.
-Đường dẫn output đã tồn tại bị từ chối ghi đè. Cleanup không chạy crawl, AI hay train dữ liệu thật.
+# 3. Xuất task gán nhãn từ prepared records và split hợp lệ
+python -m src.annotation export --data-root DATA_ROOT --version VERSION --split train --count 150 --output NEW_TASK
 
-Tiền xử lý dùng một implementation: `from src.preprocessing import preprocess`.
-Chỉ NFC, HTML entities hợp lệ ngoài URL/email/code, CRLF/NBSP và trim hai đầu;
-giữ khoảng trắng nội bộ, emoji/emoticon, dấu `-`, phủ định và teencode.
-Legacy raw có `_` hoặc >1.000 ký tự bị loại; Facebook >1.000 được giữ REVIEW.
-Exact duplicates được loại có ledger; near-duplicates chỉ đánh dấu/bảo vệ leakage.
+# 4. Nhập quyết định của người gán
+python -m src.annotation import-human --task TASK_JSON --csv LABELS_CSV --annotator NAME --blind --output NEW_EVENTS
 
-## Cấu trúc
+# 5. Huấn luyện từ release đã qua kiểm tra
+python -m src.models train --release APPROVED_RELEASE --train-mode gold-only --output NEW_RUN
+
+# 6. Đánh giá run đã huấn luyện
+python -m src.models evaluate --run NEW_RUN --output NEW_EVALUATION
+```
+
+Build cũng nhận `--config CONFIG --output-root DATA_ROOT` để chuẩn bị records và
+split. Export annotation yêu cầu prepared data; train yêu cầu release hợp lệ.
+Hiện chưa có approved release cho dataset filtered, nên không đưa trực tiếp CSV
+vào train. Output đã tồn tại không được ghi đè. Clone repo không tự có toàn bộ
+raw, coordinator và model local cần cho các lệnh trên.
+
+## Cấu trúc repository
 
 ```text
-src/crawler/        Selenium, DOM, journal/resume và export
-src/data/           import, schema, quality và grouped split
-src/dataset/        canonical filter, lineage I/O và frozen-test guards
-src/preprocessing/  một bộ tiền xử lý tối thiểu
-src/annotation/     task, human events, agreement và release gates
-src/models/         BoW/TF-IDF, NB/LR/SVM và đánh giá
-scripts/            một entry point build/filter
-configs/            cấu hình nguồn/fixture cần thiết
-requirements/       dependencies hiện tại và lock lịch sử
-tests/             fixture và regression cho chức năng còn giữ
+src/
+  crawler/        Thu thập Facebook, journal, resume và export
+  data/           Import, schema, kiểm tra chất lượng và chia nhóm
+  dataset/        Lọc canonical, provenance và bảo vệ test
+  preprocessing/  Tiền xử lý tối thiểu
+  annotation/     Task, nhãn người, agreement và release
+  models/         BoW/TF-IDF, mô hình và đánh giá
+scripts/          Entry point build/filter
+configs/          Cấu hình nguồn và fixture
+requirements/     Dependencies và lock cần tái lập
+tests/           Unit tests và fixture
+docs/            Guideline, hướng dẫn, báo cáo lọc và lịch sử
+data/            Snapshot dữ liệu/nhãn đã lưu
+outputs/         Dataset và kết quả local
 ```
 
-[Guideline V2.1](docs/guidelines/MOVIE_SENTIMENT_V2_1.md) ·
-[Quy tắc/số liệu lọc](docs/DATASET_FILTER_REPORT.md) ·
-[Crawler](docs/CRAWLER.md) · [Lịch sử dự án và cleanup](docs/PROJECT_HISTORY.md).
+## Kiểm thử và tài liệu
 
-Raw, labels, provenance, test reservations, checkpoint và kết quả local giữ nguyên.
-Snapshot cũ trong `data/` vẫn nguyên byte; không phải filtered candidate hiện tại.
-Code/tài liệu thực nghiệm cũ được truy xuất tại tag **`before-cleanup-20261112`**,
-không cần chạy lại Phase A–J. Quy trình v3.1/v3.2 đã ngừng dùng làm mặc định.
+```powershell
+python -m unittest discover -s tests
+```
+
+- [Guideline gán nhãn V2.1](docs/guidelines/MOVIE_SENTIMENT_V2_1.md)
+- [Hướng dẫn crawler và xử lý lỗi](docs/CRAWLER.md)
+- [Báo cáo lọc dữ liệu](docs/DATASET_FILTER_REPORT.md)
+- [Chỉ mục dữ liệu local](outputs/README.md)
+- [Lịch sử thử nghiệm và các hướng đã bỏ](docs/PROJECT_HISTORY.md)
+
+Raw, nhãn người, frozen splits, checkpoint và kết quả cũ được giữ nguyên.
+Các hướng xử lý v3.1/v3.2 không còn là mặc định. Code và tài liệu trước đợt dọn
+được lưu tại tag `before-cleanup-20261112`; không cần chạy lại các phase cũ.

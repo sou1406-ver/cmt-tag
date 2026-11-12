@@ -53,6 +53,8 @@ def export_tasks(root, version, output, seed=42, random_count=150, hard_ids=(), 
     rng=random.Random(seed)
     random_ids=rng.sample([rid for rid in pool if rid not in hard_ids],min(count or random_count,len(pool)-len(hard_ids)))
     selected=[(rid,'random') for rid in random_ids]+[(rid,'hard') for rid in hard_ids]
+    from src.dataset.blind import assert_allowed
+    assert_allowed([lookup[rid] for rid,_ in selected],'active_learning')
     output=Path(output)
     output.mkdir(parents=True,exist_ok=False)
     rows=[{'id':rid,'text_raw':lookup[rid]['text_raw'],'split':eligible[rid]['split'],
@@ -99,6 +101,23 @@ def import_human(task_path, csv_path, output, annotator, blind, adjudication=Fal
     return len(events)
 
 
+def pair_metrics(x,y):
+    """Shared categorical agreement; workflow states remain separate from sentiment."""
+    if not x or len(x)!=len(y): raise ValueError('Equal nonempty decision pairs required')
+    def metrics(left,right,categories):
+        n=len(left);cx,cy=Counter(left),Counter(right)
+        po=sum(u==v for u,v in zip(left,right))/n
+        pe=sum(cx[k]*cy[k] for k in set(cx)|set(cy))/(n*n)
+        return dict(n=n,agreement=po,kappa=(po-pe)/(1-pe) if pe<1 else None,categories=categories,
+            confusion_matrix=[[sum(u==c and v==d for u,v in zip(left,right)) for d in categories] for c in categories])
+    result=metrics(x,y,['POS','NEG','NEU','REVIEW','EXCLUDE'])
+    pairs=[(u,v) for u,v in zip(x,y) if u in ('POS','NEG','NEU') and v in ('POS','NEG','NEU')]
+    result['sentiment_pair_count']=len(pairs)
+    result['sentiment_only']=metrics([u for u,v in pairs],[v for u,v in pairs],['POS','NEG','NEU']) if pairs else None
+    result['note']='REVIEW/EXCLUDE are workflow decisions. Null Kappa means degenerate marginals.'
+    return result
+
+
 def agreement(left_path,right_path,output):
     left,right=read_jsonl(left_path),read_jsonl(right_path)
     def index(rows):
@@ -121,14 +140,7 @@ def agreement(left_path,right_path,output):
         if sig(a[rid])!=sig(b[rid]): disagreements.append({'id':rid,'left':a[rid],'right':b[rid]})
     for cohort in sorted({r['cohort'] for r in left}):
         ids=[rid for rid in a if a[rid]['cohort']==cohort]
-        x,y=[sig(a[rid]) for rid in ids],[sig(b[rid]) for rid in ids]
-        n=len(ids); cx,cy=Counter(x),Counter(y)
-        po=sum(u==v for u,v in zip(x,y))/n
-        pe=sum(cx[k]*cy[k] for k in set(cx)|set(cy))/(n*n)
-        reports[cohort]={'n':n,'agreement':po,'kappa':(po-pe)/(1-pe) if pe<1 else None,
-                         'categories':['POS','NEG','NEU','REVIEW','EXCLUDE'],
-                         'sentiment_pair_count':sum(u in ('POS','NEG','NEU') and v in ('POS','NEG','NEU') for u,v in zip(x,y)),
-                         'note':'Kappa includes workflow categories; null means degenerate marginals.'}
+        reports[cohort]=pair_metrics([sig(a[rid]) for rid in ids],[sig(b[rid]) for rid in ids])
     output=Path(output); output.mkdir(parents=True,exist_ok=False)
     save(output/'agreement.json',reports)
     with (output/'disagreements.jsonl').open('x',encoding='utf-8') as f:

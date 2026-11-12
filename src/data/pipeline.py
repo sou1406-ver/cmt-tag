@@ -73,6 +73,8 @@ def prepare_data(config_path, output_root=None, workspace=ROOT):
             sidecars.append((rows, spec, sha, source))
     if not records:
         raise ValueError("No comment rows to prepare")
+    from src.dataset.blind import assert_allowed
+    assert_allowed(records, 'train')
     for rows, spec, sha, source in sidecars:
         if spec["source_dataset"] not in source_ids:
             raise ValueError("Annotation sidecar references an unknown source_dataset")

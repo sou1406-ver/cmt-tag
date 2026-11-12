@@ -21,6 +21,146 @@ from src.data.schema import gold_label
 
 LABELS=['POS','NEG','NEU']
 
+GOLD_CONFIG={
+    'bow_complement_nb':{'feature':'bow','model':'complement_nb','alpha':1.0,'ngram_range':[1,1]},
+    'bow_multinomial_nb':{'feature':'bow','model':'multinomial_nb','alpha':1.0,'ngram_range':[1,1]},
+    'tfidf_word_svm':{'feature':'word','model':'svm','ngram_range':[1,2],'class_weight':'balanced','C':1.0},
+    'tfidf_char_svm':{'feature':'char_wb','model':'svm','ngram_range':[3,5],'class_weight':'balanced','C':1.0},
+}
+
+
+def gold_model(name):
+    """Predeclared models; NB deliberately never receives class_weight."""
+    from sklearn.naive_bayes import ComplementNB
+    cfg=GOLD_CONFIG[name]
+    if cfg['feature']=='bow':
+        vec=CountVectorizer(ngram_range=(1,1),token_pattern=r'(?u)\b\w+\b')
+        estimator=(ComplementNB if cfg['model']=='complement_nb' else MultinomialNB)(alpha=1.0)
+    else:
+        vec=TfidfVectorizer(analyzer='char_wb',ngram_range=(3,5)) if cfg['feature']=='char_wb' else TfidfVectorizer(ngram_range=(1,2),token_pattern=r'(?u)\b\w+\b')
+        estimator=LinearSVC(C=1.0,class_weight='balanced',random_state=20261113,max_iter=20000)
+    return Pipeline([('vectorizer',vec),('model',estimator)])
+
+
+def confusion_png(path,matrix):
+    """Readable 3-class PNG with a tiny bitmap font, no plotting dependency."""
+    import struct,zlib
+    glyphs={
+      '0':'01110/10001/10011/10101/11001/10001/01110','1':'00100/01100/00100/00100/00100/00100/01110',
+      '2':'01110/10001/00001/00010/00100/01000/11111','3':'11110/00001/00001/01110/00001/00001/11110',
+      '4':'00010/00110/01010/10010/11111/00010/00010','5':'11111/10000/10000/11110/00001/00001/11110',
+      '6':'01110/10000/10000/11110/10001/10001/01110','7':'11111/00001/00010/00100/01000/01000/01000',
+      '8':'01110/10001/10001/01110/10001/10001/01110','9':'01110/10001/10001/01111/00001/00001/01110',
+      'P':'11110/10001/10001/11110/10000/10000/10000','O':'01110/10001/10001/10001/10001/10001/01110',
+      'S':'01111/10000/10000/01110/00001/00001/11110','N':'10001/11001/11001/10101/10011/10011/10001',
+      'E':'11111/10000/10000/11110/10000/10000/11111','G':'01110/10001/10000/10111/10001/10001/01110',
+      'T':'11111/00100/00100/00100/00100/00100/00100','R':'11110/10001/10001/11110/10100/10010/10001',
+      'U':'10001/10001/10001/10001/10001/10001/01110','D':'11110/10001/10001/10001/10001/10001/11110',
+      'I':'11111/00100/00100/00100/00100/00100/11111','C':'01111/10000/10000/10000/10000/10000/01111'}
+    width,height=430,390;pixels=bytearray([255])*(width*height*3)
+    def rectangle(x,y,w,h,color):
+        for yy in range(y,y+h):
+            for xx in range(x,x+w):
+                if 0<=xx<width and 0<=yy<height:pixels[(yy*width+xx)*3:(yy*width+xx)*3+3]=bytes(color)
+    def text(x,y,value,scale=2,color=(20,30,40)):
+        for i,char in enumerate(value):
+            for yy,line in enumerate(glyphs[char].split('/')):
+                for xx,bit in enumerate(line):
+                    if bit=='1':rectangle(x+i*6*scale+xx*scale,y+yy*scale,scale,scale,color)
+    text(170,8,'PREDICTED');text(8,8,'TRUE')
+    maximum=max(1,max(max(row) for row in matrix))
+    for i,label in enumerate(LABELS):text(126+i*100,43,label);text(45,112+i*100,label)
+    for y,row in enumerate(matrix):
+        for x,count in enumerate(row):
+            ratio=count/maximum;color=(int(245-185*ratio),int(250-145*ratio),int(255-80*ratio))
+            rectangle(99+x*100,69+y*100,100,100,(210,220,230));rectangle(100+x*100,70+y*100,98,98,color)
+            value=str(count);text(100+x*100+(100-len(value)*24)//2,105+y*100,value,4,(255,255,255) if ratio>.65 else (15,25,35))
+    def chunk(tag,body):return struct.pack('!I',len(body))+tag+body+struct.pack('!I',zlib.crc32(tag+body)&0xffffffff)
+    raw=b''.join(b'\x00'+bytes(pixels[y*width*3:(y+1)*width*3]) for y in range(height))
+    Path(path).write_bytes(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('!2I5B',width,height,8,2,0,0,0))+chunk(b'IDAT',zlib.compress(raw))+chunk(b'IEND',b''))
+
+
+def gold_train_rows(gold_rows,train_path,root):
+    """Keep gold; remove train identity/exact/near leakage before existing guards."""
+    from src.dataset.common import verify,read_jsonl as read_lines
+    from src.data.split import duplicate_groups
+    from src.dataset.blind import assert_allowed,ReservedDataError
+    from src.preprocessing import preprocess
+    verify(Path(train_path).parent)
+    candidates=[r for r in read_lines(train_path) if r.get('human_label') in LABELS and
+        any(d.get('status')=='LABELED' and d.get('label')==r['human_label'] for d in r.get('human_decisions',[]))]
+    combined=[dict(record_id='g_'+r['id'],text_clean=preprocess(r['text'])) for r in gold_rows]
+    combined += [dict(record_id='t_'+r['record_id'],text_clean=preprocess(r.get('text_minimal') or r['text_raw'])) for r in candidates]
+    groups,_,near=duplicate_groups(combined,threshold=.9,min_chars=40,max_posting=max(256,len(combined)+1))
+    near['summary']['near_duplicate_limit']='No posting truncation for gold/train leakage check; minimum 40 characters, token-3gram Jaccard >= 0.9'
+    if near['summary']['high_document_frequency_shingles_skipped']:
+        raise ValueError('Gold/train leakage check must not truncate common-shingle postings')
+    test_ids={r['record_id'] for r in combined if r['record_id'].startswith('g_')}
+    test_groups={groups[rid] for rid in test_ids};test_posts={r['post_id'] for r in gold_rows}
+    test_comments={r.get('comment_id') for r in gold_rows if r.get('comment_id')};used=[];excluded=[]
+    for row in candidates:
+        rid='t_'+row['record_id'];reason=None
+        if row.get('post_id') and row['post_id'] in test_posts or row.get('comment_id') and row['comment_id'] in test_comments:reason='SOURCE_IDENTITY_LEAKAGE'
+        elif groups[rid] in test_groups:reason='EXACT_OR_NORMALIZED_TEXT_LEAKAGE'
+        elif near['neighbors'].get(rid,set())&test_ids:reason='NEAR_TEXT_LEAKAGE'
+        if reason is None:
+            adapted=dict(row,id=row['record_id'],text=row.get('text_minimal') or row['text_raw'])
+            try:
+                assert_allowed([adapted],'train',reservation_root=Path(root)/'outputs/phase_g/blind_test',
+                               registry=Path(root)/'data/test_reservations')
+            except ReservedDataError:reason='RESERVED_POOL_LEAKAGE'
+        if reason:excluded.append(dict(id=row['record_id'],reason=reason))
+        else:used.append(dict(id=row['record_id'],text=preprocess(row.get('text_minimal') or row['text_raw']),label=row['human_label']))
+    return used,excluded,dict(candidates=len(candidates),used=len(used),excluded=len(excluded),near_detector=near['summary'])
+
+
+def evaluate_gold(directory,train_path,root):
+    """One-shot, fixed configurations. Called on real gold ONLY by the user."""
+    from src.dataset.common import load,sha,save as store,read_jsonl,write_csv
+    from src.annotation.gold import _task,_directory
+    directory=_directory(directory,root);lock_path=directory/'locked_gold.json'
+    if not lock_path.is_file():raise ValueError('Gold must be locked after recheck/final decisions before evaluation')
+    contract=_task(directory);locked=load(lock_path)
+    if locked['status']!='LOCKED_SINGLE_ANNOTATOR_TEST' or locked['records_sha256']!=sha(directory/'locked_gold.local.jsonl') or locked['coordinator_sha256']!=sha(directory/'coordinator.json'):
+        raise ValueError('Locked gold checksum/status mismatch')
+    if not locked['agreement'].get('within_one_day'):raise ValueError('This fixed protocol requires the intra-annotator recheck within less than one day')
+    results=directory/'results';ledger=Path(root)/'data/evaluation_usage';key=sha(directory/'coordinator.json')
+    if (results/'receipt.json').exists() or (ledger/('gold_'+key+'.json')).exists():raise FileExistsError('Gold evaluation already claimed; exactly one execution is allowed')
+    all_gold=read_jsonl(directory/'locked_gold.local.jsonl')
+    expected={r['id']:r for r in contract['rows']}
+    if len(all_gold)!=len(expected) or {r['id'] for r in all_gold}!=set(expected) or any(r['text_sha256']!=digest(r['text']) or r['text']!=expected[r['id']]['text'] for r in all_gold):raise ValueError('Locked gold IDs/text differ')
+    test=[r for r in all_gold if r['status']=='LABELED' and r['label'] in LABELS]
+    if not test:raise ValueError('Gold has no POS/NEG/NEU examples')
+    train,excluded,train_summary=gold_train_rows(all_gold,train_path,root)
+    if len({r['label'] for r in train})<2:raise ValueError(f'Only {len(train)} leakage-safe training records remain after {len(excluded)} exclusions; at least two classes required, no guard relaxed')
+    ledger.mkdir(parents=True,exist_ok=True);results.mkdir(parents=True,exist_ok=True)
+    receipt=dict(status='CLAIMED_ONCE',gold_sha256=sha(lock_path),gold_records_sha256=sha(directory/'locked_gold.local.jsonl'),
+        train_source_sha256=sha(train_path),used_train_sha256=digest(json.dumps(train,sort_keys=True,ensure_ascii=False)),
+        configuration=GOLD_CONFIG,seed=20261113,claimed_at=now(),train_counts=train_summary,
+        implementation_sha256=digest(Path(__file__).read_bytes()),runtime=dict(python=platform.python_version(),sklearn=sklearn.__version__,numpy=np.__version__),
+        annotation_protocol='one annotator; intra-annotator recheck <1 day; first up to 60 Facebook-ordered records/post')
+    store(ledger/('gold_'+key+'.json'),receipt)  # Exclusive claim BEFORE fitting/predicting; crashes remain consumed.
+    store(results/'receipt.json',receipt)
+    write_csv(results/'train_exclusions.csv',excluded,['id','reason'])
+    table={};predictions=[];group_table=[];x=[r['text'] for r in train];y=[r['label'] for r in train]
+    for name in GOLD_CONFIG:
+        estimator=gold_model(name);started=time.perf_counter();estimator.fit(x,y)
+        pred=estimator.predict([r['text'] for r in test]);summary=metrics([r['label'] for r in test],pred)
+        summary['seconds']=time.perf_counter()-started;table[name]=summary
+        confusion_png(results/(name+'_confusion.png'),summary['confusion_matrix'])
+        predictions.extend(dict(model=name,id=r['id'],label=r['label'],prediction=str(p)) for r,p in zip(test,pred))
+        for field in ('movie_id','group'):
+            for value in sorted({r[field] for r in test}):
+                positions=[i for i,r in enumerate(test) if r[field]==value]
+                item=metrics([test[i]['label'] for i in positions],[pred[i] for i in positions])
+                group_table.append(dict(model=name,field=field,value=value,n=len(positions),accuracy=item['accuracy'],macro_f1=item['macro_f1'],per_class=item['per_class']))
+    store(results/'metrics.json',dict(models=table,train=train_summary,gold_sentiment=len(test),gold_workflow_excluded=len(all_gold)-len(test),
+        interpretation='Single-annotator test, convenience first-60 source order; no gold tuning or inter-annotator claim'))
+    write_csv(results/'comparison.csv',[dict(model=k,accuracy=v['accuracy'],macro_f1=v['macro_f1'],seconds=v['seconds']) for k,v in table.items()],['model','accuracy','macro_f1','seconds'])
+    write_csv(results/'predictions.local.csv',predictions,['model','id','label','prediction'])
+    write_csv(results/'by_movie_and_group.csv',group_table,['model','field','value','n','accuracy','macro_f1','per_class'])
+    return dict(models=list(table),train=train_summary,gold_sentiment=len(test),output=str(results))
+
 
 def metrics(y,pred):
     report=classification_report(y,pred,labels=LABELS,output_dict=True,zero_division=0)

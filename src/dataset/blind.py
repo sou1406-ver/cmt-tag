@@ -5,11 +5,18 @@ from .master import post_url
 
 REGISTRY = ROOT/'data/test_reservations'
 
+
+class ReservedDataError(ValueError):
+    """A valid reservation forbids this row, rather than a corrupt contract."""
+
 def assert_intakes_allowed(rows,purpose,registry=REGISTRY):
     for path in sorted(Path(registry).glob('*.json')):
         entry=load(path);plan=Path(entry['plan_root'])
         if sha(plan/'manifest.json')!=entry['plan_manifest_sha256']:raise ValueError('Intake registry checksum changed')
-        verify(plan);quarantine=load(plan/'candidate_quarantine.json')
+        verify(plan)
+        if entry.get('candidate_quarantine_sha256') and sha(plan/'candidate_quarantine.json')!=entry['candidate_quarantine_sha256']:
+            raise ValueError('Candidate quarantine checksum changed')
+        quarantine=load(plan/'candidate_quarantine.json')
         deny_reserved(rows,purpose,dict(ids=[],groups=[],comment_ids=[],text_hashes=[],
             post_ids=quarantine['post_ids'],post_urls=quarantine['post_urls']))
         if entry.get('collection_root'):
@@ -26,13 +33,13 @@ def assert_intakes_allowed(rows,purpose,registry=REGISTRY):
 PROHIBITED = ('train', 'validation', 'model_selection', 'active_learning', 'pseudo_labeling',
               'prompt_tuning', 'guideline_tuning', 'threshold_tuning')
 
-def assert_allowed(rows, purpose, reservation_root=None):
+def assert_allowed(rows, purpose, reservation_root=None, registry=None):
     """Mandatory at new data-use boundaries, including AI/pseudo labeling.
 
     The default local reservation is absent before Phase G, or sealed PARTIAL with
     zero reservations. A present but corrupt/incomplete reservation fails closed.
     """
-    assert_intakes_allowed(rows,purpose)
+    assert_intakes_allowed(rows,purpose,REGISTRY if registry is None else registry)
     directory = Path(reservation_root) if reservation_root else ROOT/'outputs/phase_g/blind_test'
     if not directory.exists(): return
     manifest = verify(directory)
@@ -57,7 +64,7 @@ def deny_reserved(rows,purpose,reserved):
             or (same_platform and (row.get('comment_id') in keys['comment_ids'] or row.get('post_id') in keys['post_ids']
                 or post_url(row.get('post_url')) in keys['post_urls']))
             or any(digest(normal(row[k])) in keys['text_hashes'] for k in ('text_raw','text','text_view') if row.get(k))):
-            raise ValueError('Reserved blind-test component cannot be used for '+purpose)
+            raise ReservedDataError('Reserved blind-test component cannot be used for '+purpose)
 
 def quarantine_posts(rows,post_ids,platform='facebook'):
     """Entire post components, including unsampled comments and cross-platform duplicates."""

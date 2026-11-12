@@ -89,6 +89,49 @@ Hiện chưa có approved release cho dataset filtered, nên không đưa trực
 vào train. Output đã tồn tại không được ghi đè. Clone repo không tự có toàn bộ
 raw, coordinator và model local cần cho các lệnh trên.
 
+## Gold test: post mới, một người gán
+
+File link: `outputs/gold/posts.csv`, cột `movie_id,post_url`. Chọn link trước khi
+đọc comment. Quy trình có năm lệnh; **người dùng tự crawl**, các lệnh còn lại
+không mở trình duyệt. Thay `RUN_ID` bằng run vừa crawl xong:
+
+```powershell
+python -m src.crawler crawl-batch --input outputs/gold/posts.csv --max-comments 60 --channel brave
+python -m src.annotation gold sample --run RUN_ID
+python -m src.annotation gold recheck --annotator user
+python -m src.annotation gold agreement
+python -m src.annotation gold evaluate
+```
+
+`sample` tái dùng exporter hiện có; cũng nhận `--export PATH` nếu đã có export.
+Lệnh ghi SHA file link vào `outputs/gold/manifest.json` trước các bước khác,
+từ chối post/comment cũ và reserve toàn bộ post mới khỏi AI/train. Chỉ lọc text
+rỗng và exact duplicate trong batch; không lọc quality REVIEW, từ khóa hay độ dài.
+DOM chỉ được chọn khi chứng minh là raw bị xóa không quá `mention_count` đoạn
+tên hợp lệ; còn lại giữ raw. Near-duplicate với dữ liệu cũ giữ lại, gắn cờ.
+Lấy mẫu seed **20261113**, tối đa **12/post, 100/group, 36/phim, 300 câu**;
+thiếu thì báo đúng số và cap chặn, không nới quota.
+
+Điền `gold_test.xlsx` (id/text không sửa; label POS/NEG/NEU/REVIEW/EXCLUDE).
+`recheck` chỉ chạy sau khi điền đủ, xuất `gold_recheck.xlsx`: ngẫu nhiên tối đa
+100 ID cho **cùng người gán**, không hiện nhãn cũ. Thực hiện trong **<1 ngày**.
+`agreement` tính **intra-annotator** agreement/Kappa và confusion matrix; nếu
+lệch, điền `label_final` trong `gold_disagreements.xlsx` rồi chạy lại cùng lệnh
+với `--final`. Code giữ cả hai nhãn ban đầu, chỉ khóa test sau quyết định cuối.
+REVIEW/EXCLUDE không bị ép thành NEU và không vào metrics sentiment.
+
+`evaluate` chỉ dùng test đã khóa và chạy **đúng một lần**; receipt được ghi
+trước fit/predict, kể cả chạy lỗi cũng không tự cho phép thử lại. Code loại
+train trùng/near-trùng hoặc vướng reservation, không bypass guard. Bốn cấu hình
+cố định: BoW + ComplementNB/MNB; TF-IDF từ + LinearSVC balanced; TF-IDF char_wb
+(3,5) + LinearSVC balanced. Không tune trên gold. Kết quả và bốn confusion PNG
+ở `outputs/gold/results/`; mọi file chứa comment chỉ local, không commit.
+
+Đây là test **một người gán**, recheck 100 câu trong <1 ngày; nguồn là tối đa
+60 comment đầu/post theo thứ tự Facebook hiển thị. Không coi là lấy mẫu ngẫu
+nhiên toàn Facebook hoặc inter-annotator agreement. Trong task chuẩn bị code,
+chỉ chạy fixture: chưa crawl, train hay evaluate gold thật.
+
 ## Cấu trúc repository
 
 ```text

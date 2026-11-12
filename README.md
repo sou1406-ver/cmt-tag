@@ -96,7 +96,7 @@ File link: `outputs/gold/posts.csv`, cột `movie_id,post_url`. Chọn link trư
 không mở trình duyệt. Thay `RUN_ID` bằng run vừa crawl xong:
 
 ```powershell
-python -m src.crawler crawl-batch --input outputs/gold/posts.csv --max-comments 60 --channel brave
+python -m src.crawler crawl-batch --input outputs/gold/posts.csv --max-comments 100 --channel brave
 python -m src.annotation gold sample --run RUN_ID
 python -m src.annotation gold recheck --annotator user
 python -m src.annotation gold agreement
@@ -109,6 +109,11 @@ từ chối post/comment cũ và reserve toàn bộ post mới khỏi AI/train. 
 rỗng và exact duplicate trong batch; không lọc quality REVIEW, từ khóa hay độ dài.
 DOM chỉ được chọn khi chứng minh là raw bị xóa không quá `mention_count` đoạn
 tên hợp lệ; còn lại giữ raw. Near-duplicate với dữ liệu cũ giữ lại, gắn cờ.
+Cap crawl lấy trực tiếp từ config run, phải là số nguyên **1–200**; tổng record
+mỗi post (kể cả truncated còn trong journal) không được vượt cap đó. Cap được
+ghi vào manifest, receipt và mô tả lấy mẫu, không mặc định là 60.
+SHA/bản sao danh sách link nằm ở `outputs/gold/input_seals/` cùng thời điểm thực
+tế; niêm phong sau khi crawl bắt đầu không được gọi là khóa trước crawl.
 Lấy mẫu seed **20261113**, tối đa **12/post, 100/group, 36/phim, 300 câu**;
 thiếu thì báo đúng số và cap chặn, không nới quota.
 
@@ -128,7 +133,8 @@ cố định: BoW + ComplementNB/MNB; TF-IDF từ + LinearSVC balanced; TF-IDF c
 ở `outputs/gold/results/`; mọi file chứa comment chỉ local, không commit.
 
 Đây là test **một người gán**, recheck 100 câu trong <1 ngày; nguồn là tối đa
-60 comment đầu/post theo thứ tự Facebook hiển thị. Không coi là lấy mẫu ngẫu
+Số comment đầu/post bị giới hạn bởi `max_comments` thực tế trong config (1–200),
+theo thứ tự Facebook hiển thị. Không coi là lấy mẫu ngẫu
 nhiên toàn Facebook hoặc inter-annotator agreement. Trong task chuẩn bị code,
 chỉ chạy fixture: chưa crawl, train hay evaluate gold thật.
 

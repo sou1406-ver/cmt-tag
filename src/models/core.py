@@ -138,7 +138,8 @@ def evaluate_gold(directory,train_path,root):
         train_source_sha256=sha(train_path),used_train_sha256=digest(json.dumps(train,sort_keys=True,ensure_ascii=False)),
         configuration=GOLD_CONFIG,seed=20261113,claimed_at=now(),train_counts=train_summary,
         implementation_sha256=digest(Path(__file__).read_bytes()),runtime=dict(python=platform.python_version(),sklearn=sklearn.__version__,numpy=np.__version__),
-        annotation_protocol='one annotator; intra-annotator recheck <1 day; first up to 60 Facebook-ordered records/post')
+        max_comments=contract['max_comments'],
+        annotation_protocol=f"one annotator; intra-annotator recheck <1 day; first up to {contract['max_comments']} Facebook-ordered records/post")
     store(ledger/('gold_'+key+'.json'),receipt)  # Exclusive claim BEFORE fitting/predicting; crashes remain consumed.
     store(results/'receipt.json',receipt)
     write_csv(results/'train_exclusions.csv',excluded,['id','reason'])
@@ -155,7 +156,8 @@ def evaluate_gold(directory,train_path,root):
                 item=metrics([test[i]['label'] for i in positions],[pred[i] for i in positions])
                 group_table.append(dict(model=name,field=field,value=value,n=len(positions),accuracy=item['accuracy'],macro_f1=item['macro_f1'],per_class=item['per_class']))
     store(results/'metrics.json',dict(models=table,train=train_summary,gold_sentiment=len(test),gold_workflow_excluded=len(all_gold)-len(test),
-        interpretation='Single-annotator test, convenience first-60 source order; no gold tuning or inter-annotator claim'))
+        max_comments=contract['max_comments'],
+        interpretation=f"Single-annotator test, convenience first-{contract['max_comments']} source order; no gold tuning or inter-annotator claim"))
     write_csv(results/'comparison.csv',[dict(model=k,accuracy=v['accuracy'],macro_f1=v['macro_f1'],seconds=v['seconds']) for k,v in table.items()],['model','accuracy','macro_f1','seconds'])
     write_csv(results/'predictions.local.csv',predictions,['model','id','label','prediction'])
     write_csv(results/'by_movie_and_group.csv',group_table,['model','field','value','n','accuracy','macro_f1','per_class'])

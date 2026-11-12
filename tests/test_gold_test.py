@@ -29,10 +29,10 @@ class GoldTestTests(unittest.TestCase):
         if p.exists():p.unlink()
         write_csv(p,self.posts,['movie_id','post_url'])
 
-    def source(self,count=13,overrides=None):
+    def source(self,count=13,overrides=None,max_comments=60):
         overrides=overrides or {}
         with patch('src.crawler.store.now',return_value='2026-11-14T10:00:00+07:00'):
-            store=Store(self.root/'data/crawl_runs',dict(CONFIG,posts=self.posts,max_comments=60,max_posts=100,interactive=False))
+            store=Store(self.root/'data/crawl_runs',dict(CONFIG,posts=self.posts,max_comments=max_comments,max_posts=100,interactive=False))
             for pi,post in enumerate(self.posts):
                 for ci in range(count):
                     cid=str(400000+pi*100+ci)
@@ -98,6 +98,44 @@ class GoldTestTests(unittest.TestCase):
         a=gold.quota_sample(candidates)[0];b=gold.quota_sample(list(reversed(candidates)))[0]
         self.assertEqual([r['id'] for r in a],[r['id'] for r in b])
         self.assertEqual(load(self.directory/'manifest.json')['posts_csv_sha256'],sha(self.directory/'posts.csv'))
+
+    def test_collection_cap_60_is_recorded_consistently(self):
+        summary,_=self.sampled(1)
+        self.assertEqual(summary['max_comments'],60)
+        for name in ('manifest.json','coordinator.json','sample_receipt.json'):
+            self.assertEqual(load(self.directory/name)['max_comments'],60)
+        self.assertIn('up to 60',summary['sampling'])
+        self.assertFalse(load(self.directory/'manifest.json')['pre_crawl_lock_claimed'])
+
+    def test_collection_cap_200_flows_through_agreement_and_evaluation_receipt(self):
+        export,_=self.source(max_comments=200)
+        summary=gold.sample(export,directory=self.directory,root=self.root)
+        self.assertEqual(summary['max_comments'],200);self.assertIn('up to 200',summary['sampling'])
+        for name in ('manifest.json','coordinator.json','sample_receipt.json'):
+            self.assertEqual(load(self.directory/name)['max_comments'],200)
+        task=load(self.directory/'coordinator.json');self.fill('gold_test.xlsx',task['rows'])
+        gold.recheck(self.directory,'user',self.root)
+        repeat=load(self.directory/'recheck_coordinator.json');self.fill('gold_recheck.xlsx',repeat['rows'])
+        report=gold.agreement(self.directory,root=self.root)
+        self.assertEqual(report['max_comments'],200);self.assertIn('up to 200',report['sampling_note'])
+        from src.models.core import evaluate_gold
+        evaluate_gold(self.directory,self.train_fixture(),self.root)
+        receipt=load(self.directory/'results/receipt.json')
+        self.assertEqual(receipt['max_comments'],200);self.assertIn('up to 200',receipt['annotation_protocol'])
+        self.assertEqual(load(self.directory/'results/metrics.json')['max_comments'],200)
+
+    def test_collection_cap_is_integer_1_to_200(self):
+        for value in (1,60,100,200):
+            self.assertEqual(gold.collection_cap(dict(max_comments=value)),value)
+        for value in (0,201,None,True,60.0,'100'):
+            with self.subTest(value=value),self.assertRaises(ValueError):gold.collection_cap(dict(max_comments=value))
+
+    def test_cap_counts_truncated_records_still_present_in_journal(self):
+        self.posts=self.posts[:1];self.write_posts()
+        export,_=self.source(count=2,max_comments=1,overrides={(0,1):dict(truncated=True)})
+        self.assertEqual(load(export/'export_manifest.json')['exported'],1)
+        with self.assertRaisesRegex(ValueError,'configured max_comments=1'):
+            gold.sample(export,directory=self.directory,root=self.root)
 
     def test_movie_cap_shortfall_is_reported_without_relaxation(self):
         self.posts=[dict(p,movie_id='one_movie') for p in self.posts];self.write_posts()

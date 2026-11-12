@@ -24,6 +24,13 @@ FIELDS=['id','text','label','note']
 SEED=20261113
 CAPS=dict(total=300,post=12,group=100,movie=36)
 
+
+def collection_cap(config):
+    cap=config.get('max_comments')
+    if type(cap) is not int or not 1<=cap<=200:
+        raise ValueError('Crawl config max_comments must be an integer from 1 to 200')
+    return cap
+
 def now():
     return datetime.now(timezone.utc).isoformat()
 
@@ -202,7 +209,9 @@ def _manifest(directory,posts):
     checksum=sha(posts)  # The first input operation: seal the link file before inspecting comments.
     path=directory/'manifest.json'
     declaration=dict(kind='GOLD_TEST_SINGLE_ANNOTATOR',created_at=now(),posts_csv_sha256=checksum,
-        seed=SEED,caps=CAPS,source_policy='New Facebook post/comment identities only; first up to 60 accessible records/post',
+        seed=SEED,caps=CAPS,max_comments=None,collection_cap_range=[1,200],
+        source_policy='New Facebook post/comment identities only; collection cap comes from validated crawl config',
+        pre_crawl_lock_claimed=False,
         annotation_protocol='one person; blind 100-item intra-annotator recheck within less than one day',
         output_sha256={'posts.sealed.csv':checksum})
     if path.exists():
@@ -215,6 +224,22 @@ def _manifest(directory,posts):
     verify(directory)
 
 
+def _bind_collection_cap(directory,cap):
+    """Finish the intake declaration before creating any reservation or task."""
+    if any((directory/name).exists() for name in ('reservation','coordinator.json','sample_receipt.json','locked_gold.json')):
+        raise FileExistsError('Cannot change collection cap of an existing gold reservation/task')
+    path=directory/'manifest.json';declaration=load(path)
+    if declaration.get('max_comments') not in (None,cap):raise ValueError('Gold intake already refers to a different collection cap')
+    declaration.update(max_comments=cap,
+        source_policy=f'New Facebook post/comment identities only; first up to {cap} accessible Facebook-ordered records/post')
+    seals=directory/'input_seals'
+    if seals.exists():
+        matching=[load(p) for p in sorted(seals.glob('*.seal.json')) if load(p).get('sha256')==declaration['posts_csv_sha256']]
+        if matching:declaration['post_list_seal']=matching[-1]
+    temporary=directory/'manifest.cap.pending.json';save(temporary,declaration);temporary.replace(path)
+    verify(directory)
+
+
 def _source(export,run_id,directory,root):
     if run_id:
         export=directory/'input_export'
@@ -223,18 +248,20 @@ def _source(export,run_id,directory,root):
     if run_id and receipt['run_id']!=run_id:raise ValueError('Existing local export belongs to a different run')
     run=Path(root)/'data/crawl_runs'/receipt['run_id']
     cfg=run_config(run);report=validate_run(run)
-    if cfg.get('max_comments')!=60:raise ValueError('Expected the requested --max-comments 60 crawl')
+    cap=collection_cap(cfg)
     if report['raw_validation_errors'] or receipt['raw_sha256']!=sha(run/'raw_comments.jsonl'):
         raise ValueError('Invalid or changed source journal')
     rows,fields=csv_rows((export/'comments.csv').read_bytes())
-    raw={r['internal_record_id']:r for r in read_jsonl(run/'raw_comments.jsonl') if r['extraction_status']=='complete'}
+    journal=read_jsonl(run/'raw_comments.jsonl')
+    raw={r['internal_record_id']:r for r in journal if r['extraction_status']=='complete'}
     if len(rows)!=len(raw) or len(rows)!=receipt['exported'] or len({r.get('internal_record_id') for r in rows})!=len(rows):
         raise ValueError('Export row coverage/IDs differ from journal')
     for row in rows:
         ref=raw.get(row['internal_record_id'])
         if not ref or any(row[k] != (str(ref.get(k)) if ref.get(k) is not None else '') for k in fields):
             raise ValueError('Export differs from original journal')
-    if any(n>60 for n in Counter(r['post_id'] for r in rows).values()):raise ValueError('Source exceeds 60 records per post')
+    if any(n>cap for n in Counter(r['post_id'] or post_id(r['post_url']) for r in journal).values()):
+        raise ValueError(f'Source exceeds configured max_comments={cap} records per post')
     source_hashes={str(p.resolve()):sha(p) for p in [export/'comments.csv',export/'export_manifest.json',run/'config.json',run/'raw_comments.jsonl']}
     return list(raw.values()),export,run,cfg,source_hashes
 
@@ -276,6 +303,7 @@ def sample(export=None,posts=None,directory=ROOT/'outputs/gold',root=ROOT,run_id
     listed,fields=csv_rows((directory/'posts.sealed.csv').read_bytes())
     if fields!=['movie_id','post_url']:raise ValueError('posts.csv must contain movie_id,post_url')
     rows,export,run,cfg,source_hashes=_source(export,run_id,directory,root)
+    cap=collection_cap(cfg);_bind_collection_cap(directory,cap)
     filtered=root/'outputs/canonical/versions/filtered_20261112_final';verify(filtered)
     verify(root/'outputs/phase_g/master')
     history={};seen_posts=set();seen_comments=set()
@@ -321,18 +349,18 @@ def sample(export=None,posts=None,directory=ROOT/'outputs/gold',root=ROOT,run_id
     selected,pc,gc,mc,blocked=quota_sample(eligible)
     flags,near_info=_near(selected,old)
     for row in selected:row['near_old_ids']=flags[row['id']];row['text_sha256']=digest(row['text'])
-    save(directory/'coordinator.json',dict(kind='GOLD_TEST_COORDINATOR',seed=SEED,rows=selected,guideline_sha256=sha(GUIDELINE)))
+    save(directory/'coordinator.json',dict(kind='GOLD_TEST_COORDINATOR',seed=SEED,max_comments=cap,rows=selected,guideline_sha256=sha(GUIDELINE)))
     workbook(directory/'gold_test.xlsx',[dict(id=r['id'],text=r['text'],label='',note='') for r in selected])
-    summary=dict(status='AWAITING_SINGLE_ANNOTATOR',selected=len(selected),shortfall=300-len(selected),seed=SEED,caps=CAPS,
+    summary=dict(status='AWAITING_SINGLE_ANNOTATOR',selected=len(selected),shortfall=300-len(selected),seed=SEED,caps=CAPS,max_comments=cap,
         by_post=dict(pc),by_group=dict(gc),by_movie=dict(mc),limits_blocking=dict(blocked),eligible=len(eligible),
         rejections=dict(Counter(r['reason'] for r in rejections)),near_old=sum(bool(r['near_old_ids']) for r in selected),
         near_detector=near_info,missing_comment_id=sum(not r['comment_id'] for r in imported),unknown_group_posts=sum(p['group']=='UNKNOWN' for p in accepted.values()),
         missing_post_or_movie=sum(r['reason']=='MISSING_POST_OR_MOVIE' for r in rejections),replies=sum(r['record_type']=='reply' for r in selected),
-        sampling='quota random sample from first up to 60 accessible Facebook-ordered records/post; not a population-random sample')
+        sampling=f'quota random sample from first up to {cap} accessible Facebook-ordered records/post; not a population-random sample')
     save(directory/'summary.json',summary);save(directory/'rejections.json',rejections)
     if any(sha(p)!=h for p,h in {**history,**source_hashes}.items()):raise ValueError('Historical/source input changed during sample')
     save(directory/'sample_receipt.json',dict(coordinator_sha256=sha(directory/'coordinator.json'),manifest_sha256=sha(directory/'manifest.json'),
-        source_sha256=source_hashes,history_sha256=history,summary_sha256=sha(directory/'summary.json')))
+        max_comments=cap,source_sha256=source_hashes,history_sha256=history,summary_sha256=sha(directory/'summary.json')))
     return summary
 
 
@@ -342,6 +370,9 @@ def _task(directory):
         raise ValueError('Gold coordinator/source changed')
     if any(sha(p)!=h for p,h in receipt['source_sha256'].items()):raise ValueError('Source export/journal changed after gold sampling')
     task=load(directory/'coordinator.json')
+    cap=collection_cap(task)
+    if cap!=load(directory/'manifest.json').get('max_comments') or cap!=receipt.get('max_comments'):
+        raise ValueError('Gold collection-cap metadata differs across manifest/coordinator/receipt')
     if task['guideline_sha256']!=sha(GUIDELINE):raise ValueError('Gold guideline changed')
     return task
 
@@ -389,7 +420,8 @@ def agreement(directory=ROOT/'outputs/gold',final=False,root=ROOT):
     ids=sorted(second);report=pair_metrics([first[r]['label'] for r in ids],[second[r]['label'] for r in ids])
     report.update(agreement_type='intra_annotator',annotator=repeat['annotator'],round_1_count=len(first),round_2_count=len(second),
         created_at=now(),recheck_interval_hours=(datetime.fromisoformat(now())-datetime.fromisoformat(repeat['created_at'])).total_seconds()/3600,
-        sampling_note='one annotator; planned blind recheck <1 day; first 60 Facebook-ordered records/post; not inter-annotator agreement')
+        max_comments=task['max_comments'],
+        sampling_note=f"one annotator; planned blind recheck <1 day; first up to {task['max_comments']} Facebook-ordered records/post; not inter-annotator agreement")
     report['within_one_day']=0<=report['recheck_interval_hours']<24
     differences=[dict(id=rid,text=first[rid]['text'],text_sha256=digest(first[rid]['text']),label_1=first[rid]['label'],label_2=second[rid]['label'],label_final='',note='') for rid in ids if first[rid]['label']!=second[rid]['label']]
     fields=['id','text','label_1','label_2','label_final','note']

@@ -132,11 +132,39 @@ cố định: BoW + ComplementNB/MNB; TF-IDF từ + LinearSVC balanced; TF-IDF c
 (3,5) + LinearSVC balanced. Không tune trên gold. Kết quả và bốn confusion PNG
 ở `outputs/gold/results/`; mọi file chứa comment chỉ local, không commit.
 
-Đây là test **một người gán**, recheck 100 câu trong <1 ngày; nguồn là tối đa
-Số comment đầu/post bị giới hạn bởi `max_comments` thực tế trong config (1–200),
-theo thứ tự Facebook hiển thị. Không coi là lấy mẫu ngẫu
-nhiên toàn Facebook hoặc inter-annotator agreement. Trong task chuẩn bị code,
-chỉ chạy fixture: chưa crawl, train hay evaluate gold thật.
+Đây là test **một người gán**, recheck 100 câu trong <1 ngày; số comment đầu/post
+bị giới hạn bởi `max_comments` thực tế trong config (1–200), theo thứ tự Facebook
+hiển thị. Không coi là lấy mẫu ngẫu nhiên toàn Facebook hoặc inter-annotator agreement.
+
+Trạng thái local ngày **13/11/2026** để review quy trình:
+
+- Run `fb_b5f54539dce14c07a370a65b4835861d`: 1.184 comment/reply, 31 bài;
+  26 success, 5 partial; cap 100/post. Export dùng `--allow-partial` có xác nhận
+  của người dùng: raw không lỗi schema/trùng ID, nhưng có 72 lượt DOM không parse
+  được; không xác minh độ bao phủ. Không diễn giải 72 lượt là 72 comment bị mất.
+- SHA-256 `posts.csv`: `5b3be3850c7021b8b0404f5a76476f1944534db5cf2b6e9442338276ad61e0ef`.
+  Bản sao được niêm phong lúc **23:25:53 +07:00 ngày 12/11**, sau khi run bắt đầu;
+  không có bằng chứng khóa danh sách trước crawl.
+- Chọn 230 câu từ 31 bài, 5 định danh cộng đồng/trang và 16 mã phim, gồm mã
+  `phim_noi_chung` không xác định phim cụ thể. Có 125 reply; loại 1 exact duplicate
+  trong batch; giữ và gắn cờ 2 câu gần trùng dữ liệu cũ. Thiếu 70 câu vì quota;
+  không nới cap. Detector near-duplicate có bỏ shingle xuất hiện trên 256 records,
+  nên không bảo đảm phát hiện mọi near-duplicate. Reserve toàn bộ 31 bài/1.184 ID.
+- Một người gán 230 câu, gán lại mù 100 câu và chốt 9 bất đồng: agreement 91%,
+  Cohen's Kappa 0,8792 trên 5 quyết định. Hai lượt gần nhau (khoảng 8 phút theo
+  lúc kiểm tra lượt hai), có nguy cơ nhớ nhãn; không coi đây là hai người duyệt.
+- Đã khóa 230 quyết định: POS 46, NEG 76, NEU 40, EXCLUDE 68; 162 câu sentiment
+  đủ trạng thái cho đánh giá. Chưa train hoặc evaluate gold thật. Dataset filtered
+  giữ nguyên manifest SHA `602d98e0ee184c8c01f7bd89e2e129918341a367fcfcf862e7b9f56d3352d0f6`.
+- Lần kiểm thử gần nhất: **167/167 unittest pass**. Đã kiểm ID, text hash, nhãn
+  hợp lệ, seed tái lập, reservation và checksum workbook khi khóa.
+
+Reviewer kiểm tra `src/annotation/gold.py`, `src/models/core.py`,
+`src/dataset/blind.py`, `src/data/pipeline.py` và `tests/test_gold_test.py`.
+Ưu tiên audit guard leakage, bằng chứng chọn DOM, quota, blind recheck và receipt
+đánh giá một lần. Số liệu trên là tóm tắt local; repository không chứa workbook,
+comment hoặc nhãn theo ID để reviewer độc lập tái tính số liệu thật. Không gửi
+nội dung test cho AI để chọn/sửa nhãn; dùng fixture để review implementation.
 
 ## Cấu trúc repository
 

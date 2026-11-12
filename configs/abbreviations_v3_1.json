@@ -1,9 +1,0 @@
-{
-  "version": "vietnamese_abbreviations_v1",
-  "evidence": "Explicit I.4.1 user-requested low-ambiguity group; whole lowercase tokens plus Vietnamese context, excluded protected/quoted spans",
-  "auto": {"ko": "không", "khum": "không", "hok": "không", "đc": "được", "cx": "cũng"},
-  "review_only": ["k", "dc", "mn", "j", "z", "bt"],
-  "preserve": ["t", "m", "vl", "vcl", "vch"],
-  "auto_sources": ["facebook", "legacy_29k_unverified"],
-  "enabled": {"auto": true, "review_flags": true}
-}

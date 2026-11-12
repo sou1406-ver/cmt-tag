@@ -1,56 +1,75 @@
 # Sentiment bình luận phim tiếng Việt
 
-Pipeline Python CLI phân loại **POS / NEG / NEU**, giữ provenance và chống
-leakage. Không xây web/dashboard.
+Python CLI cho **POS / NEG / NEU**. Luồng chính:
+**Crawl → Build/filter → Tiền xử lý tối thiểu → Annotation → Train → Evaluate**.
 
-**Hiện tại: filtered candidate 25.810 comment, chưa quality-approved.**
-Facebook7.146 /legacy18.664;425 nhãn sentiment người còn lại. Đã bỏ legacy
-chứa `_`, legacy>1.000 ký tự, human EXCLUDE và exact duplicates; không phục hồi
-word segmentation. Raw và lịch sử650 quyết định giữ nguyên.
+Dataset hiện tại: **25.810 comment**, **425 nhãn sentiment người**, **6.968 ứng viên gán nhãn chưa duyệt**.
+Bản local: `outputs/canonical/versions/filtered_20261112_final/comments.csv`.
+`text_raw` giữ nguyên; `text_minimal` là cột riêng. Candidate chưa quality-approved,
+không tự đổi active pointer hoặc coi các nhãn development là independent gold test.
 
-[Report lọc dữ liệu](docs/DATASET_FILTER_REPORT.md) · Dataset local:
-`outputs/canonical/versions/filtered_20261112_final/comments.csv` · Pool đề xuất6.968,
-**approved0**; không train/API hoặc đổi active pointer.
+## Setup
 
-[Canonical snapshot cũ trên Git](data/canonical/README.md) vẫn giữ nguyên.
-Corpus filtered mới không commit theo yêu cầu. Thử nghiệm v3.2 tạm dừng. Facebook>1.000 giữ REVIEW; legacy>1.000 loại. Không tự gán NEU.
-
-## Quickstart
-
-Chạy từ root repo với môi trường đã setup:
+Chạy PowerShell tại root repo; dùng Python 3.12 và môi trường riêng:
 
 ```powershell
-.\.venv-phase-e\Scripts\python.exe -m src.dataset.quality_review --help
-.\.venv-phase-e\Scripts\python.exe -m unittest discover -s tests
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements/classical-base.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements/crawler.txt
+.\.venv\Scripts\python.exe -m unittest discover -s tests
 ```
 
-[Setup môi trường](docs/guides/ENVIRONMENT.md) phân biệt classical/crawler và
-Transformer; không cài chung các pin NumPy/sklearn không tương thích.
-[File cần người dùng điền và lệnh import](docs/QUALITY_REVIEW_HANDOFF.md).
-Output đã tồn tại không được ghi đè; nguồn gốc và ledger đầy đủ vẫn local; snapshot review canonical có trong Git.
+Build/filter và xử lý nhãn dùng standard library. Các test DOM cần Selenium và
+Chrome/Brave; test model cần sklearn. Không nâng package/pin trong lần dọn này.
+`requirements/locks/classical-windows-py312.txt` giữ nguyên để tái lập môi trường cũ.
 
-## Pipeline
+## Sáu lệnh chính
 
-Crawler → Raw/provenance → Preprocessing → Quality → Annotation →
-Train-only features → Models → Evaluation.
+Dùng Python của môi trường đã cài dependencies. Trước tiên có thể thêm `--help`.
 
-- [Pipeline hiện tại](docs/CURRENT_PIPELINE.md): input/output, owner, config,
-  entry point chuẩn và guards.
-- [Quá trình phát triển](docs/PROJECT_EVOLUTION.md): A–J, vấn đề/cải tiến,
-  kết quả và những trạng thái đã bị thay thế.
-- [Kết quả thực nghiệm](docs/EXPERIMENT_RESULTS.md): protocol, metrics và
-  giới hạn so sánh; development CV không phải independent test.
+| Việc | Lệnh |
+| --- | --- |
+| Crawl | `python -m src.crawler interactive --channel brave` |
+| Build/filter | `python scripts/build_master_dataset.py --filter-canonical outputs/canonical/versions/rebuild_20261112 --legacy-max-characters 1000 --output outputs/canonical/versions/NEW_FILTERED` |
+| Export annotation | `python -m src.annotation export --data-root DATA_ROOT --version VERSION --split train --count 150 --output NEW_TASK` |
+| Import annotation | `python -m src.annotation import-human --task TASK_JSON --csv LABELS_CSV --annotator NAME --blind --output NEW_EVENTS` |
+| Train | `python -m src.models train --release APPROVED_RELEASE --train-mode gold-only --output NEW_RUN` |
+| Evaluate | `python -m src.models evaluate --run NEW_RUN --output NEW_EVALUATION` |
 
-[Mục lục](docs/README.md) · [Bản đồ repository](docs/architecture/REPOSITORY_MAP.md) ·
-[Dữ liệu local](outputs/README.md) · [Guideline V2.1](docs/guidelines/MOVIE_SENTIMENT_V2_1.md).
+Các placeholder phải thay bằng artifact đúng contract. Export nhận **prepared records/split**;
+train nhận **release đã qua kiểm tra**. Candidate filtered chưa được duyệt nên chưa có
+approved release tương ứng; không đưa thẳng CSV vào train để bỏ qua quality/leakage guards.
+Build cũng nhận `--config CONFIG --output-root DATA_ROOT` cho prepared records/split;
+chỉ dùng cấu hình nguồn được phê duyệt, không dùng `overall` legacy làm ground truth.
+Các gate `agreement`/`release` thuộc cùng CLI annotation, không phải pipeline phase mới.
+Đường dẫn output đã tồn tại bị từ chối ghi đè. Cleanup không chạy crawl, AI hay train dữ liệu thật.
 
-## Kiểm thử và bảo toàn
+Tiền xử lý dùng một implementation: `from src.preprocessing import preprocess`.
+Chỉ NFC, HTML entities hợp lệ ngoài URL/email/code, CRLF/NBSP và trim hai đầu;
+giữ khoảng trắng nội bộ, emoji/emoticon, dấu `-`, phủ định và teencode.
+Legacy raw có `_` hoặc >1.000 ký tự bị loại; Facebook >1.000 được giữ REVIEW.
+Exact duplicates được loại có ledger; near-duplicates chỉ đánh dấu/bảo vệ leakage.
 
-```powershell
-python -m unittest discover -s tests
+## Cấu trúc
+
+```text
+src/crawler/        Selenium, DOM, journal/resume và export
+src/data/           import, schema, quality và grouped split
+src/dataset/        canonical filter, lineage I/O và frozen-test guards
+src/preprocessing/  một bộ tiền xử lý tối thiểu
+src/annotation/     task, human events, agreement và release gates
+src/models/         BoW/TF-IDF, NB/LR/SVM và đánh giá
+scripts/            một entry point build/filter
+configs/            cấu hình nguồn/fixture cần thiết
+requirements/       dependencies hiện tại và lock lịch sử
+tests/             fixture và regression cho chức năng còn giữ
 ```
 
-Giữ nguyên raw, nhãn người, guideline, split và kết quả đã khóa. Không dùng
-legacy overall làm gold; không tự duyệt workbook, gọi AI, freeze/release hoặc
-train chỉ để kiểm tra cấu trúc. Chức năng mới mở rộng owner hiện có trước;
-cập nhật ba tài liệu tổng hợp thay vì thêm report/module theo tên phase.
+[Guideline V2.1](docs/guidelines/MOVIE_SENTIMENT_V2_1.md) ·
+[Quy tắc/số liệu lọc](docs/DATASET_FILTER_REPORT.md) ·
+[Crawler](docs/CRAWLER.md) · [Lịch sử dự án và cleanup](docs/PROJECT_HISTORY.md).
+
+Raw, labels, provenance, test reservations, checkpoint và kết quả local giữ nguyên.
+Snapshot cũ trong `data/` vẫn nguyên byte; không phải filtered candidate hiện tại.
+Code/tài liệu thực nghiệm cũ được truy xuất tại tag **`before-cleanup-20261112`**,
+không cần chạy lại Phase A–J. Quy trình v3.1/v3.2 đã ngừng dùng làm mặc định.

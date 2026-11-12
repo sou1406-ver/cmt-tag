@@ -1,27 +1,32 @@
-"""Configurable text views for experiments; raw observations remain immutable."""
+"""Minimal literal text view; never change raw observations or approve data."""
+import re
+import unicodedata
 
-VERSIONS=('basic_v1','plain_text_v1','plain_text_v3','plain_text_v3_1','plain_text_v3_2')
+def minimal_filter_text(text):
+    """Small data view: NFC, exact valid HTML, CRLF/NBSP and outer whitespace.
 
-
-def preprocess(text,version='plain_text_v3_1',**options):
-    """Dispatch unchanged version engines; does not approve or update annotation.
-
-    Returns a uniform text_normalized/version/details envelope. Version-specific
-    options are forwarded to that engine, which validates its existing contract.
-    Historical imports and results remain available at their original paths.
+    Internal spacing/newlines and punctuation stay literal; no segmentation,
+    alias conversion, teencode, case changes or mention/name guessing.
     """
-    if version=='basic_v1':
-        from .normalization import normalize
-        value=normalize(text,**options)
-        return dict(text_normalized=value,version=version,details={})
-    if version=='plain_text_v1':
-        from .plain_text import preprocess as engine
-    elif version=='plain_text_v3':
-        from .plain_text_v3 import preprocess as engine
-    elif version=='plain_text_v3_1':
-        from .final_normalization import normalize as engine
-    elif version=='plain_text_v3_2':
-        from .evidence_cleaning import normalize as engine
-    else:raise ValueError('Unsupported preprocessing version: '+str(version))
-    details=engine(text,**options)
-    return dict(text_normalized=details['text_normalized'] if version in ('plain_text_v3_1','plain_text_v3_2') else details['text_clean'],version=version,details=details)
+    import html,html.entities
+    entity=re.compile(r'&(?:#[0-9]+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]+);')
+    technical=re.compile(r'```[\s\S]*?```|`[^`]*`|https?://\S+|www\.\S+|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}')
+    def decode(m):
+        name=m[0][1:-1]
+        if name.startswith('#'):
+            try:code=int(name[2:],16) if name[1:2].lower()=='x' else int(name[1:])
+            except ValueError:return m[0]
+            if not 32<=code<=0x10ffff or 0xd800<=code<=0xdfff:return m[0]
+        elif name+';' not in html.entities.html5:return m[0]
+        return html.unescape(m[0])
+    current=text
+    while True:
+        parts=[];cursor=0
+        def clean(s):return entity.sub(decode,unicodedata.normalize('NFC',s)).replace('\r\n','\n').replace('\r','\n').replace('\u00a0',' ')
+        for m in technical.finditer(current):parts.extend([clean(current[cursor:m.start()]),m[0]]);cursor=m.end()
+        parts.append(clean(current[cursor:]));value=''.join(parts).strip()
+        if value==current:return value
+        current=value
+
+# One public preprocessing implementation.
+preprocess = minimal_filter_text

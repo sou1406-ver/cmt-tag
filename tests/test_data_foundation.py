@@ -368,31 +368,12 @@ class PipelineTests(unittest.TestCase):
 
     def test_cli_end_to_end(self):
         with tempfile.TemporaryDirectory() as temp:
-            result = subprocess.run([sys.executable, str(ROOT / "scripts/prepare_data.py"), "--config",
+            result = subprocess.run([sys.executable, str(ROOT / "scripts/build_master_dataset.py"), "--config",
                                      str(ROOT / "configs/data_fixture.json"), "--output-root", temp],
                                     capture_output=True, text=True, encoding="utf-8", cwd=ROOT)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(json.loads(result.stdout)["counts"]["raw_comment_rows"], 14)
 
-    @unittest.skipUnless(importlib.util.find_spec("pandas"), "optional legacy pandas not installed")
-    def test_legacy_labeler_preserves_human_metadata_and_refuses_overwrite(self):
-        with tempfile.TemporaryDirectory() as temp:
-            source, target = Path(temp) / "source.csv", Path(temp) / "target.csv"
-            source.write_text("text,clean,nhan_nguoi,post_id\nPhim hay,phim hay,NEG,p1\n", encoding="utf-8")
-            original = source.read_bytes()
-            command = [sys.executable, str(ROOT / "gan_nhan.py"), str(source), "-o", str(target)]
-            result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8")
-            self.assertEqual(result.returncode, 0, result.stderr)
-            import csv
-            with target.open(encoding="utf-8-sig", newline="") as f:
-                row = next(csv.DictReader(f))
-            self.assertEqual(row["nhan_nguoi"], "NEG")
-            self.assertEqual(row["post_id"], "p1")
-            saved = target.read_bytes()
-            result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8")
-            self.assertNotEqual(result.returncode, 0)
-            self.assertEqual(target.read_bytes(), saved)
-            self.assertEqual(source.read_bytes(), original)
 
 
 if __name__ == "__main__":

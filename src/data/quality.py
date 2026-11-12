@@ -87,3 +87,42 @@ def near_duplicate_candidates(records, config):
         for shingle in shingles:
             postings[shingle].append(current)
     return candidates
+
+from src.dataset.common import ROOT, load
+from src.dataset.repetition import repetition_signals
+from src.crawler.parser import post_id as parsed_post_id
+
+FILM=re.compile(r'(?<!\w)(?:phim|kịch[ _]bản|diễn[ _]xuất|đạo[ _]diễn|nhân[ _]vật|cảnh[ _]quay|cinema|movie|âm[ _]nhạc|nhịp[ _]phim)(?!\w)',re.I)
+
+AD=re.compile(r'(?<!\w)(?:mua ngay|đặt hàng|liên hệ|inbox|khuyến mãi|giảm giá|hotline|freeship)(?!\w)',re.I)
+
+UI={s.casefold() for s in load(ROOT/'configs/phase_i.json')['exact_ui_strings']}
+
+def verified_post(row):
+    # Available metadata is an identity link, not an unused-source attestation.
+    if row.get('source_dataset')!='facebook' or not all(row.get(k) for k in ('post_id','post_url','comment_id')):return ''
+    try:return str(row['post_id']) if parsed_post_id(row['post_url'])==str(row['post_id']) else ''
+    except ValueError:return ''
+
+def layers(row,parent=None):
+    text=row['text_normalized'];technical='VALID';reasons=[]
+    if not text.strip():technical='EXCLUDE_EMPTY';reasons.append('EMPTY_TEXT')
+    elif text.strip().casefold() in UI:technical='EXCLUDE_EXACT_UI';reasons.append('EXACT_KNOWN_UI')
+    elif '\ufffd' in text:technical='REVIEW_ENCODING';reasons.append('REPLACEMENT_CHARACTER')
+    elif any('TRUNCAT' in x or 'CORRUPT' in x for x in row.get('quality_reasons',[]) if isinstance(x,str)):
+        technical='REVIEW_CORRUPTION';reasons.append('SOURCE_CORRUPTION_FLAG')
+    elif not re.search(r'\w',text):technical='REVIEW_NON_TEXT';reasons.append('NON_TEXT_CONTEXT_REQUIRED')
+    rep=repetition_signals(text)
+    advertising=len(AD.findall(text))>=2
+    spam='SPAM_CANDIDATE' if rep['repetition_risk'] or advertising else 'NOT_FLAGGED_UNVALIDATED'
+    evidence=[]
+    if FILM.search(text):domain='IN_DOMAIN_CANDIDATE';evidence.append('FILM_CONTENT_CUE')
+    elif row.get('parent_comment_id') and len(text)<=80:
+        domain='CONTEXT_REQUIRED';evidence.append('SHORT_REPLY')
+        if parent is not None and FILM.search(parent['text_normalized']):evidence.append('LINKED_PARENT_FILM_CUE_NOT_CHILD_CONFIRMATION')
+    elif advertising:domain='OFF_TOPIC_CANDIDATE';evidence.append('MULTIPLE_AD_CUES_UNVALIDATED')
+    else:domain='UNCERTAIN';evidence.append('INSUFFICIENT_COMMENT_EVIDENCE')
+    if verified_post(row):evidence.append('POST_IDENTITY_PRESENT_NOT_DOMAIN_PROOF')
+    return dict(technical_status=technical,domain_status=domain,domain_evidence=evidence,spam_status=spam,
+        technical_reasons=reasons,structural_spam_reasons=(['REPETITION_SIGNAL'] if rep['repetition_risk'] else [])+(['ADVERTISING_CUES'] if advertising else []),
+        repetition_diagnostics=rep,final_quality_decision='EXCLUDE_TECHNICAL' if technical.startswith('EXCLUDE_') else 'KEEP_PROPOSED' if technical=='VALID' and domain=='IN_DOMAIN_CANDIDATE' and spam=='NOT_FLAGGED_UNVALIDATED' else 'REVIEW_PROPOSED')

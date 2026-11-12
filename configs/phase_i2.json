@@ -1,9 +1,0 @@
-{
-  "source": "outputs/phase_i/v5",
-  "seed": 20261113,
-  "pilot_count": 500,
-  "audit_count": 200,
-  "near_duplicate": {"threshold": 0.9, "min_chars": 40, "shingle_size": 3, "max_posting": 256},
-  "implementation_paths": ["src/preprocessing/plain_text.py", "configs/plain_text_lexicon_v1.json", "src/dataset/phase_i2.py", "src/dataset/repetition.py", "src/dataset/semantic_quality.py"],
-  "protect_paths": ["outputs/phase_i/v5", "outputs/phase_i1/v2", "outputs/phase_g/master", "outputs/phase_g/blind_test", "outputs/development/reviewed", "outputs/phase_g2/human_import_01", "docs/guidelines/MOVIE_SENTIMENT_V2_1.md"]
-}

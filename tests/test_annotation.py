@@ -5,7 +5,6 @@ import tempfile
 import unittest
 
 from src.annotation.core import GUIDELINE, agreement, export_tasks, import_human, load_release, prepared, release
-from src.annotation.silver import annotate
 from src.annotation.guidelines import GUIDELINE_VERSION, LEGACY_VERSION, LEGACY_SHA256
 from src.data.importers import digest
 from src.data.pipeline import prepare_data
@@ -102,21 +101,6 @@ class AnnotationTests(unittest.TestCase):
         with self.assertRaises(ValueError): export_tasks(self.data,self.version,self.root/'hard',hard_ids=[rid])
         with self.assertRaises(ValueError): release(self.data,self.version,[],self.root/'used',used_ids=[rid])
 
-    def test_silver_replay_resume_train_only_and_permission_guard(self):
-        records,_,manifest=prepared(self.data,self.version)
-        ids={e['id'] for e in manifest['entries'] if e['split']=='train' and e['eligible_for_annotation']}
-        responses=[{'comment_id':r['id'],'label':'POS','reason':'Synthetic fixture response','needs_review':False,'evidence':[]} for r in records if r['id'] in ids]
-        (self.root/'responses.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in responses))
-        cfg=self.root/'provider.json'; cfg.write_text(json.dumps({'kind':'replay','model':'fixture','responses':'responses.jsonl'}))
-        out=self.root/'silver'; result=annotate(self.data,self.version,cfg,out,retries=0)
-        before=(out/'machine.jsonl').read_bytes()
-        self.assertEqual(result['completed'],len(ids))
-        self.assertEqual(annotate(self.data,self.version,cfg,out,retries=0),result)
-        self.assertEqual((out/'machine.jsonl').read_bytes(),before)
-        self.assertTrue(all(not e['decision']['confirmed'] for e in read_jsonl(out/'machine.jsonl')))
-        with self.assertRaises(ValueError): release(self.data,self.version,[out/'machine.jsonl'],self.root/'fake_real')
-        cfg.write_text(json.dumps({'kind':'command','model':'external','argv':['must-not-run'],'external':True}))
-        with self.assertRaisesRegex(ValueError,'permission'): annotate(self.data,self.version,cfg,self.root/'blocked',retries=0)
 
 
 if __name__=='__main__': unittest.main()

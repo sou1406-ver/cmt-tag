@@ -1,2 +1,0 @@
-# Compatibility include; canonical environment is under requirements/.
--r requirements/data.txt

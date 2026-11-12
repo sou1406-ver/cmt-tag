@@ -1,9 +1,0 @@
-{
-  "source": "outputs/phase_i3/v3",
-  "accepted_tokens": "outputs/phase_i3/v3/accepted_tokens.local.json",
-  "abbreviation_rules": "configs/abbreviations_v3_1.json",
-  "max_decode_passes": 4,
-  "seed": 20261117,
-  "review_count": 150,
-  "protect_paths": ["outputs/phase_g/master", "outputs/phase_g/blind_test", "outputs/development/reviewed", "outputs/phase_g2/human_import_01", "outputs/phase_i/v5", "outputs/phase_i1/v2", "outputs/phase_i2/v2", "outputs/phase_i3/v3", "outputs/phase_i3/workbook_v3", "outputs/phase_i3/validation_v1", "outputs/phase_i4/v5", "outputs/phase_i4/workbook_v2", "outputs/phase_e", "outputs/phase_h", "docs/guidelines/MOVIE_SENTIMENT_V2_1.md"]
-}

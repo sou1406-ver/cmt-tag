@@ -1,6 +1,6 @@
 """Configurable text views for experiments; raw observations remain immutable."""
 
-VERSIONS=('basic_v1','plain_text_v1','plain_text_v3','plain_text_v3_1')
+VERSIONS=('basic_v1','plain_text_v1','plain_text_v3','plain_text_v3_1','plain_text_v3_2')
 
 
 def preprocess(text,version='plain_text_v3_1',**options):
@@ -20,6 +20,8 @@ def preprocess(text,version='plain_text_v3_1',**options):
         from .plain_text_v3 import preprocess as engine
     elif version=='plain_text_v3_1':
         from .final_normalization import normalize as engine
+    elif version=='plain_text_v3_2':
+        from .evidence_cleaning import normalize as engine
     else:raise ValueError('Unsupported preprocessing version: '+str(version))
     details=engine(text,**options)
-    return dict(text_normalized=details['text_normalized'] if version=='plain_text_v3_1' else details['text_clean'],version=version,details=details)
+    return dict(text_normalized=details['text_normalized'] if version in ('plain_text_v3_1','plain_text_v3_2') else details['text_clean'],version=version,details=details)

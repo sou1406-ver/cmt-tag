@@ -1,5 +1,10 @@
 # Canonical raw rebuild — trạng thái mới nhất (12/11/2026)
 
+**Candidate preprocessing mới:** `plain_text_v3_2`, local
+`outputs/canonical/versions/cleaning_v3_2_candidate/`. [Report/entry points và workbook](CLEANING_V3_2_REPORT.md).
+38.642 retained rows/524 sentiment giữ nguyên; pool8.812, approved0. Đây là
+candidate riêng; bảng v3.1 bên dưới vẫn là baseline đã khóa, không tự source switch.
+
 Candidate `canonical_37cf670237e3398b5c96` ở
 `outputs/canonical/versions/rebuild_20261112/`; bản chia sẻ để kiểm tra ở
 [`data/canonical/`](../data/canonical/README.md). Các snapshot J bên dưới là lịch sử.

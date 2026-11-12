@@ -11,6 +11,11 @@ và **524 nhãn sentiment**. Không thay nhãn, không duyệt corpus, không tr
 yêu cầu chủ repo: CSV raw/normalized tách cột, ledger loại và workbook 200 câu.
 Đây là snapshot chờ review, **không phải dataset đã được duyệt**.
 
+Candidate mới [plain_text_v3_2](docs/CLEANING_V3_2_REPORT.md) đã chạy trên đủ
+38.642 dòng: 1.833 view thay đổi, nhãn/raw giữ nguyên, pool đề xuất8.812/approved0.
+Corpus và workbook100 mới giữ **local** tại `outputs/canonical/versions/cleaning_v3_2_candidate/`;
+snapshot Git v3.1 không bị thay thế, active pointer chưa đổi.
+
 ## Quickstart
 
 Chạy từ root repo với môi trường đã setup:

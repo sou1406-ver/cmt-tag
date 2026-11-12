@@ -1,5 +1,12 @@
 # Canonical candidate mới — 12/11/2026
 
+V3.2 candidate bàn giao **local, chưa approved**:
+`canonical/versions/cleaning_v3_2_candidate/`; workbook duy nhất
+`canonical/versions/cleaning_v3_2_candidate/review/cleaning_review.xlsx` (100 blank decisions).
+Repro17/17 artifacts: `canonical_support/cleaning_v3_2_candidate_repro/`;
+verification: `canonical_support/cleaning_verification_v2/`.
+Xem [cleaning report](../docs/CLEANING_V3_2_REPORT.md); không thay snapshot public v3.1.
+
 [`data/canonical`](../data/canonical/README.md) chứa bản dữ liệu được người dùng
 yêu cầu đưa lên Git để review. Phần local còn lại không tự có khi clone.
 

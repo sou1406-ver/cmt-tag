@@ -1,5 +1,12 @@
 # Việc cần làm với canonical candidate mới
 
+**Review normalization v3.2 mới:**
+`outputs/canonical/versions/cleaning_v3_2_candidate/review/cleaning_review.xlsx`.
+100 câu, cột B/C là trước/sau; chỉ điền D/E: ACCEPT hoặc REJECT và note.
+Ô trống = chưa làm. Không metadata/sentiment trong sheet; không kế thừa
+ACCEPT cũ. [Report và lệnh import đúng coordinator](CLEANING_V3_2_REPORT.md).
+File domain/spam bên dưới là task v3.1 khác, chưa là quality approval cho v3.2.
+
 Điền một file [`canonical_quality_review.xlsx`](../data/canonical/canonical_37cf670237e3398b5c96/canonical_quality_review.xlsx):
 200 câu, chỉ cột C/D/E trong sheet Review. Domain và spam là hai quyết định
 riêng; đọc hướng dẫn/dropdown, không sửa ID/text/source. **Ô trống là chưa làm**,

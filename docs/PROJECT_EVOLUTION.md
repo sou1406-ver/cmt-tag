@@ -118,3 +118,15 @@ Source pointer chưa đổi; source-switch approval và quality approval tách b
 Theo yêu cầu người dùng, publish CSV canonical/raw+normalized, exclusion metadata,
 manifest/source audit và workbook trong data/canonical để review qua Git.
 Không API, training, guideline/split changes hoặc release pilot mới.
+
+## Evidence-based cleaning candidate v3.2 (12/11/2026)
+
+Thêm một engine composition riêng và mở rộng owner master/builder/importer cũ;
+frozen v3.1 giữ nguyên. Full local lineage verified, 38.642 raw/524 labels giữ
+nguyên. 1.833 changed views, evidence121tokens từ117 safe Facebook comments,
+670 residual compound splits và pinned emoji mapping; 10/47 REJECT có fix
+proposed nhưng0 được tự duyệt. Changed DOM views chưa đủ deletion-span evidence,
+nên fallbackraw, không đoán tên. Recompute duplicates/raw aliases/protections:
+pool8.814→8.812, approved0; source pointer không đổi. 17/17 artifacts tái lập,
+388tests(387pass/1skip). [Report duy nhất](CLEANING_V3_2_REPORT.md); corpus/workbook
+v3.2 giữ local, không thay canonical snapshot đã chia sẻ.

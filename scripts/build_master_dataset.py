@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from src.dataset.master import build,rebuild_canonical,promote_canonical
+from src.dataset.master import build,rebuild_canonical,promote_canonical,rebuild_cleaning
 
 
 def publish_review_data(version,workbook,output):
@@ -50,12 +50,18 @@ def main():
     p.add_argument('--config', type=Path, default=Path('configs/master_dataset.json'))
     p.add_argument('--output', type=Path, default=Path('outputs/phase_g/master'))
     p.add_argument('--canonical',action='store_true',help='Raw-derived curated rebuild; never auto-promotes')
+    p.add_argument('--cleaning-v3-2',type=Path,help='Verified local canonical source to derive a v3.2 candidate')
     p.add_argument('--promote',type=Path,help='Verified canonical version to promote, only with explicit approval')
     p.add_argument('--approval',type=Path)
     p.add_argument('--pointer',type=Path,default=Path('outputs/canonical/active.json'))
     p.add_argument('--publish-data',type=Path,help='Explicit review-only publication of a verified canonical version')
     p.add_argument('--workbook',type=Path)
     args = p.parse_args()
+    if args.cleaning_v3_2:
+        if args.canonical or args.promote or args.publish_data:p.error('Cleaning cannot publish, promote or rebuild old canonical')
+        if args.output==Path('outputs/phase_g/master'):args.output=Path('outputs/canonical/versions/cleaning_v3_2')
+        result=rebuild_cleaning(args.cleaning_v3_2,args.output)
+        print(json.dumps({k:result[k] for k in ('status','records','changed_records','proposed_annotation_pool')}));return
     if args.publish_data:
         if args.canonical or args.promote or not args.workbook or args.output==Path('outputs/phase_g/master'):p.error('--publish-data requires --workbook and explicit new --output; cannot rebuild/promote')
         result=publish_review_data(args.publish_data,args.workbook,args.output)

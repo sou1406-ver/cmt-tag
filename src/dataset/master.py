@@ -283,6 +283,273 @@ def promote_canonical(directory,approval_path,pointer):
     return 'QUALITY_REVIEW_PENDING'
 
 
+def cleaning_protection(rows,seeds,edges=(),fields=('text_raw','text_normalized')):
+    """Conservative alias/exact/direct-near closure, without deleting any record."""
+    aliases=defaultdict(set);neighbors=defaultdict(set)
+    for r in rows:
+        for text in [*(r.get(k,'') for k in fields),*r.get('source_text_variants',[])]:
+            if text:aliases[digest(normal(text))].add(r['record_id'])
+        if r.get('comment_id') and r.get('post_id'):
+            aliases['identity:'+r['source_dataset']+':'+r['post_id']+':'+r['comment_id']].add(r['record_id'])
+    for values in aliases.values():
+        for rid in values:neighbors[rid].update(values-{rid})
+    for e in edges:
+        neighbors[e['left']].add(e['right']);neighbors[e['right']].add(e['left'])
+    blocked=set(seeds);front=list(blocked)
+    while front:
+        rid=front.pop()
+        for other in neighbors[rid]-blocked:blocked.add(other);front.append(other)
+    return blocked,neighbors
+
+
+def cleaning_sample(rows,blocked,groups,neighbors,previous_rejects,seed=20261120):
+    """Deterministic review; no sentiment access and no protected diagnostic pairs."""
+    import random,difflib
+    rng=random.Random(seed);safe=sorted([r for r in rows if r['record_id'] not in blocked],key=lambda r:r['record_id'])
+    changed=[r for r in safe if r['text_normalized']!=r['text_normalized_v3_1']];rng.shuffle(changed)
+    controls=[r for r in safe if r['text_normalized']==r['text_normalized_v3_1']];rng.shuffle(controls)
+    largest=sorted(changed,key=lambda r:(difflib.SequenceMatcher(None,r['text_normalized_v3_1'],r['text_normalized'],autojunk=False).ratio(),r['record_id']))
+    risky=[r for r in safe if r['record_id'] in previous_rejects or r['text_preprocessing_source']=='VERIFIED_DOM_VIEW' and r['text_preprocessing_input']!=r['text_raw']
+        or any(e['rule'] in ('TECHNICAL_AT_MENTION','FB_DISTINCT_TOKEN_EVIDENCE') for e in r['transform_events']) or any('UNDERSCORE' in f for f in r['normalization_flags'])]
+    rng.shuffle(risky);selected=[];chosen=set();used_groups=set();counts=Counter()
+    def add(r,kind):
+        rid=r['record_id']
+        if rid in chosen or groups[rid] in used_groups or neighbors[rid]&chosen:return False
+        selected.append(r);chosen.add(rid);used_groups.add(groups[rid]);counts[kind]+=1;return True
+    for kind,values,quota in [('random_changed',changed,35),('largest_changed',largest,25),('risk',risky,30),('unchanged_control',controls,10)]:
+        for r in values:
+            if counts[kind]>=quota:break
+            add(r,kind)
+    for r in [*changed,*controls]:
+        if len(selected)>=100:break
+        add(r,'reallocated')
+    return selected,dict(seed=seed,target_counts=dict(random_changed=35,largest_changed=25,risk=30,unchanged_control=10),
+        actual_counts=dict(counts),rows=len(selected),method='sequential disjoint groups; shortage reallocated, no sentiment selection; exact/direct-near isolation',
+        ids=[r['record_id'] for r in selected])
+
+
+def rebuild_cleaning(source,output):
+    """Verify full local ancestry, derive a v3.2 candidate; never publish or promote."""
+    import difflib
+    from .common import verify,read_jsonl
+    from .unified import check_protection
+    from .phase_i import protection_set,duplicate_groups
+    from .normalization_workbook import validate as validate_old_review
+    from .quality_readiness import layers,verified_post as quality_post
+    from .blind import assert_allowed
+    from src.preprocessing.evidence_cleaning import normalize as clean,select_dom,token_evidence,aliases_resource,COMPOUND,segments,ALIAS
+    if output.exists():raise FileExistsError('Immutable cleaning output exists')
+    baseline_manifest=verify(source);cfg=load(source/'config.json');contract=load(source/'source_contract.local.json')
+    if baseline_manifest.get('status')!='REBUILD_VERIFIED' or baseline_manifest.get('dataset_version')!='canonical_37cf670237e3398b5c96':raise ValueError('Expected verified canonical ancestry')
+    protected=load(source/'protected_inputs.local.json');check_protection(protected)
+    for file in source.rglob('*'):
+        if file.is_file():protected[str(file.resolve())]=sha(file)
+    public=ROOT/'data/canonical/canonical_37cf670237e3398b5c96';verify(public)
+    for file in public.iterdir():
+        if file.is_file():protected[str(file.resolve())]=sha(file)
+    frozen={**contract['normalization_components_sha256'],'src/preprocessing/final_normalization.py':contract['normalizer_sha256'],cfg['accepted_tokens']:contract['accepted_tokens_sha256'],cfg['abbreviations']:contract['rules_sha256']}
+    for p,h in frozen.items():
+        if sha(ROOT/p)!=h:raise ValueError('Frozen v3.1 resource changed: '+p)
+        protected[str((ROOT/p).resolve())]=h
+    pointer=ROOT/cfg['active_pointer'];pointer_before=sha(pointer) if pointer.exists() else None
+    original=read_jsonl(ROOT/cfg['master_root']/'master.jsonl');master_manifest=verify(ROOT/cfg['master_root'])
+    verified,_,index,observation_count=canonical_sources(original,master_manifest,(ROOT/cfg['legacy_source']).resolve(),cfg['legacy_source_sha256'])
+    rows=read_jsonl(source/'normalized_annotation_view.local.jsonl');by={r['record_id']:r for r in rows};original_by={r['record_id']:r for r in verified}
+    if any(r['text_raw']!=original_by[r['record_id']]['text_raw'] for r in rows):raise ValueError('Canonical/raw mapping mismatch')
+    excluded=read_jsonl(source/'exclusion_ledger.local.jsonl');all_rows=[*rows,*excluded]
+    lineage=load(ROOT/cfg['lineage_config'])
+    reservation=ROOT/lineage['test_reservation'];availability=ROOT/lineage['test_source_candidates']
+    test_manifest=verify(reservation.parent)
+    if not availability.is_file():raise FileNotFoundError('Required test/exposure availability evidence missing')
+    if test_manifest.get('status')!='PARTIAL' and not reservation.is_file():raise FileNotFoundError('Required test reservation missing')
+    quarantine=ROOT/lineage['test_quarantine_root']
+    if not quarantine.is_dir():raise FileNotFoundError('Required quarantine root missing')
+    protection_paths=[reservation.parent/'manifest.json',availability,*sorted(quarantine.rglob('post_quarantine.json'))]
+    if reservation.is_file():protection_paths.append(reservation)
+    for p in protection_paths:protected[str(p.resolve())]=sha(p)
+    rid,cid,pid,info=protection_set(lineage,original)
+    planned=info['candidate_post_ids'];hold=load(ROOT/cfg['quality_holdout'])['ids'];hold=set(hold)
+    history=read_jsonl(source/'human_decisions_historical.local.jsonl');human={r['human_decision']['record_id'] for r in history}
+    heldposts={r['post_id'] for r in all_rows if r['record_id'] in hold|human and r.get('post_id')}
+    seeds=rid|hold|human|{r['record_id'] for r in excluded}|{r['record_id'] for r in rows if 'DEVELOPMENT_TEST_EXCLUDED_OR_HOLDOUT_LINK' in r['eligibility_reasons']}
+    seeds|={r['record_id'] for r in all_rows if r.get('comment_id') in cid or r.get('post_id') in pid|planned|heldposts}
+    policy=cfg['near_duplicate']
+    raw_groups,raw_exact,raw_near=duplicate_groups([dict(record_id=r['record_id'],text_clean=r['text_raw']) for r in all_rows],**policy)
+    old_groups,old_exact,old_near=duplicate_groups([dict(record_id=r['record_id'],text_clean=r.get('text_normalized',r['text_raw'])) for r in all_rows],**policy)
+    evidence_block,_=cleaning_protection(all_rows,seeds,[*raw_near['edges'],*old_near['edges']])
+    evidence=token_evidence(rows,evidence_block)
+    evidence.update(source_dataset_version=baseline_manifest['dataset_version'],source_content_sha256=baseline_manifest['canonical_content_sha256'],
+        protection_policy='All human decisions/development posts, test/reserved/planned/holdout whole posts, old guards, raw aliases/exact/direct-near closure; no legacy evidence',
+        protected_ids_sha256=digest('|'.join(sorted(evidence_block))))
+    resource=aliases_resource();accepted=set(load(ROOT/cfg['accepted_tokens']));abbr=load(ROOT/cfg['abbreviations'])
+    # Every DOM candidate comes from a checksum-bound observation in the original master.
+    cache={};candidate_by=defaultdict(list)
+    for s in index:
+        path=Path(s['absolute_path']);payload=path.read_bytes()
+        if sha(path)!=s['container_sha256']:raise ValueError('DOM source checksum mismatch')
+        if s['archive_member']:
+            with zipfile.ZipFile(io.BytesIO(payload)) as z:payload=z.read(s['archive_member'])
+        if digest(payload)!=s['source_sha256']:raise ValueError('DOM member checksum mismatch')
+        cache[s['source_file']]=(read_payload(payload,Path(s['archive_member'] or path.name).suffix)[0],s)
+    for r in rows:
+        if r['source_dataset']!='facebook':continue
+        for obs in r['metadata_provenance']:
+            payloads,s=cache[obs['source_file']];n=obs['source_row'];item=payloads[n-1]
+            if item.get('text_extraction_version')!='dom_text_v2' or 'text_without_mentions' not in item:continue
+            key=next(k for k in TEXT_KEYS if k in item)
+            if digest(item[key])!=obs['text_raw_sha256']:raise ValueError('DOM observation raw hash mismatch')
+            candidate_by[r['record_id']].append(dict(item,text_raw=item[key],comment_id=str(item.get('comment_id') or ''),post_id=str(item.get('post_id') or ''),
+                source_file=s['source_file'],source_sha256=s['source_sha256'],source_row=n,checksum_verified=True))
+    views=[];dom_ledger=[];unresolved=[];events=[];dom_summary=Counter();dom_sources=defaultdict(Counter);rejections=Counter();changed_rules=defaultdict(set)
+    for r in rows:
+        text,dom_flags,audit=select_dom(r,candidate_by[r['record_id']]);valid=[a for a in audit if a['status']=='VALID'];conflict='DOM_CONFLICT' in dom_flags
+        used=bool(valid) and not conflict;input_source='VERIFIED_DOM_VIEW' if used else 'RAW'
+        if r['source_dataset']=='facebook':
+            dom_summary['facebook_records']+=1;dom_summary['with_candidate']+=bool(audit);dom_summary['full_checks_passed']+=bool(valid)
+            dom_summary['selected']+=used;dom_summary['selected_changed']+=used and text!=r['text_raw'];dom_summary['conflicts']+=conflict
+        for a in audit:
+            dom_sources[a['source_file']][a['status']]+=1
+            if a['status']!='VALID':rejections[a['status']]+=1
+        d=dict(record_id=r['record_id'],text_preprocessing_source=input_source,evidence=audit,flags=dom_flags)
+        dom_ledger.append(d)
+        if dom_flags and r['source_dataset']=='facebook':unresolved.append(d)
+        result=clean(text,source=r['source_dataset'],accepted_tokens=accepted,evidence_tokens=evidence['vocabulary'],abbreviations=abbr,aliases=resource['aliases'])
+        # Explicit independent idempotence and raw determinism checks for every retained record.
+        again=clean(result['text_normalized'],source=r['source_dataset'],accepted_tokens=accepted,evidence_tokens=evidence['vocabulary'],abbreviations=abbr,aliases=resource['aliases'])
+        if result['text_normalized']!=again['text_normalized']:raise ValueError('v3.2 text idempotence failed')
+        new=dict(r,**result,text_normalized_v3_1=r['text_normalized'],text_preprocessing_source=input_source,text_preprocessing_input=text,
+            preprocessing_source_evidence=audit,dom_flags=dom_flags,text_annotation=None,annotation_text_version=None,normalization_version='plain_text_v3_2',
+            normalization_events_v3_1=r['normalization_events'],normalization_events=result['transform_events'],
+            needs_human_recheck=bool(r['human_label']) and result['text_normalized']!=r['text_normalized'],normalization_human_decision='')
+        for e in result['transform_events']:
+            events.append(dict(record_id=r['record_id'],**e));changed_rules[e['rule']].add(r['record_id'])
+        views.append(new)
+    # Excluded content remains outside the corpus; derive shadows for protection only.
+    shadows=[]
+    for r in excluded:
+        text=clean(r['text_raw'],source=r['source_dataset'],accepted_tokens=accepted,evidence_tokens=evidence['vocabulary'],abbreviations=abbr,aliases=resource['aliases'])['text_normalized']
+        shadows.append(dict(r,text_normalized=text))
+    all_new=[*views,*shadows]
+    new_groups,new_exact,new_near=duplicate_groups([dict(record_id=r['record_id'],text_clean=r['text_normalized']) for r in all_new],**policy)
+    candidate_groups,candidate_exact,candidate_near=duplicate_groups([dict(record_id=r['record_id'],text_clean=r['text_normalized']) for r in views],**policy)
+    # Raw+old+new aliases and all direct edges are protected together; no old guard is relaxed.
+    joint=[dict(r,text_normalized_v3_1=by.get(r['record_id'],{}).get('text_normalized',r['text_raw'])) for r in all_new]
+    blocked,neighbors=cleaning_protection(joint,evidence_block,[*raw_near['edges'],*old_near['edges'],*new_near['edges']],('text_raw','text_normalized_v3_1','text_normalized'))
+    pool=[];eligibility_diff=[];parents=defaultdict(list)
+    for r in views:
+        if r['comment_id'] and r['post_id']:parents[(r['source_dataset'],r['post_id'],r['comment_id'])].append(r)
+    for r in views:
+        rid=r['record_id'];previous=by[rid];linked=parents.get((r['source_dataset'],r['post_id'],r['parent_comment_id']),[])
+        r.update(layers(r,linked[0] if len(linked)==1 else None))
+        if 'NON_TEXT_REVIEW' in r['normalization_flags']:
+            r.update(technical_status='REVIEW_NON_TEXT',final_quality_decision='REVIEW_PROPOSED')
+        reasons=[]
+        if r['technical_status']!='VALID':reasons.append('TECHNICAL_REVIEW')
+        if r['domain_status']!='IN_DOMAIN_CANDIDATE':reasons.append('DOMAIN_UNCONFIRMED')
+        if r['spam_status']=='SPAM_CANDIDATE':reasons.append('SPAM_REVIEW')
+        if r['human_decisions']:reasons.append('HUMAN_DECISION_PRESENT')
+        if rid in blocked:reasons.append('DEVELOPMENT_TEST_EXCLUDED_OR_HOLDOUT_LINK')
+        if rid in candidate_exact or rid in raw_exact:reasons.append('EXACT_DUPLICATE')
+        if r['master_review_flags'] and set(r['master_review_flags'])-{'TEXT_VARIANTS_RETAINED'}:reasons.append('MASTER_IDENTITY_REVIEW_FLAG')
+        if r['source_dataset']=='facebook' and not quality_post(r):reasons.append('UNVERIFIED_FACEBOOK_IDENTITY')
+        if r['contamination_status'] not in ('NOT_FLAGGED','NOT_FLAGGED_BY_DECLARED_RULES'):reasons.extend(x for x in previous['eligibility_reasons'] if 'CONTAMINATION' in x)
+        unresolved_tokens=[m[0] for protected,s,_ in segments(r['text_normalized']) if not protected for m in COMPOUND.finditer(s)]
+        r['remaining_format_tokens']=unresolved_tokens;r['format_status']='NEEDS_REVIEW' if unresolved_tokens else 'PLAIN_OR_PROTECTED_PROPOSAL'
+        if unresolved_tokens or any(f in ('BARE_ALIAS_AMBIGUOUS','UNMATCHED_ALIAS_REVIEW') or f.startswith(('UNBALANCED_','AMBIGUOUS_ABBREVIATION')) for f in r['normalization_flags']):reasons.append('FORMAT_REVIEW_PENDING')
+        if 'DOM_CONFLICT' in r['dom_flags']:reasons.append('DOM_CONFLICT_REVIEW')
+        r['quality_status']='REVIEW' if r['final_quality_decision']!='KEEP_PROPOSED' or 'FORMAT_REVIEW_PENDING' in reasons or 'DOM_CONFLICT_REVIEW' in reasons else 'KEEP_PROPOSED'
+        r['eligibility_reasons']=sorted(set(reasons));r['annotation_eligibility']='INELIGIBLE' if reasons else 'ELIGIBLE_PROPOSED';r['duplicate_group_id']=candidate_groups[rid]
+        r['annotation_pool_reasons_v3_1']=previous['annotation_pool_reasons'];r['annotation_pool_reasons']=list(r['eligibility_reasons'])
+        if not reasons:pool.append(r)
+        if r['annotation_eligibility']!=previous['annotation_eligibility'] or set(reasons)!=set(previous['eligibility_reasons']):eligibility_diff.append(dict(record_id=rid,before=previous['annotation_eligibility'],after=r['annotation_eligibility'],old_reasons=previous['eligibility_reasons'],new_reasons=r['eligibility_reasons']))
+        if r['human_decisions']!=previous['human_decisions'] or r['human_label']!=previous['human_label'] or r['text_raw']!=previous['text_raw']:raise AssertionError('Raw/human mutation')
+    assert_allowed([dict(r,id=r['record_id'],group_id=r['master_group_id'],text_view=r['text_normalized']) for r in pool],'pseudo_labeling')
+    review=validate_old_review(ROOT/cfg['normalization_workbook'],ROOT/cfg['normalization_coordinator'])
+    if not cfg.get('review_convention_authorization'):raise ValueError('Missing real review-convention authorization')
+    effective={r['id']:('REJECT' if r['human_note'].strip() or r['human_decision']=='REJECT' else r['human_decision'] or 'ACCEPT') for r in review}
+    rejected={i for i,d in effective.items() if d=='REJECT'};root_causes=[];new_by={r['record_id']:r for r in views}
+    for old_review in review:
+        rid=old_review['id']
+        if rid not in rejected:continue
+        previous=by[rid];r=new_by[rid];note=old_review['human_note'];causes=[]
+        if previous['remaining_format_tokens']:causes.append('INCOMPLETE_UNDERSCORE_RECOVERY')
+        if any('EMOJI' in e['rule'] for e in r['transform_events']) or 'face_' in note or '❤️' in note:causes.append('EMOJI_SERIALIZATION')
+        if 'TT' in note or 'Akira' in note:causes.append('AMBIGUOUS_NAME_OR_ABBREVIATION')
+        if 'emote' in note:causes.append('DOMAIN_NON_TEXT_DECISION_NOT_NORMALIZATION_ONLY')
+        if not note.strip():causes.append('NO_HUMAN_REASON_CAUSAL_ATTRIBUTION_UNCONFIRMED')
+        if not causes:causes.append('INSUFFICIENT_EVIDENCE_FOR_SPECIFIC_RULE')
+        applicable=[e for e in r['transform_events'] if e['stage']!='preserved v3.1 components']
+        status='FIX_PROPOSED' if applicable and r['text_normalized']!=previous['text_normalized'] else 'NO_SAFE_FIX' if 'AMBIGUOUS_NAME_OR_ABBREVIATION' in causes else 'NEEDS_REVIEW'
+        root_causes.append(dict(record_id=rid,text_raw=previous['text_raw'],text_v3_1=previous['text_normalized'],text_v3_2=r['text_normalized'],human_note=note,
+            old_events=previous['normalization_events'],old_flags=previous['normalization_flags'],old_decision='REJECT',old_version='plain_text_v3_1',
+            causes=causes,causal_attribution='NOTE/SPAN_EVIDENCE' if note.strip() else 'OBSERVED_RESIDUAL_NOT_PROVEN_BAD_TRANSFORMATION',status=status,
+            new_decision='',remaining_format=r['remaining_format_tokens'],targeted_events=applicable))
+    selected,sampling=cleaning_sample(views,blocked,candidate_groups,neighbors,rejected)
+    remaining=Counter(t for r in views for t in r['remaining_format_tokens']);reason_counts=Counter(e['reason'] for r in views for e in r['unresolved_underscore'])
+    changed_ids={r['record_id'] for r in views if r['text_normalized']!=r['text_normalized_v3_1']}
+    group_members=defaultdict(list)
+    for r in views:group_members[candidate_groups[r['record_id']]].append(r['record_id'])
+    newly_merged_groups=[sorted(ids) for ids in group_members.values() if len({old_groups[i] for i in ids})>1]
+    posts_evidence_missing={r['post_id'] for r in views if r['source_dataset']=='facebook' and r['post_id'] and not any(a['status']=='VALID' for a in r['preprocessing_source_evidence'])}
+    # Compare actual sealed edge ledgers on exactly the same retained population.
+    old_edge_rows=csv_rows((source/'direct_near_duplicates.local.csv').read_bytes())[0];old_edge_set={(e['left'],e['right']) for e in old_edge_rows}
+    new_edge_set={(e['left'],e['right']) for e in candidate_near['edges']}
+    original_summary=load(source/'summary.json')
+    baseline=dict(records=len(rows),sources=dict(Counter(r['source_dataset'] for r in rows)),human_decisions=sum(len(r['human_decisions']) for r in rows),sentiment=sum(bool(r['human_label']) for r in rows),
+        underscore_records=sum('_' in r['text_normalized'] for r in rows),underscore_tokens=sum(len(COMPOUND.findall(r['text_normalized'])) for r in rows),
+        exact_groups=original_summary['normalized_duplicates']['exact_groups'],
+        alias_records=sum(any((m[1] or m[2]) in resource['aliases'] for m in ALIAS.finditer(r['text_normalized'])) for r in rows),
+        technical_at_mention_records=sum(bool(re.search(r'(?<!\w)@[A-Za-z][A-Za-z0-9_.]*',r['text_normalized'])) for r in rows),
+        exact_duplicate_excess=original_summary['normalized_duplicates']['exact_duplicate_rows'],near_edges=len(old_edge_set),
+        protected_records=sum('DEVELOPMENT_TEST_EXCLUDED_OR_HOLDOUT_LINK' in r['eligibility_reasons'] for r in rows),
+        computed_protected_records=sum(r['record_id'] in evidence_block for r in rows),unresolved_format=sum(bool(r['remaining_format_tokens']) for r in rows),
+        format_status=dict(Counter(r['format_status'] for r in rows)),quality_status=dict(Counter(r['quality_status'] for r in rows)),proposed_annotation_pool=original_summary['proposed_annotation_pool'],approved=0)
+    metrics=dict(status='CANDIDATE_REBUILT_QUALITY_REVIEW_PENDING',preprocessing_version='plain_text_v3_2',baseline=baseline,records=len(views),sources=dict(Counter(r['source_dataset'] for r in views)),
+        human_decisions_retained=sum(len(r['human_decisions']) for r in views),human_decisions_historical=len(history),sentiment_retained=sum(bool(r['human_label']) for r in views),
+        changed_records=sum(r['text_normalized']!=r['text_normalized_v3_1'] for r in views),dom=dict(dom_summary),dom_candidate_rejections=dict(rejections),dom_by_source={k:dict(v) for k,v in dom_sources.items()},
+        records_with_rejected_dom_candidates=sum(any(a['status']!='VALID' for a in r['preprocessing_source_evidence']) for r in views),
+        records_with_candidates_but_none_selected=sum(bool(r['preprocessing_source_evidence']) and r['text_preprocessing_source']=='RAW' for r in views),
+        posts_missing_dom_evidence=len(posts_evidence_missing),
+        contribution_rule_records={k:len(v) for k,v in sorted(changed_rules.items())},
+        changed_records_involving_rule={k:len(v&changed_ids) for k,v in sorted(changed_rules.items())},
+        alias_recovery_events=sum(e['rule']=='PINNED_EMOJI_ALIAS' for e in events),unmatched_alias_review_records=sum('UNMATCHED_ALIAS_REVIEW' in r['normalization_flags'] for r in views),
+        ambiguous_alias_review_records=sum('BARE_ALIAS_AMBIGUOUS' in r['normalization_flags'] for r in views),
+        evidence_split_events=sum(e['rule']=='FB_DISTINCT_TOKEN_EVIDENCE' for e in events),
+        evidence_distinct_comments=evidence['distinct_comments'],evidence_vocabulary=len(evidence['vocabulary']),
+        underscore_records=sum('_' in r['text_normalized'] for r in views),remaining_underscore_tokens=sum(remaining.values()),remaining_underscore_types=len(remaining),underscore_reason_counts=dict(reason_counts),
+        reject_decisions=dict(Counter(effective.values())),reject_fix_status=dict(Counter(r['status'] for r in root_causes)),reject_causes=dict(Counter(c for r in root_causes for c in r['causes'])),
+        non_text_review=sum('NON_TEXT_REVIEW' in r['normalization_flags'] for r in views),human_needs_recheck=sum(r['needs_human_recheck'] for r in views),
+        duplicates=candidate_near['summary'],new_exact_groups=len(newly_merged_groups),new_near_edges=len(new_edge_set-old_edge_set),removed_near_edges=len(old_edge_set-new_edge_set),
+        protected_records=sum(r['record_id'] in blocked for r in views),newly_protected_records=sum(r['record_id'] in blocked-evidence_block for r in views),
+        unresolved_format=sum(bool(r['remaining_format_tokens']) for r in views),normalization_review_records=sum(r['format_status']=='NEEDS_REVIEW' for r in views),
+        quality_status=dict(Counter(r['quality_status'] for r in views)),proposed_annotation_pool=len(pool),approved_annotation_pool=0,approved_training_labels=0,
+        eligibility_changes=len(eligibility_diff),sampling=sampling,source_observations_verified=observation_count,logical_sources_verified=len(index),
+        active_pointer_updated=False,canonical_approved=False,ai_inputs_exported=False,normalization_decisions_transferred=0)
+    with staged(output) as out:
+        write_jsonl(out/'candidate_corpus.local.jsonl',views);write_jsonl(out/'transform_events.local.jsonl',events)
+        write_jsonl(out/'dom_provenance.local.jsonl',dom_ledger);write_jsonl(out/'unresolved_dom.local.jsonl',unresolved)
+        save(out/'token_evidence.local.json',evidence);save(out/'emoji_resource.json',{k:v for k,v in resource.items() if k!='aliases'})
+        write_jsonl(out/'normalization_reject_root_causes.local.jsonl',root_causes)
+        write_csv(out/'remaining_underscore.local.csv',[dict(token=t,count=n) for t,n in sorted(remaining.items(),key=lambda x:(-x[1],x[0]))],['token','count'])
+        save(out/'summary.json',metrics);save(out/'protected_inputs.local.json',protected)
+        write_csv(out/'direct_near_duplicates.local.csv',sorted(candidate_near['edges'],key=lambda e:(e['left'],e['right'])),['left','right','method'])
+        save(out/'duplicate_leakage_diff.local.json',dict(old_near_edges=sorted(old_edge_set),new_near_edges=sorted(new_edge_set),new_exact_groups=newly_merged_groups,new_protected_ids=sorted(blocked-evidence_block),old_protected_ids=sorted(evidence_block),new_all_protected_ids=sorted(blocked),
+            policy='Raw/old/new exact alias + direct-near conservative transitive protection, includes excluded shadows; no frozen splits changed'))
+        write_jsonl(out/'eligibility_diff.local.jsonl',eligibility_diff)
+        write_csv(out/'annotation_pool.local.csv',[dict(record_id=r['record_id'],text_view=r['text_normalized']) for r in pool],['record_id','text_view'])
+        save(out/'workbook_input.local.json',dict(kind='cleaning_v3_2',rows=[dict(id=r['record_id'],text_truoc=r['text_normalized_v3_1'],text_sau=r['text_normalized'],decision='',note='') for r in selected],
+            source_manifest_sha256=sha(source/'manifest.json'),candidate_content_sha256=sha(out/'candidate_corpus.local.jsonl'),preprocessing_version='plain_text_v3_2',sampling=sampling))
+        save(out/'config.json',dict(source=str(source.resolve()),source_manifest_sha256=sha(source/'manifest.json'),near_duplicate=policy,seed=sampling['seed']))
+        save(out/'verification.json',dict(raw_and_human_unchanged=True,frozen_v31_resources_unchanged=True,idempotence_records=len(views),historical_decisions=len(history),review_protected_overlap=0,
+            source_manifest_sha256=sha(source/'manifest.json'),public_snapshot_manifest_sha256=sha(public/'manifest.json'),v31_resource_sha256=frozen,
+            engine_sha256=sha(ROOT/'src/preprocessing/evidence_cleaning.py'),owner_sha256=sha(Path(__file__)),facade_sha256=sha(ROOT/'src/preprocessing/__init__.py'),emoji_mapping_sha256=resource['mapping_sha256']))
+        check_protection(protected)
+        if (sha(pointer) if pointer.exists() else None)!=pointer_before:raise ValueError('Active pointer changed')
+        seal(out,dict(status=metrics['status'],preprocessing_version='plain_text_v3_2',source_manifest_sha256=sha(source/'manifest.json'),records=len(views),
+            canonical_approved=False,annotation_approved=False,active_pointer_updated=False,candidate_content_sha256=sha(out/'candidate_corpus.local.jsonl')))
+    return metrics
+
+
 def post_url(value):
     """Strip tracking and comment anchors; retain only post identity parameters."""
     if not value: return ''

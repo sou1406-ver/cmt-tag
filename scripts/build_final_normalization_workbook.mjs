@@ -3,7 +3,33 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {Workbook,SpreadsheetFile} from '@oai/artifact-tool';
-const [input,output]=process.argv.slice(2),bytes=await fs.readFile(input),rows=JSON.parse(bytes.toString('utf8'));
+const [input,output]=process.argv.slice(2),bytes=await fs.readFile(input),contract=JSON.parse(bytes.toString('utf8'));
+if (contract.kind==='cleaning_v3_2') {
+ const rows=contract.rows,n=rows.length+1;
+ if(!rows.length||rows.length>100||new Set(rows.map(r=>r.id)).size!==rows.length)throw Error('Require 1..100 unique cleaning IDs');
+ if(rows.some(r=>r.decision||r.note))throw Error('New human review must be blank');
+ await fs.mkdir(output,{recursive:false});
+ const book=Workbook.create(),sheet=book.worksheets.add('Review');sheet.showGridLines=false;
+ const literal=s=>String(s??'').startsWith('=')?"'"+s:String(s??'');
+ const values=[['id','text_truoc','text_sau','decision','note'],...rows.map(r=>[r.id,r.text_truoc,r.text_sau,'',''].map(literal))];
+ if(values.some(r=>r.some(v=>v.length>32767)))throw Error('Excel cell limit; never truncate');
+ sheet.getRange(`A1:E${n}`).values=values;sheet.getRange(`A1:E${n}`).setNumberFormat('@');
+ sheet.getRange(`A1:E${n}`).format={font:{name:'Arial',size:11,color:'#24364B'},wrapText:true,verticalAlignment:'top'};
+ sheet.getRange('A1:E1').format={fill:'#234B65',font:{name:'Arial',bold:true,color:'#FFFFFF'},rowHeight:36,horizontalAlignment:'center'};
+ for(const [col,width] of [['A',23],['B',76],['C',76],['D',17],['E',40]])sheet.getRange(`${col}1:${col}${n}`).format.columnWidth=width;
+ rows.forEach((r,i)=>sheet.getRange(`A${i+2}:E${i+2}`).format.rowHeight=Math.min(290,Math.max(75,18*(Math.ceil(Math.max(r.text_truoc.length,r.text_sau.length)/70)+1))));
+ sheet.tables.add(`A1:E${n}`,true,'CleaningReview');sheet.freezePanes.freezeRows(1);
+ sheet.getRange(`D2:E${n}`).format.fill='#FFF2CC';sheet.getRange(`D2:D${n}`).dataValidation={rule:{type:'list',values:['ACCEPT','REJECT']}};
+ book.recalculate();
+ const scan=await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#NUM!',options:{useRegex:true,maxResults:5},maxChars:500});
+ await fs.writeFile(path.join(output,'formula_scan.local.ndjson'),scan.ndjson);
+ const png=await book.render({sheetName:'Review',range:'A1:E4',scale:1,format:'png'});
+ await fs.writeFile(path.join(output,'review.png'),new Uint8Array(await png.arrayBuffer()));
+ await(await SpreadsheetFile.exportXlsx(book)).save(path.join(output,'cleaning_review.xlsx'));
+ await fs.writeFile(path.join(output,'manifest.local.json'),JSON.stringify({rows:rows.length,input_sha256:crypto.createHash('sha256').update(bytes).digest('hex'),status:'PENDING_HUMAN_NORMALIZATION_APPROVAL'}));
+ console.log(`Created ${rows.length} five-column cleaning review rows; decisions blank.`);
+} else {
+const rows=contract;
 if(rows.length!==150||new Set(rows.map(r=>r.record_id)).size!==150)throw Error('Require 150 unique normalization IDs');
 await fs.mkdir(output,{recursive:false});
 const book=Workbook.create(),main=book.worksheets.add('Review'),compare=book.worksheets.add('Raw I3 Normalized'),guide=book.worksheets.add('Instructions');
@@ -48,3 +74,4 @@ for(const [name,range,file] of [['Review','A1:E4','review'],['Raw I3 Normalized'
 await(await SpreadsheetFile.exportXlsx(book)).save(path.join(output,'final_normalization_review_150.xlsx'));
 await fs.writeFile(path.join(output,'manifest.local.json'),JSON.stringify({rows:150,input_sha256:crypto.createHash('sha256').update(bytes).digest('hex'),status:'PENDING_HUMAN_NORMALIZATION_APPROVAL'}));
 console.log('Created 150 normalization review rows; human fields blank.');
+}

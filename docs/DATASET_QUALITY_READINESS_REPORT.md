@@ -1,5 +1,10 @@
 # Canonical rebuild readiness — 12/11/2026
 
+Candidate cleaning mới `plain_text_v3_2` đã được kiểm full-corpus, vẫn pending:
+raw/nhãn giữ nguyên, pool8.812/approved0, 47 REJECT chưa có approval mới.
+[Bảng before/after và giới hạn DOM](CLEANING_V3_2_REPORT.md). Bảng dưới là
+canonical v3.1 baseline, không gắn các số này cho v3.2 hoặc coi corpus đã duyệt.
+
 **REBUILD_VERIFIED / QUALITY_REVIEW_PENDING; 0 approved.** Các số liệu Phase J
 bên dưới là snapshot lịch sử, không phải trạng thái mới nhất.
 

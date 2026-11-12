@@ -89,6 +89,29 @@ Hiện chưa có approved release cho dataset filtered, nên không đưa trực
 vào train. Output đã tồn tại không được ghi đè. Clone repo không tự có toàn bộ
 raw, coordinator và model local cần cho các lệnh trên.
 
+## Thử nghiệm tiền xử lý trên nhãn phát triển
+
+```powershell
+python -m pip install -r requirements/classical-base.txt
+python -m src.models preprocessing-cv --output outputs/preprocessing_experiments
+```
+
+Implementation opt-in: `src/preprocessing/model.py`; minimal view và model/config
+Gold cũ không đổi. So A/B/C/D và các đối chứng tắt PyVi/teencode/rút chữ lặp bằng
+5-fold × 5 seed, dùng chung fold: 425 nhãn người, kèm bảng phụ 346 Facebook.
+79 legacy record thiếu post_id có group riêng, **không bảo đảm chống leakage theo
+bài cho legacy**. Word vectorizer dùng `token_pattern=r'(?u)[^\s]+'`,
+`lowercase=False`; char_wb (3,5) không dùng token_pattern. PyVi 0.1.1 được pin,
+bảng teencode hẹp có kiểm soát, giữ `k` và emoticon. DOM metadata hiện chỉ đủ
+`DOM_RULE_MATCH`, không gọi là verified; không xóa tiền tố tên bằng regex mới.
+
+Kết quả development local: `outputs/preprocessing_experiments/REPORT.md`,
+`comparison.csv`, `fold_results.csv`, `paired_deltas.csv`, `view_audit.csv`.
+Char-SVM: A → C đạt Macro-F1 0,5434 → 0,5614 trên 425 câu; Facebook-only
+0,5642 → 0,5677. DOM view không cải thiện ổn định; giữ pipeline mới opt-in.
+Không tự chuyển active pipeline, không chọn cấu hình bằng gold hoặc evaluate lại.
+Output đã tồn tại thì chọn thư mục output mới; dữ liệu/comment chỉ lưu local.
+
 ## Gold test: post mới, một người gán
 
 File link: `outputs/gold/posts.csv`, cột `movie_id,post_url`. Chọn link trước khi
@@ -154,7 +177,8 @@ Trạng thái local ngày **13/11/2026** để review quy trình:
   Cohen's Kappa 0,8792 trên 5 quyết định. Hai lượt gần nhau (khoảng 8 phút theo
   lúc kiểm tra lượt hai), có nguy cơ nhớ nhãn; không coi đây là hai người duyệt.
 - Đã khóa 230 quyết định: POS 46, NEG 76, NEU 40, EXCLUDE 68; 162 câu sentiment
-  đủ trạng thái cho đánh giá. Chưa train hoặc evaluate gold thật. Dataset filtered
+  đủ trạng thái cho đánh giá. Gold sau đó đã evaluate một lần với cấu hình cũ;
+  giữ nguyên receipt/results, không chạy lại. Dataset filtered
   giữ nguyên manifest SHA `602d98e0ee184c8c01f7bd89e2e129918341a367fcfcf862e7b9f56d3352d0f6`.
 - Lần kiểm thử gần nhất: **167/167 unittest pass**. Đã kiểm ID, text hash, nhãn
   hợp lệ, seed tái lập, reservation và checksum workbook khi khóa.

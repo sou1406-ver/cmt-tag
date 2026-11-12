@@ -11,9 +11,15 @@ def main():
     a.add_argument('--usage-root',type=Path,default=Path('data/evaluation_usage'))
     a.add_argument('--train-mode',choices=['mixed','silver-only','gold-only'],default='mixed')
     a=s.add_parser('evaluate'); a.add_argument('--run',type=Path,required=True); a.add_argument('--output',type=Path,required=True)
+    a=s.add_parser('preprocessing-cv',help='Development-only fixed preprocessing comparisons; never evaluates gold')
+    a.add_argument('--output',type=Path,default=Path('outputs/preprocessing_experiments'))
     args=p.parse_args()
     try:
-        if args.cmd=='train':
+        if args.cmd=='preprocessing-cv':
+            import json
+            from .preprocessing_cv import run
+            print(json.dumps(run(args.output),ensure_ascii=True))
+        elif args.cmd=='train':
             result=train(args.release,args.output,args.usage_root,args.seed,args.train_mode)
             print('Selection saved; test untouched. Dev winner: '+result['dev_winner'])
         else:

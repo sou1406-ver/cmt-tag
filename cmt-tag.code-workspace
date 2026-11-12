@@ -1,20 +1,17 @@
 {
   "folders": [
     {
-      "name": "01 - Nhãn đã nhập",
-      "path": "outputs/phase_g2/human_import_01"
-    },
-    {
-      "name": "02 - Workbook đã gán",
-      "path": "outputs/phase_g2/annotation_task"
-    },
-    {
       "name": "Repo",
       "path": "."
+    },
+    {
+      "name": "Dữ liệu sau lọc",
+      "path": "outputs/canonical/versions/filtered_20261112_final"
     }
   ],
   "settings": {
     "terminal.integrated.cwd": "${workspaceFolder:Repo}",
+    "python.defaultInterpreterPath": "${workspaceFolder:Repo}/.venv/Scripts/python.exe",
     "explorer.compactFolders": true,
     "files.exclude": {
       "**/__pycache__": true,

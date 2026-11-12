@@ -92,3 +92,17 @@ chuyển regression còn giá trị: **143 pass, 0 fail, 0 skip**. Riêng G.1 v�
 `python -S` (không site-packages/Selenium): 1 pass, 2 skip có lý do, không import error.
 269 input trong lineage và 1.215 baseline files vẫn đúng checksum; import graph
 97 edges và các link tài liệu chính hợp lệ. Raw comments mới không nằm trong commit.
+
+### Môi trường local sau cleanup
+
+Chỉ dùng `.venv` cho workflow hiện tại. Ba môi trường `.venv-crawler`,
+`.venv-phase-e`, `.venv-phase-h` đã xóa sau khi môi trường thay thế vượt qua
+`pip check` và 143 tests. 25 distributions cần thiết được chuyển từ môi trường
+E với **nguyên phiên bản đã cài**, không tải/nâng cấp package; console launchers
+được tạo lại cho đường dẫn mới. Bỏ các package segmentation/plot/Transformer
+không thuộc workflow hiện tại. Các lock/recipe lịch sử và checkpoint vẫn giữ
+để tái lập riêng khi cần, không yêu cầu giữ sẵn nhiều venv trong repo.
+
+README trình bày BTL theo nguồn dữ liệu → lọc/tiền xử lý → nhãn → train →
+đánh giá. Workspace VS Code mở repo và dữ liệu sau lọc; các folder phase trong
+outputs là bằng chứng bất biến, không phải các bước phải chạy lại.

@@ -170,7 +170,7 @@ class StoreTests(unittest.TestCase):
             result=subprocess.run([sys.executable,'-m','src.crawler',*args,'--run',self.store.run_id,
                        '--data-root',str(self.root)],capture_output=True,text=True,encoding='utf-8')
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-        result=subprocess.run([sys.executable,'scripts/prepare_data.py','--config',
+        result=subprocess.run([sys.executable,'scripts/build_master_dataset.py','--config',
             str(self.root/'imports'/self.store.run_id/'import_config.json'), '--output-root',str(self.root/'processed')],
             capture_output=True,text=True,encoding='utf-8')
         self.assertEqual(result.returncode,0,result.stderr)
@@ -242,7 +242,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(validate(s.path)['metadata_completeness_rate']['post_id'],0)
 
 
-@unittest.skipUnless(importlib.util.find_spec('selenium'),'Install requirements-crawler.txt and a Chrome/Brave browser for DOM tests')
+@unittest.skipUnless(importlib.util.find_spec('selenium'),'Install requirements/crawler.txt and a Chrome/Brave browser for DOM tests')
 class BrowserTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

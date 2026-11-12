@@ -1,9 +1,0 @@
-{
-  "master_root": "outputs/phase_g/master",
-  "master_manifest_sha256": "7b66f8aaf08d74bc249ff4d613be08d4a9bb64645f7448f1065a704b81d79af9",
-  "target": 180,
-  "max_per_post": 10,
-  "max_per_movie": 20,
-  "seed": 20261111,
-  "second_annotator_count": 50
-}

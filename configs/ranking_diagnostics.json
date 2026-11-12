@@ -1,6 +1,0 @@
-{
-  "e1_root": "outputs/phase_e1",
-  "e1_manifest_sha256": "49d546532eae7bea7e6fa67fafddf2c5863d1cf35fa580a22f8f02345b621859",
-  "model_id": "tfidf_char_svm",
-  "threshold_tuning": false
-}

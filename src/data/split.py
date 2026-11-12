@@ -152,3 +152,92 @@ def validate_manifest(records, candidates, manifest, require_gold=False, used_id
         if not manifest.get("locked_gold"):
             raise ValueError("Gold manifest has not been locked")
     return True
+
+import hashlib
+import re
+from src.dataset.common import ROOT, load, normal
+
+def stable_hash(text: str) -> str:
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+def protection_set(cfg: dict, rows: list[dict]) -> tuple[set[str], set[str], set[str], dict]:
+    """Read confirmed test reservation/quarantine; exclude unverified planned source posts too."""
+    reserved_ids, reserved_comments, reserved_posts = set(), set(), set()
+    reserve_path = ROOT / cfg['test_reservation']
+    manifest_path = reserve_path.parent / 'manifest.json'
+    manifest = load(manifest_path) if manifest_path.exists() else {}
+    reservation_status = manifest.get('status', 'NO_RESERVATION_ARTIFACT')
+    if manifest.get('status') != 'PARTIAL' and reserve_path.is_file():
+        reservation = load(reserve_path)
+        reserved_ids.update(reservation.get('ids', []))
+        reserved_comments.update(reservation.get('comment_ids', []))
+        reserved_posts.update(reservation.get('post_ids', []))
+    # Candidate source posts with unresolved exposure are protected from this pilot.
+    candidate_path = ROOT / cfg['test_source_candidates']
+    candidate_posts = set()
+    if candidate_path.exists():
+        availability = load(candidate_path)
+        candidate_posts.update(str(x) for x in availability.get('source_candidates_requiring_exposure_audit', []))
+    # Any completed Phase G.1 whole-post quarantine is authoritative.
+    quarantine_files = sorted((ROOT / cfg['test_quarantine_root']).rglob('post_quarantine.json'))
+    for path in quarantine_files:
+        q = load(path)
+        reserved_ids.update(q.get('ids', [])); reserved_comments.update(q.get('comment_ids', []))
+        reserved_posts.update(q.get('post_ids', []))
+    return reserved_ids, reserved_comments, reserved_posts, dict(
+        reservation_status=reservation_status, confirmed_reserved_ids=len(reserved_ids),
+        confirmed_reserved_comment_ids=len(reserved_comments), confirmed_reserved_posts=len(reserved_posts),
+        unverified_test_candidate_posts=len(candidate_posts), candidate_post_ids=candidate_posts,
+        quarantine_files_checked=len(quarantine_files))
+
+def duplicate_groups(rows: list[dict], threshold: float = .9, min_chars: int = 40,
+                     shingle_size: int = 3, max_posting: int = 256) -> tuple[dict[str, str], set[str], dict]:
+    """Exact groups and direct near-duplicate edges; no giant transitive master component."""
+    exact = defaultdict(list)
+    for row in rows:
+        key = stable_hash(normal(row['text_clean'])) if row['text_clean'] else 'empty:' + row['record_id']
+        exact[key].append(row['record_id'])
+    exact_group = {}
+    exact_duplicate_ids = set()
+    for values in exact.values():
+        group = 'ex_' + stable_hash('|'.join(sorted(values)))[:20]
+        for rid in values:
+            exact_group[rid] = group
+        if len(values) > 1:
+            exact_duplicate_ids.update(sorted(values)[1:])
+    representatives = [r for r in rows if r['record_id'] not in exact_duplicate_ids and len(r['text_clean']) >= min_chars]
+    postings = defaultdict(list); sizes = {}; near_neighbors = defaultdict(set)
+    high_df = 0; edges = 0
+    token_re = re.compile(r'\w+|[^\w\s]', re.UNICODE)
+    for row in sorted(representatives, key=lambda x: x['record_id']):
+        tokens = token_re.findall(row['text_clean'].casefold())
+        shingles = {tuple(tokens[i:i+shingle_size]) for i in range(max(0, len(tokens)-shingle_size+1))}
+        if not shingles:
+            continue
+        overlaps = Counter()
+        for shingle in shingles:
+            previous = postings[shingle]
+            if len(previous) >= max_posting:
+                high_df += 1
+                continue
+            overlaps.update(previous)
+        current = row['record_id']
+        for previous, intersection in overlaps.items():
+            union = len(shingles) + sizes[previous] - intersection
+            if union and intersection / union >= threshold:
+                near_neighbors[current].add(previous); near_neighbors[previous].add(current); edges += 1
+        sizes[current] = len(shingles)
+        for shingle in shingles:
+            if len(postings[shingle]) < max_posting:
+                postings[shingle].append(current)
+    summary = dict(exact_groups=len(exact), exact_duplicate_rows=len(exact_duplicate_ids), direct_near_duplicate_edges=edges,
+        direct_near_duplicate_rows=len(near_neighbors), near_duplicate_threshold=threshold,
+        near_duplicate_min_chars=min_chars, shingle_size=shingle_size,
+        high_document_frequency_shingles_skipped=high_df,
+        near_duplicate_limit='candidate generation skips shingles occurring in >256 records; may miss boilerplate-driven near duplicates')
+    edge_rows=[]
+    for left, right_set in near_neighbors.items():
+        for right in right_set:
+            if left < right:
+                edge_rows.append(dict(left=left,right=right,method=f'token_{shingle_size}gram_jaccard_at_least_{threshold}'))
+    return exact_group, exact_duplicate_ids, dict(summary=summary, neighbors=near_neighbors, edges=edge_rows)

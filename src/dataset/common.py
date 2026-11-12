@@ -131,3 +131,20 @@ def read_sheet(path,name):
         if len(set(headers))!=len(headers):raise ValueError('Duplicate headers')
         rows=[{header:r.get(i,'') for i,header in enumerate(headers,1)} for r in grid[1:] if r.get(1)]
         return headers,rows,tree
+
+import unicodedata
+
+def normal(text):
+    return ' '.join(unicodedata.normalize('NFC', text).split()).casefold()
+
+def protection(paths):
+    result={}
+    for relative in paths:
+        target=ROOT/relative
+        if not target.exists():raise FileNotFoundError('Required protected input: '+relative)
+        values=[target] if target.is_file() else sorted(p for p in target.rglob('*') if p.is_file())
+        result.update({str(p.resolve()):sha(p) for p in values})
+    return result
+
+def check_protection(snapshot):
+    if any(sha(p)!=value for p,value in snapshot.items()):raise ValueError('Protected source/artifact changed')

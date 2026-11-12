@@ -21,6 +21,53 @@ FILM=re.compile(r'\b(phim|diễn viên|diễn xuất|kịch bản|đạo diễn|
 VI_MARKS=re.compile('[ăâđêôơưĂÂĐÊÔƠƯàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]')
 
 
+def verified_tail_block(rows,rule):
+    """Exact file-position AND original-ID evidence; never a numeric-ID cutoff."""
+    count=rule['last_records'];first=rule['first_original_id'];last=rule['last_original_id']
+    if count<=0 or len(rows)<count or last-first+1!=count:raise ValueError('Invalid source block contract')
+    ids=[r['id'] for r in rows]
+    if any(not rid for rid in ids) or len(set(ids))!=len(ids):raise ValueError('Missing/repeated original source ID')
+    tail=rows[-count:]
+    if [r['id'] for r in tail]!=[str(i) for i in range(first,last+1)]:raise ValueError('Tail row/ID sequence mismatch; refuse exclusion')
+    return set(range(len(rows)-count+1,len(rows)+1))
+
+
+def region_audit(rows,window=1000):
+    """Contiguous measured windows, not presumed natural/synthetic boundaries."""
+    result=[]
+    for start in range(0,len(rows),window):
+        part=rows[start:start+window];texts=[r['comment'] for r in part];lengths=sorted(map(len,texts))
+        result.append(dict(first_source_row=start+1,last_source_row=start+len(part),first_original_id=part[0]['id'],last_original_id=part[-1]['id'],rows=len(part),
+            underscore_rows=sum('_' in t for t in texts),split_entity_rows=sum(bool(re.search(r'&\s+(?:quot|amp|lt|gt|apos)\s*;',t)) for t in texts),
+            punctuation_spacing_rows=sum(bool(re.search(r'\s+[,.!?;:]',t)) for t in texts),
+            abbreviation_rows=sum(bool(re.search(r'(?<!\w)(?:ko|khum|hok|đc|cx|mn|bt|k)(?!\w)',t)) for t in texts),
+            short_under_10=sum(len(t)<10 for t in texts),encoding_failure_rows=sum('\ufffd' in t for t in texts),
+            film_cue_rows=sum(bool(FILM.search(t)) for t in texts),domain_uncertain_without_cue=sum(not bool(FILM.search(t)) for t in texts),
+            length_min=lengths[0],length_median=lengths[len(lengths)//2],length_max=lengths[-1],
+            legacy_overall_audit_only=dict(Counter(r['overall'] for r in part)),
+            raw_exact_duplicate_extra_rows=len(texts)-len(set(map(normal,texts)))))
+    return result
+
+
+def template_overlap_audit(rows,tail_rows,width=12,min_chars=50,min_records=8):
+    """Descriptive long-phrase overlap with excluded block, never AI-origin inference."""
+    tokenize=lambda text:re.findall(r'[^\W_]+',unicodedata.normalize('NFC',text).casefold())
+    def phrases(text):
+        tokens=tokenize(text)
+        return {tuple(tokens[i:i+width]) for i in range(len(tokens)-width+1) if len(' '.join(tokens[i:i+width]))>=min_chars}
+    counts=Counter()
+    for n in sorted(tail_rows):counts.update(phrases(rows[n-1]['comment']))
+    frequent={p:n for p,n in counts.items() if n>=min_records};matches={};coverage=0
+    for n,row in enumerate(rows,1):
+        hits=phrases(row['comment'])&frequent.keys()
+        if n in tail_rows:coverage+=bool(hits)
+        elif hits:matches[n]=sorted(digest(' '.join(t)) for t in hits)
+    pattern_rows=[dict(phrase=' '.join(p),phrase_sha256=digest(' '.join(p)),source_records=n) for p,n in sorted(frequent.items(),key=lambda x:(-x[1],x[0]))]
+    return matches,pattern_rows,dict(method='exact NFC/casefold 12-word phrases >=50 characters present in >=8 excluded records; configurable',
+        phrase_width=width,min_chars=min_chars,min_tail_records=min_records,frequent_phrase_types=len(frequent),tail_records_with_phrase=coverage,
+        outside_phrase_review_records=len(matches),ai_generated_claim=False,limitation='literal long-phrase matches only; paraphrases/short templates and unknown entity substitutions may be missed')
+
+
 def quality(text,old_label):
     view=normal(text).replace('_',' ');flags=[]
     technical=[]

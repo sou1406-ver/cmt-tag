@@ -11,6 +11,11 @@ def validate(path,coordinator,complete=False):
     verify(coordinator.parent);contract=load(coordinator);expected={r['record_id']:r for r in contract['rows']}
     cfg=load(coordinator.parent/'config.json');source=ROOT/cfg['source'];verify(source)
     if contract['source_manifest_sha256']!=sha(source/'manifest.json'):raise ValueError('Source checksum changed')
+    if contract['kind']=='canonical':
+        manifest=load(coordinator.parent/'manifest.json')
+        if (manifest.get('dataset_version')!=contract.get('dataset_version') or
+            contract.get('canonical_content_sha256')!=sha(coordinator.parent/'normalized_annotation_view.local.jsonl')):
+            raise ValueError('Canonical review source/version checksum changed')
     if contract['kind']=='holdout':
         reserved=load(ROOT/cfg['holdout_reservation'])['ids']
         if len(expected)!=40 or set(expected)!=set(reserved):raise ValueError('Original 40 holdout IDs required')
@@ -36,9 +41,10 @@ def import_review(path,coordinator,output):
     metrics=quality_metrics(enriched) if contract['kind']=='development' else None
     with staged(output) as out:
         write_csv(out/'human_quality_decisions.local.csv',enriched,['id','human_domain_decision','human_spam_decision','human_note','text_sha256'])
-        save(out/'metrics.json',dict(status='AVAILABLE_SAMPLE_DIAGNOSTICS' if metrics else 'HOLDOUT_LABELS_IMPORTED_NOT_USED_FOR_RULE_TUNING',metrics=metrics))
-        return seal(out,dict(status='HUMAN_QUALITY_REVIEW_IMPORTED',kind=contract['kind'],rows=len(rows),workbook_sha256=sha(path),coordinator_sha256=sha(coordinator),
+        save(out/'metrics.json',dict(status='AVAILABLE_SAMPLE_DIAGNOSTICS' if metrics else 'CANONICAL_REVIEW_IMPORTED_NO_APPROVAL' if contract['kind']=='canonical' else 'HOLDOUT_LABELS_IMPORTED_NOT_USED_FOR_RULE_TUNING',metrics=metrics))
+        return seal(out,dict(status='CANONICAL_QUALITY_REVIEW_IMPORTED_NO_APPROVAL' if contract['kind']=='canonical' else 'HUMAN_QUALITY_REVIEW_IMPORTED',kind=contract['kind'],rows=len(rows),workbook_sha256=sha(path),coordinator_sha256=sha(coordinator),
             source_manifest_sha256=contract['source_manifest_sha256'],normalization_version=contract['normalization_version'],annotation_pointer_updated=False,
+            **(dict(canonical_content_sha256=contract['canonical_content_sha256'],dataset_version=contract['dataset_version']) if contract['kind']=='canonical' else {}),
             domain_counts=dict(Counter(r['human_domain_decision'] for r in rows)),spam_counts=dict(Counter(r['human_spam_decision'] for r in rows))))
 
 

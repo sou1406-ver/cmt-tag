@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {Workbook,SpreadsheetFile} from '@oai/artifact-tool';
 const [input,output]=process.argv.slice(2),bytes=await fs.readFile(input),c=JSON.parse(bytes.toString('utf8')),rows=c.rows;
-const expected=c.kind==='holdout'?40:200;
+const expected=c.kind==='holdout'?40:c.kind==='canonical'?c.review_count:200;
 if(rows.length!==expected||new Set(rows.map(r=>r.record_id)).size!==expected)throw Error('Wrong fixed review IDs');
 await fs.mkdir(output,{recursive:false});
 const book=Workbook.create(),main=book.worksheets.add('Review'),source=book.worksheets.add('Source'),guide=book.worksheets.add('Instructions');
@@ -33,7 +33,7 @@ const instructions=[['Domain và spam v3.1','Hướng dẫn'],
  ['SPAM / NOT_SPAM / SPAM_UNSURE','Spam độc lập domain. Quảng cáo hoặc lặp copy-paste phải có bằng chứng. Chưa rõ chọn SPAM_UNSURE.'],
  ['Đừng loại vì dài hoặc biểu cảm','Review dài, trích dẫn, emoji lặp và quan điểm tiêu cực không tự là spam. Không dùng tên, tôn giáo, ngôn ngữ làm tiêu chí.'],
  ['Đọc toàn bộ comment','F2 hoặc mở thanh công thức bằng Ctrl+Shift+U. File giữ đủ text; chiều cao dòng chỉ giới hạn hiển thị.'],
- [c.kind==='holdout'?'Quality holdout 40 ID cố định':'Cùng 200 ID semantic I.4',c.kind==='holdout'?'Không dùng để phát triển rule. Đây không phải independent sentiment test.':'Bản làm việc v3.1; chỉ giữ quyết định cũ khi text giống hệt. File I.4 cũ được bảo toàn.'],
+ [c.kind==='holdout'?'Quality holdout 40 ID cố định':c.kind==='canonical'?'Canonical raw rebuild, quality sample':'Cùng 200 ID semantic I.4',c.kind==='holdout'?'Không dùng để phát triển rule. Đây không phải independent sentiment test.':c.kind==='canonical'?'Mẫu theo nguồn/vùng/change; không phải test. Source chứa provenance và text trước rebuild để đối chiếu. Không có block nguồn đã loại.':'Bản làm việc v3.1; chỉ giữ quyết định cũ khi text giống hệt. File I.4 cũ được bảo toàn.'],
  ['Chưa phát hành corpus/pilot','Quyết định được import vào ledger. Không tự duyệt toàn corpus hoặc chuyển annotation pointer.']];
 guide.getRange('A1:B10').values=instructions;guide.getRange('A1:B10').format={font:{name:'Arial',size:12},wrapText:true,verticalAlignment:'top',rowHeight:65};
 guide.getRange('A1:A10').format.columnWidth=43;guide.getRange('B1:B10').format.columnWidth=105;guide.showGridLines=false;
@@ -44,7 +44,7 @@ await fs.writeFile(path.join(output,'formula_scan.local.ndjson'),scan.ndjson);
 for(const [sheet,range,file] of [['Review','A1:E4','review'],['Source','A1:E2','source'],['Instructions','A1:B10','instructions']]){
  const png=await book.render({sheetName:sheet,range,scale:1,format:'png'});await fs.writeFile(path.join(output,file+'.png'),new Uint8Array(await png.arrayBuffer()));
 }
-const filename=c.kind==='holdout'?'quality_holdout_40.xlsx':'semantic_quality_review_v31_200.xlsx';
+const filename=c.kind==='holdout'?'quality_holdout_40.xlsx':c.kind==='canonical'?'canonical_quality_review.xlsx':'semantic_quality_review_v31_200.xlsx';
 await(await SpreadsheetFile.exportXlsx(book)).save(path.join(output,filename));
 await fs.writeFile(path.join(output,'manifest.local.json'),JSON.stringify({rows:rows.length,kind:c.kind,input_sha256:crypto.createHash('sha256').update(bytes).digest('hex'),status:c.status}));
 console.log(`Created ${rows.length} fixed-ID ${c.kind} review rows.`);

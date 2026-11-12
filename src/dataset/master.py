@@ -3,6 +3,7 @@ from collections import Counter, defaultdict
 import io
 import json
 import os
+import re
 from pathlib import Path
 import unicodedata
 from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
@@ -18,8 +19,268 @@ META = ('comment_id', 'post_id', 'post_url', 'parent_comment_id', 'movie_id', 'c
 SKIP = {'.git', 'node_modules', '__pycache__', 'selenium_cache', '.playwright-browsers', '.agents', '.codex', '.aws'}
 
 
+def canonical_sources(records,manifest,legacy_path,legacy_sha):
+    """Resolve original payloads through pinned observation identity, never clean views."""
+    cache={};index=[]
+    def source(name):
+        if name in cache:return cache[name]
+        archive,separator,member=name.partition('!');path=(ROOT/archive).resolve()
+        if not path.is_relative_to(ROOT) and path!=legacy_path.resolve():raise ValueError('Unapproved source path outside repository')
+        expected=manifest['input_sha256'].get(str(path))
+        if not expected or sha(path)!=expected:raise ValueError('Original source/container checksum mismatch')
+        if separator:
+            with zipfile.ZipFile(path) as z:payload=z.read(member)
+            suffix=Path(member).suffix.lower()
+        else:payload=path.read_bytes();suffix=path.suffix.lower()
+        checksum=digest(payload);rows,fields=read_payload(payload,suffix)
+        if not any(k in fields for k in TEXT_KEYS):raise ValueError('Original source has no literal text column')
+        cache[name]=(rows,fields,checksum)
+        index.append(dict(source_file=name,absolute_path=str(path),archive_member=member,source_sha256=checksum,container_sha256=expected,rows=len(rows),fields=fields,encoding='UTF-8 with optional BOM'))
+        return cache[name]
+    result=[];mapping=[];observations=0
+    for item in records:
+        for obs in item['observations']:
+            rows,fields,checksum=source(obs['source_file']);n=obs['source_row']
+            if checksum!=obs['input_sha256'] or not isinstance(n,int) or not 1<=n<=len(rows):raise ValueError('Observation source identity changed')
+            key=next(k for k in TEXT_KEYS if k in fields)
+            if rows[n-1][key]!=obs['text_raw']:raise ValueError('Observation raw text mismatch')
+            observations+=1
+        rows,fields,checksum=source(item['source_file']);n=item['source_row'];actual=rows[n-1]
+        key=next(k for k in TEXT_KEYS if k in fields);raw=actual[key]
+        if raw!=item['text_raw']:raise ValueError('Selected original raw does not match master identity')
+        if not any(o['source_file']==item['source_file'] and o['source_row']==n and o['input_sha256']==checksum for o in item['observations']):raise ValueError('Selected source lacks observation evidence')
+        legacy=(ROOT/item['source_file']).resolve()==legacy_path.resolve() if '!' not in item['source_file'] else False
+        if legacy and checksum!=legacy_sha:raise ValueError('Legacy source differs from approved original')
+        original_id=str(actual.get('id','')) if legacy else str(actual.get('internal_record_id') or actual.get('comment_id') or '')
+        r=dict(record_id=item['id'],original_id=original_id,source_dataset='legacy_29k_unverified' if legacy else 'facebook' if item['source_platform']=='facebook' else 'unknown_source',
+            source_file=item['source_file'],source_row=n,source_sha256=checksum,text_raw=raw,raw_sha256=digest(raw),
+            platform=item['source_platform'],source_platform=item['source_platform'],master_group_id=item['group_id'],
+            movie_id=item['movie_id'],post_id=item['post_id'],post_url=item['post_url'],comment_id=item['comment_id'],parent_comment_id=item['parent_comment_id'],
+            original_metadata={k:v for k,v in actual.items() if k not in TEXT_KEYS},legacy_overall=actual.get('overall','') if legacy else '',legacy_overall_status='UNVERIFIED' if legacy else '',
+            metadata_provenance=[dict({k:v for k,v in o.items() if k not in ('text_raw','text_view')},text_raw_sha256=digest(o['text_raw'])) for o in item['observations']],
+            source_text_variants=list(item['text_variants']),development_ids=list(item['development_ids']),master_review_flags=list(item['review_flags']))
+        result.append(r);mapping.append({k:r[k] for k in ('record_id','source_dataset','source_file','source_row','source_sha256','original_id','raw_sha256')})
+    return result,mapping,sorted(index,key=lambda r:r['source_file']),observations
+
+
 def normal(text):
     return ' '.join(unicodedata.normalize('NFC', text).split()).casefold()
+
+
+def rebuild_canonical(config_path,output):
+    """Raw-derived curation with exact exclusion evidence; never promotes or approves."""
+    import random
+    from .common import verify,read_jsonl
+    from .legacy_audit import verified_tail_block,region_audit,template_overlap_audit
+    from .phase_i import annotation_registry,protection_set,duplicate_groups
+    from .unified import protection,check_protection,source_rows as verify_human_lineage
+    from .quality_readiness import layers,verified_post
+    from .blind import assert_allowed
+    from .normalization_workbook import validate as validate_normalization
+    from src.preprocessing import preprocess
+    cfg=load(config_path);master=ROOT/cfg['master_root'];master_manifest=verify(master)
+    if sha(master/'manifest.json')!=cfg['master_manifest_sha256']:raise ValueError('Master ancestry mismatch')
+    legacy_path=(ROOT/cfg['legacy_source']).resolve()
+    if sha(legacy_path)!=cfg['legacy_source_sha256']:raise ValueError('Legacy source hash mismatch; no source substitution allowed')
+    source_bytes=legacy_path.read_bytes();legacy,fields=csv_rows(source_bytes)
+    if fields!=cfg['legacy_fields']:raise ValueError('Legacy schema changed')
+    tail_rows=verified_tail_block(legacy,cfg['legacy_block'])
+    if any(not r['comment'].strip() or '\ufffd' in r['comment'] for r in legacy):raise ValueError('Legacy empty/corrupt content requires source audit')
+    manifest_sources=[p for p,h in master_manifest['input_sha256'].items() if Path(p).resolve()==legacy_path and h==cfg['legacy_source_sha256']]
+    if len(manifest_sources)!=1:raise ValueError('Original legacy file not uniquely bound to Phase G provenance')
+    lineage=load(ROOT/cfg['lineage_config']);original=read_jsonl(master/'master.jsonl')
+    protected=protection(load(ROOT/cfg['quality_config'])['protect_paths'])
+    # The user's workbook is mutable, so capture its current bytes; do not enforce an old blank checksum.
+    protected[str((ROOT/cfg['normalization_workbook']).resolve())]=sha(ROOT/cfg['normalization_workbook'])
+    sources,mapping,source_index,observations=canonical_sources(original,master_manifest,legacy_path,cfg['legacy_source_sha256'])
+    for entry in source_index:protected[entry['absolute_path']]=entry['container_sha256']
+    registry,decisions,human_summary=annotation_registry(lineage,original)
+    verified_human,_,_,_=verify_human_lineage(load(ROOT/lineage['human_lineage_config']))
+    if len(verified_human)!=human_summary['sentiment_rows']:raise ValueError('Human lineage count mismatch')
+    oldroot=ROOT/cfg['old_normalized_reference'];verify(oldroot)
+    old={r['record_id']:r for r in read_jsonl(oldroot/'corpus_proposals.local.jsonl')}
+    if any(registry.get(r['record_id'],[])!=old[r['record_id']]['human_decisions'] for r in sources):raise ValueError('Human decision history changed')
+    excluded={r['record_id'] for r in sources if r['source_dataset']=='legacy_29k_unverified' and r['source_sha256']==cfg['legacy_source_sha256'] and r['source_row'] in tail_rows}
+    if len(excluded)!=len(tail_rows):raise ValueError('Verified source block is not one-to-one with canonical identities')
+    by_id={r['record_id']:r for r in sources}
+    for r in sources:
+        if r['source_dataset']=='legacy_29k_unverified':
+            actual=legacy[r['source_row']-1]
+            if r['original_id']!=actual['id'] or r['text_raw']!=actual['comment']:raise ValueError('Legacy identity/raw mapping mismatch')
+            for d in registry.get(r['record_id'],[]):
+                if d['source_sha256']!=r['source_sha256'] or int(d['source_row'])!=r['source_row']:raise ValueError('Human legacy source identity mismatch')
+    regions=region_audit(legacy,cfg['region_window'])
+    phrase_matches,patterns,template_summary=template_overlap_audit(legacy,tail_rows,cfg['template_phrase_words'],cfg['template_min_chars'],cfg['template_min_records'])
+    suspect={r['record_id'] for r in sources if r['source_dataset']=='legacy_29k_unverified' and r['source_row'] in phrase_matches}
+    accepted=set(load(ROOT/cfg['accepted_tokens']));abbreviations=load(ROOT/cfg['abbreviations']);normalized=[]
+    for r in sources:
+        result=preprocess(r['text_raw'],version=cfg['normalization_version'],source=r['source_dataset'],accepted_tokens=accepted,abbreviations=abbreviations)['details']
+        # A change here is not an authorized normalization patch.
+        if result['text_normalized']!=old[r['record_id']]['text_normalized']:raise ValueError('Frozen normalization behavior changed')
+        normalized.append(dict(r,**result,human_decisions=registry.get(r['record_id'],[]),human_label=next((d['label'] for d in registry.get(r['record_id'],[]) if d['status']=='LABELED'),'')))
+    norm_by={r['record_id']:r for r in normalized}
+    full_groups,_,full_near=duplicate_groups([dict(record_id=r['record_id'],text_clean=r['text_normalized']) for r in normalized],**cfg['near_duplicate'])
+    raw_groups,_,raw_near=duplicate_groups([dict(record_id=r['record_id'],text_clean=r['text_raw']) for r in sources],**cfg['near_duplicate'])
+    excluded_groups={full_groups[i] for i in excluded};excluded_raw_groups={raw_groups[i] for i in excluded}
+    alias_owners=defaultdict(set)
+    for r in sources:
+        for text in (r['text_raw'],*r['source_text_variants']):alias_owners[digest(normal(text))].add(r['record_id'])
+    excluded_alias_ids=set().union(*(owners for owners in alias_owners.values() if owners&excluded))
+    shadow_edges=full_near['edges']+raw_near['edges']
+    for e in shadow_edges:
+        if e['left'] in excluded and e['right'] not in excluded:suspect.add(e['right'])
+        if e['right'] in excluded and e['left'] not in excluded:suspect.add(e['left'])
+    suspect|=({r['record_id'] for r in sources if full_groups[r['record_id']] in excluded_groups or raw_groups[r['record_id']] in excluded_raw_groups}|excluded_alias_ids)-excluded
+    curated=[r for r in sources if r['record_id'] not in excluded];views=[r for r in normalized if r['record_id'] not in excluded]
+    groups,exact,near=duplicate_groups([dict(record_id=r['record_id'],text_clean=r['text_normalized']) for r in views],**cfg['near_duplicate'])
+    raw_new_groups,raw_exact,raw_new_near=duplicate_groups([dict(record_id=r['record_id'],text_clean=r['text_raw']) for r in curated],**cfg['near_duplicate'])
+    review_rows=validate_normalization(ROOT/cfg['normalization_workbook'],ROOT/cfg['normalization_coordinator'])
+    if not cfg.get('review_convention_authorization'):raise ValueError('Real user authorization required for shorthand review convention')
+    migrated=[];format_decisions={}
+    for item in review_rows:
+        rid=item['id'];r=by_id[rid];decision=item['human_decision']
+        effective='REJECT' if item['human_note'].strip() or decision=='REJECT' else decision or 'ACCEPT'
+        same=r['text_raw']==old[rid]['text_raw'] and norm_by[rid]['text_normalized']==old[rid]['text_normalized'] and old[rid]['normalization_version']==cfg['normalization_version']
+        if not same:raise ValueError('Old review identity/text/version cannot be carried')
+        migrated.append(dict(record_id=rid,source_sha256=r['source_sha256'],source_row=r['source_row'],raw_sha256=r['raw_sha256'],text_sha256=digest(norm_by[rid]['text_normalized']),
+            normalization_version=cfg['normalization_version'],human_decision=effective,original_cell_decision=decision,human_note=item['human_note'],
+            decision_basis='EXPLICIT_CELL' if decision==effective else 'USER_AUTHORIZED_NOTE_OR_BLANK_CONVENTION',canonical_membership=rid not in excluded))
+        if rid not in excluded:format_decisions[rid]=effective
+    reserved_ids,reserved_comments,reserved_posts,test_info=protection_set(lineage,original)
+    planned_posts=test_info.pop('candidate_post_ids');holdout=set(load(ROOT/cfg['quality_holdout'])['ids'])
+    humans=set(registry);human_posts={r['post_id'] for r in sources if r['record_id'] in humans and r['source_dataset']=='facebook' and r['post_id']}
+    hold_posts={by_id[i]['post_id'] for i in holdout if by_id[i]['source_dataset']=='facebook' and by_id[i]['post_id']}
+    protected_ids=humans|holdout|excluded|reserved_ids|{r['record_id'] for r in sources if r['comment_id'] and r['comment_id'] in reserved_comments or r['post_id'] and r['post_id'] in reserved_posts|planned_posts|human_posts|hold_posts}
+    protected_raw={raw_groups[i] for i in protected_ids if i in raw_groups};protected_norm={full_groups[i] for i in protected_ids if i in full_groups}
+    protected_ids|={r['record_id'] for r in sources if raw_groups[r['record_id']] in protected_raw or full_groups[r['record_id']] in protected_norm}
+    protected_ids|=set().union(*(owners for owners in alias_owners.values() if owners&protected_ids))
+    neighbor=defaultdict(set)
+    for e in shadow_edges+near['edges']:neighbor[e['left']].add(e['right']);neighbor[e['right']].add(e['left'])
+    raw_snapshots=[];pool=[];quality_counts=Counter();parents=defaultdict(list)
+    for r in views:
+        if r['comment_id']:parents[(r['source_dataset'],r['post_id'],r['comment_id'])].append(r)
+    for r in curated:
+        rid=r['record_id'];r['duplicate_group_id']=raw_new_groups[rid];r['human_decisions']=registry.get(rid,[]);raw_snapshots.append(r)
+    for r in views:
+        rid=r['record_id'];reasons=[];r['duplicate_group_id']=groups[rid];r['old_duplicate_group_id']=old[rid]['duplicate_group_id']
+        r['test_reserved']=rid in reserved_ids or bool(r['comment_id'] and r['comment_id'] in reserved_comments) or bool(r['post_id'] and r['post_id'] in reserved_posts)
+        r['annotation_pool_reasons']=[];r['source_format_evidence']=['FACEBOOK_LITERAL_SOURCE'] if r['source_dataset']=='facebook' else ['LEGACY_LITERAL_SOURCE',*(['UNDERSCORE_SIGNAL_NOT_SYNTHETIC_PROOF'] if '_' in r['text_raw'] else []),*(['ENTITY_SIGNAL'] if re.search(r'&\s*(?:quot|amp|#)',r['text_raw']) else [])]
+        r['contamination_status']='SUSPECTED_CONTAMINATION_REVIEW' if rid in suspect else 'NOT_FLAGGED_UNVALIDATED'
+        if rid in holdout:r.update(technical_status='RESERVED_NOT_ASSESSED',domain_status='UNCERTAIN',spam_status='RESERVED_NOT_ASSESSED',final_quality_decision='RESERVED_QUALITY_HOLDOUT');reasons.append('QUALITY_HOLDOUT')
+        else:
+            linked=parents.get((r['source_dataset'],r['post_id'],r['parent_comment_id']),[])
+            r.update(layers(r,linked[0] if len(linked)==1 else None))
+            if r['technical_status']!='VALID':reasons.append('TECHNICAL_REVIEW')
+            if r['domain_status']!='IN_DOMAIN_CANDIDATE':reasons.append('DOMAIN_UNCONFIRMED')
+            if r['spam_status']=='SPAM_CANDIDATE':reasons.append('SPAM_REVIEW')
+        if registry.get(rid):reasons.append('HUMAN_DECISION_PRESENT')
+        if rid in protected_ids or neighbor[rid]&protected_ids:reasons.append('DEVELOPMENT_TEST_EXCLUDED_OR_HOLDOUT_LINK')
+        if rid in exact or rid in raw_exact:reasons.append('EXACT_DUPLICATE')
+        if r['master_review_flags'] and set(r['master_review_flags'])-{'TEXT_VARIANTS_RETAINED'}:reasons.append('MASTER_IDENTITY_REVIEW_FLAG')
+        if r['source_dataset']=='facebook' and not verified_post(r):reasons.append('UNVERIFIED_FACEBOOK_IDENTITY')
+        if rid in suspect:reasons.append('SUSPECTED_CONTAMINATION_REVIEW')
+        if format_decisions.get(rid)=='REJECT':reasons.append('HUMAN_NORMALIZATION_REJECT')
+        if (r['remaining_format_tokens'] or r['normalization_flags']) and format_decisions.get(rid)!='ACCEPT':reasons.append('FORMAT_REVIEW_PENDING')
+        r['format_status']='HUMAN_ACCEPTED_SAME_TEXT' if format_decisions.get(rid)=='ACCEPT' else 'HUMAN_REJECTED' if format_decisions.get(rid)=='REJECT' else 'NEEDS_REVIEW' if r['remaining_format_tokens'] or r['normalization_flags'] else 'PLAIN_OR_PROTECTED_PROPOSAL'
+        r['quality_status']='EXCLUDE' if r['technical_status'].startswith('EXCLUDE_') else 'REVIEW' if rid in suspect or r['format_status'] in ('NEEDS_REVIEW','HUMAN_REJECTED') or r['final_quality_decision']!='KEEP_PROPOSED' else 'KEEP_PROPOSED'
+        r['eligibility_reasons']=sorted(set(reasons));r['annotation_eligibility']='ELIGIBLE_PROPOSED' if not reasons else 'INELIGIBLE';r['annotation_approval_transferred']=False
+        r['text_annotation']=None;r['annotation_text_version']=None;quality_counts[r['quality_status']]+=1
+        if not reasons:pool.append(r)
+    assert not ({r['record_id'] for r in views}&excluded)
+    assert_allowed([dict(r,id=r['record_id'],group_id=r['master_group_id'],text_view=r['text_normalized']) for r in pool],'pseudo_labeling')
+    # One targeted quality workbook, held/test posts/IDs/aliases/direct neighbors excluded.
+    review_block=holdout|reserved_ids|{r['record_id'] for r in sources if r['post_id'] and r['post_id'] in reserved_posts|planned_posts|hold_posts}
+    blocked_raw={raw_groups[i] for i in review_block if i in raw_groups}
+    review_block|={r['record_id'] for r in sources if raw_groups[r['record_id']] in blocked_raw}
+    review_block|=set().union(*(owners for owners in alias_owners.values() if owners&review_block))
+    review_groups={full_groups[i] for i in review_block if i in full_groups}|{full_groups[i] for i in excluded}
+    safe=[r for r in views if r['record_id'] not in review_block and full_groups[r['record_id']] not in review_groups and not neighbor[r['record_id']]&review_block]
+    rng=random.Random(cfg['seed']);safe=sorted(safe,key=lambda r:r['record_id']);rng.shuffle(safe);selected=[];seen=set()
+    def add(r):
+        if groups[r['record_id']] in seen or any(x['record_id'] in neighbor[r['record_id']] for x in selected):return False
+        selected.append(r);seen.add(groups[r['record_id']]);return True
+    predicates=[lambda r:r['source_dataset']=='facebook',lambda r:r['source_dataset']=='legacy_29k_unverified' and r['source_row']<=cfg['region_window'],
+        lambda r:r['source_dataset']=='legacy_29k_unverified' and cfg['region_window']<r['source_row']<min(tail_rows) and '_' in r['text_raw'],
+        lambda r:r['source_dataset']=='legacy_29k_unverified' and r['source_row']>=min(tail_rows)-cfg['region_window'],
+        lambda r:r['record_id'] in suspect,lambda r:r['text_raw']==r['text_normalized'],lambda r:r['text_raw']!=r['text_normalized']]
+    anchors={}
+    for i,predicate in enumerate(predicates):
+        for r in safe:
+            if predicate(r) and add(r):anchors[str(i)]=r['record_id'];break
+    for r in safe:
+        if sum(x['source_dataset']=='facebook' for x in selected)>=min(40,cfg['review_count']//4):break
+        if r['source_dataset']=='facebook':add(r)
+    buckets=defaultdict(list)
+    for r in safe:buckets[(r['source_dataset'],r['source_row']//cfg['region_window'] if r['source_dataset']=='legacy_29k_unverified' else 0,r['contamination_status'],r['text_raw']!=r['text_normalized'])].append(r)
+    while len(selected)<cfg['review_count']:
+        progress=False
+        for key in sorted(buckets):
+            while buckets[key]:
+                if add(buckets[key].pop()):progress=True;break
+            if len(selected)>=cfg['review_count']:break
+        if not progress:raise ValueError('Insufficient protected quality sample')
+    historical_ledger=[dict(human_decision=d,canonical_membership=d['record_id'] not in excluded,exclusion_reason='SUSPECTED_TEMPLATE_BLOCK' if d['record_id'] in excluded else '') for d in decisions]
+    usable=[d for d in decisions if d['record_id'] not in excluded and d['status']=='LABELED']
+    holdout_removed=sorted(holdout&excluded)
+    summary=dict(status='REBUILD_VERIFIED',quality_status='QUALITY_REVIEW_PENDING',canonical_approved=False,active_pointer_updated=False,
+        old_records=len(sources),records=len(curated),removed_records=len(excluded),old_sources=dict(Counter(r['source_dataset'] for r in sources)),sources=dict(Counter(r['source_dataset'] for r in curated)),
+        original_source_rows=len(legacy),original_source_sha256=cfg['legacy_source_sha256'],human_decisions_historical=len(decisions),human_decisions_retained=sum(d['record_id'] not in excluded for d in decisions),
+        historical_sentiment_labels=human_summary['sentiment_rows'],retained_sentiment_labels=len(usable),retained_sentiment_distribution=dict(Counter(d['label'] for d in usable)),excluded_human_sentiment_labels=human_summary['sentiment_rows']-len(usable),
+        approved_training_labels=0,retained_human_labels_with_quality_flags=sum(bool(r['human_label']) and r['quality_status']!='KEEP_PROPOSED' for r in views),
+        suspected_contamination_review=len(suspect-excluded),template_audit=template_summary,raw_duplicates=raw_new_near['summary'],normalized_duplicates=near['summary'],old_normalized_duplicates=load(oldroot/'summary.json')['duplicates'],
+        underscore_rows=sum('_' in r['text_normalized'] for r in views),unresolved_format_rows=sum(bool(r['remaining_format_tokens']) for r in views),unresolved_format_occurrences=sum(len(r['remaining_format_tokens']) for r in views),
+        proposed_annotation_pool=len(pool),proposed_pool_sources=dict(Counter(r['source_dataset'] for r in pool)),approved_annotation_pool=0,quality_counts=dict(quality_counts),
+        quality_holdout=dict(original=len(holdout),retained=len(holdout-excluded),excluded=len(holdout_removed),status='RESERVATION_REVIEW_REQUIRED' if holdout_removed else 'PENDING_QUALITY_HOLDOUT'),
+        migrated_normalization_decisions=dict(Counter(r['human_decision'] for r in migrated)),retained_normalization_decisions=dict(Counter(r['human_decision'] for r in migrated if r['canonical_membership'])),
+        source_observations_verified=observations,logical_sources_verified=len(source_index),official_ai_inputs_exported=False,normalization_version=cfg['normalization_version'])
+    content_hash=digest(''.join(json.dumps(r,ensure_ascii=False,sort_keys=True,allow_nan=False)+'\n' for r in views))
+    logical=dict(source_manifest_sha256=sha(master/'manifest.json'),raw_sources=source_index,exclusion_source_rows=sorted(tail_rows),excluded_ids=sorted(excluded),
+        normalizer_sha256=sha(ROOT/'src/preprocessing/final_normalization.py'),accepted_tokens_sha256=sha(ROOT/cfg['accepted_tokens']),rules_sha256=sha(ROOT/cfg['abbreviations']),
+        normalization_components_sha256={p:sha(ROOT/p) for p in ('src/preprocessing/plain_text.py','src/preprocessing/plain_text_v3.py','src/preprocessing/emoji_aliases.py','configs/plain_text_lexicon_v1.json')},
+        normalized_corpus_sha256=content_hash,config_sha256=sha(config_path),human_ledger_sha256=digest(json.dumps(decisions,ensure_ascii=False,sort_keys=True)),
+        normalization_review_sha256=sha(ROOT/cfg['normalization_workbook']),quality_holdout_sha256=sha(ROOT/cfg['quality_holdout']),quality_rules_sha256=sha(ROOT/'src/dataset/quality_readiness.py'))
+    version='canonical_'+digest(json.dumps(logical,ensure_ascii=False,sort_keys=True))[:20];summary['dataset_version']=version
+    with staged(output) as work:
+        write_jsonl(work/'curated_raw.local.jsonl',raw_snapshots);write_jsonl(work/'normalized_annotation_view.local.jsonl',views)
+        write_jsonl(work/'human_decisions_historical.local.jsonl',historical_ledger)
+        write_jsonl(work/'exclusion_ledger.local.jsonl',[dict(by_id[i],status='EXCLUDED_FROM_CANONICAL_DATASET',reason='SUSPECTED_TEMPLATE_BLOCK',human_decisions=registry.get(i,[])) for i in sorted(excluded)])
+        write_csv(work/'source_to_canonical.local.csv',[dict(r,canonical_membership=r['record_id'] not in excluded) for r in mapping],list(mapping[0])+['canonical_membership'])
+        save(work/'original_sources.local.json',source_index);save(work/'source_region_quality_audit.local.json',regions)
+        save(work/'template_summary.json',template_summary);write_csv(work/'template_patterns.local.csv',patterns,['phrase','phrase_sha256','source_records'])
+        write_jsonl(work/'suspected_contamination_review.local.jsonl',[dict(record_id=r['record_id'],source_file=r['source_file'],source_row=r['source_row'],original_id=r['original_id'],text_raw=r['text_raw'],status='SUSPECTED_CONTAMINATION_REVIEW',phrase_hashes=phrase_matches.get(r['source_row'],[]) if r['source_dataset']=='legacy_29k_unverified' else []) for r in views if r['record_id'] in suspect])
+        write_csv(work/'direct_near_duplicates.local.csv',sorted(near['edges'],key=lambda e:(e['left'],e['right'])),['left','right','method']);write_csv(work/'raw_direct_near_duplicates.local.csv',sorted(raw_new_near['edges'],key=lambda e:(e['left'],e['right'])),['left','right','method'])
+        write_csv(work/'normalization_review_carryover.local.csv',migrated,list(migrated[0]))
+        save(work/'quality_holdout_mapping.local.json',dict(retained_ids=sorted(holdout-excluded),excluded_ids=holdout_removed,original_reservation_sha256=sha(ROOT/cfg['quality_holdout']),new_reservation_created=False))
+        save(work/'summary.json',summary);save(work/'source_contract.local.json',logical);save(work/'config.json',dict(cfg,source=cfg['master_root']))
+        content_sha=sha(work/'normalized_annotation_view.local.jsonl')
+        if content_sha!=content_hash:raise AssertionError('Canonical content digest mismatch')
+        sample=[dict(record_id=r['record_id'],text_view=r['text_normalized'],text_raw=r['text_raw'],text_previous=old[r['record_id']]['text_normalized'],source_dataset=r['source_dataset'],
+            source_view=json.dumps({k:r[k] for k in ('source_dataset','source_file','source_row','source_sha256','original_id','source_format_evidence','contamination_status')},ensure_ascii=False),
+            text_sha256=digest(r['text_normalized']),human_domain_decision='',human_spam_decision='',human_note='') for r in selected]
+        save(work/'workbook_input.local.json',dict(kind='canonical',rows=sample,review_count=len(sample),source_manifest_sha256=sha(master/'manifest.json'),canonical_content_sha256=content_sha,
+            normalization_version=cfg['normalization_version'],dataset_version=version,status='QUALITY_REVIEW_PENDING'))
+        save(work/'selection_manifest.local.json',dict(seed=cfg['seed'],ids=[r['record_id'] for r in selected],anchors=anchors,method='source/region/change round robin with explicit anchors; targeted quality sample, no sentiment selection',source_counts=dict(Counter(r['source_dataset'] for r in selected))))
+        impact=dict(old_source_manifest_sha256=sha(oldroot/'manifest.json'),new_canonical_content_sha256=content_sha,active_pointer_updated=False,
+            stale_for_new_corpus=['I/J quality proposals and eligibility','review coordinator corpus bindings (same-text decisions carried separately)','quality holdout: 3 excluded; no resampling','pilot selection and freeze/release approval','future experiment input manifests'],
+            preserved_historical=['master and 650 human decisions','old splits and test reservation/quarantine','E/E.1/E.2/G/H results/checkpoints'],normalization_review_reused_only_if_identity_raw_text_version_equal=True)
+        save(work/'dependency_impact.json',impact);save(work/'protected_inputs.local.json',protected)
+        check_protection(protected);seal(work,dict(status='REBUILD_VERIFIED',quality_status='QUALITY_REVIEW_PENDING',dataset_version=version,records=len(curated),canonical_content_sha256=content_sha,
+            active_pointer_updated=False,implementation_sha256=sha(Path(__file__)),config_sha256=sha(config_path)))
+    return summary
+
+
+def promote_canonical(directory,approval_path,pointer):
+    """Source-switch approval is separate from quality/freeze approval."""
+    from .common import verify
+    manifest=verify(directory);approval=load(approval_path)
+    if manifest.get('status')!='REBUILD_VERIFIED' or approval.get('source_switch_approved') is not True or not approval.get('reviewer') or not approval.get('approved_at'):raise ValueError('Explicit verified source-switch approval required')
+    if approval.get('manifest_sha256')!=sha(directory/'manifest.json') or approval.get('canonical_content_sha256')!=manifest['canonical_content_sha256']:raise ValueError('Source-switch approval checksum mismatch')
+    if approval.get('quality_approved'):raise ValueError('Source promotion cannot approve corpus quality')
+    if pointer.exists():raise FileExistsError('Existing active pointer requires a separately reviewed migration; no overwrite')
+    pointer.parent.mkdir(parents=True,exist_ok=True)
+    save(pointer,dict(status='QUALITY_REVIEW_PENDING',source_switch_approved=True,canonical_approved=False,dataset_version=manifest['dataset_version'],
+        corpus_root=str(directory.resolve()),manifest_sha256=sha(directory/'manifest.json'),approval_sha256=sha(approval_path)))
+    return 'QUALITY_REVIEW_PENDING'
 
 
 def post_url(value):

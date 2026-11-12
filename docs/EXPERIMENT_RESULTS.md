@@ -1,3 +1,9 @@
+> Canonical rebuild 12/11/2026 chưa chạy thí nghiệm mới. Các metrics bên dưới
+> vẫn dùng dataset/split lịch sử (532 nhãn, legacy augmentation186). Candidate
+> mới còn524 nhãn/178 legacy sentiment, chưa approved; không chuyển input,
+> tái sử dụng manifest cũ hoặc gắn điểm lịch sử cho candidate mới.
+
+
 # Kết quả thực nghiệm và giới hạn so sánh
 
 Không có model mới được fit trong lần consolidation này. Các số dưới lấy từ

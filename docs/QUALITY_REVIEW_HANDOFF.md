@@ -1,3 +1,17 @@
+# Việc cần làm với canonical candidate mới
+
+Điền một file [`canonical_quality_review.xlsx`](../data/canonical/canonical_37cf670237e3398b5c96/canonical_quality_review.xlsx):
+200 câu, chỉ cột C/D/E trong sheet Review. Domain và spam là hai quyết định
+riêng; đọc hướng dẫn/dropdown, không sửa ID/text/source. **Ô trống là chưa làm**,
+không áp dụng quy ước blank=ACCEPT của workbook normalization cũ cho file này.
+
+Normalization150 cũ đã được đọc theo xác nhận người: 103 ACCEPT/47 REJECT,
+không cần gán lại để nhập. Chưa sửa các lỗi text bị reject. Corpus chưa approved.
+Holdout40 cũ có3ID nằm trong block loại; còn37 reservation, chưa tự bù mẫu.
+Các bảng pending bên dưới phản ánh snapshot trước rebuild; không dùng chúng để
+tự duyệt/chuyển nguồn canonical. Xem CURRENT_PIPELINE cho lệnh import mới.
+
+
 # Quality review — việc cần làm
 
 Trạng thái: **DATASET_FREEZE_PENDING**. Không có API call, train hoặc corpus

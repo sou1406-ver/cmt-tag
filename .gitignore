@@ -1,4 +1,4 @@
-# Local datasets, labels and research artifacts; only approved clean exports are shared.
+# Local research data; allowlisted user-requested review snapshots are also shared.
 /data/*
 !/data/imports/
 /data/imports/*
@@ -93,3 +93,16 @@ __pycache__/
 !.env.example
 !.env.sample
 /.playwright-browsers/
+
+# Explicitly authorized canonical review snapshot; never unignore other local data.
+!/data/canonical/
+/data/canonical/*
+!/data/canonical/README.md
+!/data/canonical/canonical_37cf670237e3398b5c96/
+/data/canonical/canonical_37cf670237e3398b5c96/*
+!/data/canonical/canonical_37cf670237e3398b5c96/comments.csv
+!/data/canonical/canonical_37cf670237e3398b5c96/exclusions.csv
+!/data/canonical/canonical_37cf670237e3398b5c96/canonical_quality_review.xlsx
+!/data/canonical/canonical_37cf670237e3398b5c96/manifest.json
+!/data/canonical/canonical_37cf670237e3398b5c96/README.md
+!/data/canonical/canonical_37cf670237e3398b5c96/source_regions.json

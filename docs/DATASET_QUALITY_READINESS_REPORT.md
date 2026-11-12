@@ -1,3 +1,68 @@
+# Canonical rebuild readiness — 12/11/2026
+
+**REBUILD_VERIFIED / QUALITY_REVIEW_PENDING; 0 approved.** Các số liệu Phase J
+bên dưới là snapshot lịch sử, không phải trạng thái mới nhất.
+
+Nguồn legacy: `G:/dlvb/data_module1.csv`, UTF-8 BOM, 29.688 dòng, các cột
+`id,comment,overall`; SHA-256
+`4cfe4a00d7a95c46909755b3255e7bc504a7728f503f4b30a68abba7ff9b17b7`.
+Không xác minh được platform/movie/post hoặc phương pháp tạo `overall`.
+Kiểm tra đồng thời vị trí **28.489–29.688** (data rows, không tính header) và
+ID liên tục **30513–31712** trước khi loại 1.200 dòng. Không áp dụng ID này
+cho nguồn khác. Exclusion ledger giữ lý do SUSPECTED_TEMPLATE_BLOCK, raw/hash,
+provenance và 8 quyết định người; raw gốc không bị sửa/xóa.
+
+| Chỉ số | Trước | Sau rebuild |
+| --- | ---: | ---: |
+| Records | 39.842 | 38.642 |
+| Facebook / legacy | 10.154 / 29.688 | 10.154 / 28.488 |
+| Historical human decisions | 650 | 650 (642 retained) |
+| Sentiment labels | 532 | 524 retained |
+| Normalized exact duplicate excess | 3.704 | 3.704 |
+| Normalized direct-near edges | 521 | 522 |
+| Quality holdout reservations | 40 | 37 retained, 3 excluded |
+
+8 nhãn bị cách ly cùng block: POS2/NEG2/NEU4. 524 retained gồm POS187/NEG219/
+NEU118; 288 còn quality flags. Không tự sửa nhãn hoặc bù 3 holdout đã loại.
+Historical experiments giữ nguyên, không chuyển sang dữ liệu mới âm thầm.
+
+Audit nguồn dùng cửa sổ 1.000 dòng, không khẳng định ranh giới nguồn/tokenizer:
+underscore gần như không có ở đầu, tăng từ vùng 17.001–18.000, phổ biến ở các
+vùng sau; tail không underscore không chứng minh nó tự nhiên. Xem
+`source_regions.json` trong snapshot công khai để đối chiếu số đo từng vùng.
+
+Ngoài block: 0 hit theo tiêu chí literal 12-word phrases >=50 ký tự xuất hiện
+trong >=8 tail records (30 phrase types, 153 tail records có hit). Đây chỉ là
+review signal có giới hạn, không chứng minh ngoài block không nhiễm hoặc block
+do AI tạo. Các câu chưa chứng minh là nhiễm không bị tự loại.
+
+Rebuild tái dùng facade `plain_text_v3_1` và 2.814 accepted token types frozen;
+không sửa engine/dictionary, không normalize từ output cũ. Vẫn **5.251** dòng
+có `_`; **4.782** dòng/10.561 occurrences format chưa giải quyết. Protected
+structures có thể chứa `_`; không được coi mọi `_` là lỗi rồi cắt toàn cục.
+
+Raw exact duplicate excess 3.661; normalized 3.704. Near policy: >=40 chars,
+3-shingles, threshold0.9, skip postings>256; có thể bỏ sót boilerplate. Thêm
+1 normalized near edge sau curation do candidate-generation cap thay đổi khi
+corpus giảm, không phải thêm/sửa comment. Old graph/reservations giữ nguyên,
+recompute raw/normalized protections trên corpus retained; không nới guards.
+
+Proposed pool 8.814 (Facebook25/legacy8.789), không dùng `overall` để chọn nhãn.
+Quality KEEP_PROPOSED11.614/REVIEW27.028 chưa phải semantic accuracy. Cần xác
+minh provenance, review format/normalization/domain/spam và reservation protocol
+trước source switch và quality approval; không xuất AI input hoặc train.
+
+Workbook normalization cũ được đọc theo quyết định người: có note hoặc explicit
+REJECT => REJECT, ô trống không note => ACCEPT. 103 ACCEPT/47 REJECT; retained
+102/47, 1 ACCEPT thuộc block loại. Carryover chỉ khớp ID/raw/normalized/version,
+không coi ACCEPT là corpus approval, không tự sửa 47 đề xuất bị reject.
+
+Hai rebuild độc lập cho cùng manifest/version/content SHA và **21/21 artifact
+hashes**. Workbook mới có 200 dòng (46 Facebook/154 legacy), domain/spam/note
+đều trống, không chứa block loại hoặc holdout reserved. 353 tests: 352 pass,
+1 skip. Không train, API, thay guideline/split/nhãn hoặc kết quả đã khóa.
+
+
 # Phase J — Dataset Quality Readiness
 
 ## Trạng thái hiện tại

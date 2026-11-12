@@ -3,10 +3,13 @@
 Pipeline Python CLI phân loại **POS / NEG / NEU**, giữ provenance và chống
 leakage. Không xây web/dashboard.
 
-**Hiện tại: DATASET_FREEZE_PENDING.** Có 39.842 raw records, 650 quyết định
-người và 532 nhãn sentiment. Normalization candidate là plain_text_v3_1;
-9.788 records ở mức proposed, **0 approved**. Đang chờ review format,
-normalization, domain/spam và quality holdout. Chưa phát hành pilot500 mới.
+**Hiện tại: REBUILD_VERIFIED / QUALITY_REVIEW_PENDING.** Đã rebuild từ raw,
+loại đúng block 1.200 dòng legacy; còn **38.642 records**, 642 quyết định người
+và **524 nhãn sentiment**. Không thay nhãn, không duyệt corpus, không train/API.
+
+[Dữ liệu canonical để kiểm tra](data/canonical/README.md) được đưa lên Git theo
+yêu cầu chủ repo: CSV raw/normalized tách cột, ledger loại và workbook 200 câu.
+Đây là snapshot chờ review, **không phải dataset đã được duyệt**.
 
 ## Quickstart
 
@@ -20,7 +23,7 @@ Chạy từ root repo với môi trường đã setup:
 [Setup môi trường](docs/guides/ENVIRONMENT.md) phân biệt classical/crawler và
 Transformer; không cài chung các pin NumPy/sklearn không tương thích.
 [File cần người dùng điền và lệnh import](docs/QUALITY_REVIEW_HANDOFF.md).
-Output đã tồn tại không được ghi đè; dữ liệu/workbook local không tự có khi clone.
+Output đã tồn tại không được ghi đè; nguồn gốc và ledger đầy đủ vẫn local; snapshot review canonical có trong Git.
 
 ## Pipeline
 

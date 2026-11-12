@@ -100,3 +100,21 @@ quality CLI. Các script/requirement cũ là compatibility aliases; engines/conf
 được checksum pin vẫn ở nguyên path/byte. Archive chỉ giữ báo cáo gốc để đào sâu.
 Không dùng số file giảm làm thước đo nghiên cứu. Các thay đổi sau cập nhật đúng
 mục trong tài liệu này; không mặc định tạo thêm phase report/module mới.
+
+## Canonical rebuild từ raw (12/11/2026)
+
+Giữ nguyên engines/facade v3.1 và artifacts lịch sử; thêm source verification,
+namespace-aware tail curation và versioned canonical owner trong dataset/master.py.
+Config canonical_dataset.json pin đúng CSV raw/37 nguồn và resources. Hai rebuild
+độc lập cho21 artifact hashes giống nhau. Loại đúng1.200 tail rows/IDs30513–31712,
+không sửa raw hoặc tự kết luận AI-origin;38.642 records retained. Historical650
+quyết định còn nguyên,642 retained/524 sentiment;8 nhãn và3 quality-holdout IDs
+nằm trong block loại được giữ history, không thay nhãn/bù mẫu.
+
+Đọc review normalization theo chỉ dẫn người (103accept/47reject), carryover bằng
+identity/raw/text/version, không coi đó là corpus approval. Rebuild duplicate và
+quality guards;8.814 proposed,0approved. Workbook quality200 mới còn trống.
+Source pointer chưa đổi; source-switch approval và quality approval tách biệt.
+Theo yêu cầu người dùng, publish CSV canonical/raw+normalized, exclusion metadata,
+manifest/source audit và workbook trong data/canonical để review qua Git.
+Không API, training, guideline/split changes hoặc release pilot mới.

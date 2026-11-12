@@ -1,3 +1,42 @@
+# Canonical raw rebuild — trạng thái mới nhất (12/11/2026)
+
+Candidate `canonical_37cf670237e3398b5c96` ở
+`outputs/canonical/versions/rebuild_20261112/`; bản chia sẻ để kiểm tra ở
+[`data/canonical/`](../data/canonical/README.md). Các snapshot J bên dưới là lịch sử.
+Raw được đọc lại từ 37 logical sources/60.627 observations có checksum, không
+lấy text normalized cũ làm input. Engine/fixed resources `plain_text_v3_1` giữ nguyên.
+
+| Trạng thái mới | Số lượng |
+| --- | ---: |
+| Retained records (Facebook / legacy) | 38.642 (10.154 / 28.488) |
+| Historical decisions / retained | 650 / 642 |
+| Retained sentiment POS / NEG / NEU | 187 / 219 / 118 |
+| Proposed annotation pool / approved | 8.814 / 0 |
+| Approved training labels | 0 |
+
+650 quyết định vẫn nằm trong history; 8 nhãn thuộc block loại không nằm trong
+524 nhãn retained. 288/524 câu nhãn người còn quality flags, không gọi đây là
+clean gold. `overall` legacy chỉ để audit. `text_raw` bất biến, normalization là
+cột riêng; candidate `text_annotation` vẫn null, active pointer chưa được cập nhật.
+
+```powershell
+python scripts/build_master_dataset.py --canonical --config configs/canonical_dataset.json --output outputs/canonical/versions/NEW_VERSION
+python scripts/build_master_dataset.py --publish-data outputs/canonical/versions/rebuild_20261112 --workbook outputs/canonical/review/canonical_quality_review.xlsx --output data/canonical/NEW_REVIEW_SNAPSHOT
+python -m src.dataset.quality_review import --input data/canonical/canonical_37cf670237e3398b5c96/canonical_quality_review.xlsx --coordinator outputs/canonical/versions/rebuild_20261112/workbook_input.local.json --output outputs/canonical/quality_import_01
+```
+
+Rebuild cần đúng raw/resources local và hash trong config; clone chỉ có snapshot
+review, không có toàn bộ nguồn/ledger private. Output có sẵn bị từ chối overwrite.
+Import cần điền đủ domain và spam; canonical import tạo ledger **không approval**.
+Không dùng evaluator/freeze/export J trên canonical coordinator mới: protocol J
+cũ không phải quality acceptance protocol cho candidate này.
+
+Source switch tương lai là thao tác riêng: `--promote VERSION --approval FILE`
+với reviewer/date, approval rõ ràng và matching manifest/content SHA. Không chạy
+trong lần này. Source switch vẫn là QUALITY_REVIEW_PENDING, không tự cho phép
+annotation/training. Quality approval còn chờ quy trình và review riêng.
+
+
 # Pipeline hiện tại và nơi triển khai
 
 **Trạng thái: DATASET_FREEZE_PENDING.** Có 39.842 raw records, 650 human

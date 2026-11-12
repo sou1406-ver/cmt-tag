@@ -1,3 +1,18 @@
+# Canonical candidate mới — 12/11/2026
+
+[`data/canonical`](../data/canonical/README.md) chứa bản dữ liệu được người dùng
+yêu cầu đưa lên Git để review. Phần local còn lại không tự có khi clone.
+
+| Thành phần local | Đường dẫn |
+| --- | --- |
+| Raw curated + normalized + historical decisions, sealed manifest | `canonical/versions/rebuild_20261112/` |
+| Workbook quality200 mới, chưa điền | `canonical/review/canonical_quality_review.xlsx` |
+| Rebuild độc lập21/21 hashes giống nhau | `canonical_support/rebuild_repro/` |
+
+Candidate38.642 records/524 retained sentiment, chưa source switch/quality approval.
+Các bảng dưới là snapshot lịch sử, không phải số liệu canonical mới nhất.
+
+
 # Dữ liệu và kết quả local
 
 Chỉ mục lục này được đưa lên Git. CSV, workbook, model, snapshot và coordinator

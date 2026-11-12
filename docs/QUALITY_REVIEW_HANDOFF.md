@@ -44,8 +44,8 @@ nếu đã tồn tại, dùng tên output mới. Import không tự freeze hoặ
 ```powershell
 python scripts/import_format_validation.py --input outputs/phase_i3/workbook_v3/plain_text_validation_200.xlsx --output outputs/phase_j/format_import_01
 python scripts/import_final_normalization_review.py --input outputs/phase_i4_1/workbook_v2/final_normalization_review_150.xlsx --output outputs/phase_j/normalization_import_01
-python scripts/import_domain_spam_review.py --input outputs/phase_j/semantic_workbook_v1/semantic_quality_review_v31_200.xlsx --coordinator outputs/phase_j/v2/semantic_review_input.local.json --output outputs/phase_j/domain_import_01
-python scripts/import_domain_spam_review.py --input outputs/phase_j/holdout_workbook_v1/quality_holdout_40.xlsx --coordinator outputs/phase_j/v2/holdout_input.local.json --output outputs/phase_j/holdout_import_01
+python -m src.dataset.quality_review import --input outputs/phase_j/semantic_workbook_v1/semantic_quality_review_v31_200.xlsx --coordinator outputs/phase_j/v2/semantic_review_input.local.json --output outputs/phase_j/domain_import_01
+python -m src.dataset.quality_review import --input outputs/phase_j/holdout_workbook_v1/quality_holdout_40.xlsx --coordinator outputs/phase_j/v2/holdout_input.local.json --output outputs/phase_j/holdout_import_01
 ```
 
 Importer kiểm sealed coordinator, source manifest, đúng 200/40 IDs, text hash,
@@ -56,8 +56,8 @@ quyết định trống. Chỉ tạo ledger riêng, không sửa các file ngu�
 Đánh giá khi đã có đủ quyết định:
 
 ```powershell
-python scripts/evaluate_quality_review.py --imported outputs/phase_j/domain_import_01 --output outputs/phase_j/domain_evaluation_01
-python scripts/evaluate_quality_review.py --imported outputs/phase_j/holdout_import_01 --output outputs/phase_j/holdout_evaluation_01
+python -m src.dataset.quality_review evaluate --imported outputs/phase_j/domain_import_01 --output outputs/phase_j/domain_evaluation_01
+python -m src.dataset.quality_review evaluate --imported outputs/phase_j/holdout_import_01 --output outputs/phase_j/holdout_evaluation_01
 ```
 
 Holdout importer không tính metrics hoặc dùng labels để tune. Evaluator kiểm
@@ -95,7 +95,7 @@ gán sentiment mới trong lúc hoàn tất quality review.
 ## Kiểm tra kỹ thuật
 
 ```powershell
-python scripts/prepare_quality_readiness.py
+python -m src.dataset.quality_review prepare
 python -m unittest discover -s tests
 ```
 

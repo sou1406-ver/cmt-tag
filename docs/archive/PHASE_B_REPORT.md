@@ -19,7 +19,7 @@ Không chạy crawler, gán sentiment mới hoặc huấn luyện mô hình.
 | Mới: CLI | `scripts/prepare_data.py`, `scripts/validate_data.py` |
 | Mới: config/setup | `configs/data_legacy.json`, `configs/data_fixture.json`, `requirements-data.txt`, `.gitignore` |
 | Mới: tests | `tests/__init__.py`, `tests/test_data_foundation.py`, `tests/fixtures/comments.csv`, `tests/fixtures/comments.json` |
-| Mới: hướng dẫn/báo cáo | `README.md`, `docs/DATA_SCHEMA.md`, `docs/REPO_AUDIT_PHASE_A.md`, `docs/PHASE_B_REPORT.md` |
+| Mới: hướng dẫn/báo cáo | `README.md`, `docs/reference/DATA_SCHEMA.md`, `docs/archive/REPO_AUDIT_PHASE_A.md`, `docs/archive/PHASE_B_REPORT.md` |
 | Vá tối thiểu | `gan_nhan.py`: giữ human/metadata, output exclusive; `trich_dac_trung.py`: bắt buộc manifest và chỉ fit train |
 | Chỉ tạo local, gitignored | `data/raw`, `data/processed`, `data/splits`, `outputs/phase_b_tests.txt` |
 

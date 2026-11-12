@@ -46,7 +46,7 @@ là pilot gán nhãn người theo guideline hiện có trước khi kết luậ
 
 ## File và cách xử lý
 
-[Thư mục dữ liệu](../data/imports/facebook_group_pilot_20261110/) có CSV, Excel,
+[Thư mục dữ liệu](../../data/imports/facebook_group_pilot_20261110) có CSV, Excel,
 `import_config.json` và `export_manifest.json`. Manifest lưu đủ 7 URL, mã phim,
 nhóm, lý do chọn, trạng thái từng bài, giới hạn và checksum. CSV/Excel có
 `source`, `movie_id`, `post_id`, `post_url`, `source_group` và ID bình luận.

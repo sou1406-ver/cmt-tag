@@ -9,7 +9,7 @@ full-component rule or change the frozen folds.
 the unified rows did not carry that source field. Its earlier zero count was
 therefore not evidence about reply threads. Phase G.3.2 verifies it from each
 exact source observation and adds the thread-level result; see
-`docs/PHASE_G3_2_REPORT.md`.
+`docs/archive/PHASE_G3_2_REPORT.md`.
 
 ## Why the full-master graph became giant
 

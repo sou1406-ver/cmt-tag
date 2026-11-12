@@ -1,5 +1,13 @@
 # CODEX HANDOFF — Phân loại sắc thái bình luận phim tiếng Việt
 
+> Đây là đặc tả lịch sử. Điểm vào hiện tại: [pipeline](docs/CURRENT_PIPELINE.md),
+> [quá trình phát triển](docs/PROJECT_EVOLUTION.md), [kết quả](docs/EXPERIMENT_RESULTS.md).
+> Quy tắc bảo trì mới ưu tiên owner/module hiện có, shared utilities và subcommands.
+> Trước khi tạo file, kiểm implementation/call sites/config/schema đã có; ghi rõ
+> replacement, compatibility và cập nhật mục lục nếu trách nhiệm độc lập cần file mới.
+> Không mặc định tạo phase mới, preprocessing version mới hoặc requirements/report mới.
+> Cập nhật ba tài liệu tổng hợp tương ứng; frozen contracts/nhãn/raw không đổi.
+
 **Trạng thái:** Đặc tả triển khai v1.0, ngày 07/11/2026  
 **Mục tiêu:** Xây dựng pipeline ML gán nhãn bán tự động và huấn luyện mô hình phân loại `POS` / `NEG` / `NEU` cho **comment về phim nói chung**.  
 **Ưu tiên:** Chất lượng dữ liệu, chống rò rỉ, thực nghiệm có thể tái lập; KHÔNG mở rộng sang lĩnh vực khác ở giai đoạn này.

@@ -1,7 +1,6 @@
 """Read-only format validation and append-only import; never changes sentiment."""
 import json
-from .quality_workbook import read_sheet
-from .common import load,staged,seal,write_csv,sha
+from .common import load,staged,seal,write_csv,sha,read_sheet,validate_review_ids,literal_text
 
 
 def validate(path,coordinator,complete=False):
@@ -9,8 +8,8 @@ def validate(path,coordinator,complete=False):
     fields,rows,tree=read_sheet(path,'Validation');rawfields,rawrows,_=read_sheet(path,'Raw I2 I3')
     if fields!=['id','text_clean_i3','change_summary','format_decision','human_note']:raise ValueError('Invalid format review columns')
     for items in (rows,rawrows):
-        if len(items)!=200 or len({r['id'] for r in items})!=200 or {r['id'] for r in items}!=set(expected):raise ValueError('Validation IDs changed')
-    def literal(s):return s[1:] if s.startswith("'=") else s
+        validate_review_ids(items,expected,200,'Validation IDs changed')
+    literal=literal_text
     for r in rows:
         e=expected[r['id']]
         if literal(r['text_clean_i3'])!=e['text_clean_i3']:raise ValueError('Clean text changed/truncated')

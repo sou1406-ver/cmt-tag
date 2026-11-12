@@ -1,2 +1,2 @@
--r requirements-baseline.txt
-underthesea==8.3.0
+# Compatibility include; canonical environment is under requirements/.
+-r requirements/classical-nlp.txt

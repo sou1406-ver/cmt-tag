@@ -69,7 +69,7 @@ settle 2.000 ms và idle 8 vòng. Không viết crawler mới hoặc thay kiến
   được 2.277 dòng. Đối chiếu toàn bộ 43.282 ô Excel với CSV, ID lưu dạng text,
   không có công thức phát sinh từ comment; đã xem render.
 
-CSV/Excel trong [thư mục dữ liệu mới](../data/imports/facebook_high_activity_20261110/)
+CSV/Excel trong [thư mục dữ liệu mới](../../data/imports/facebook_high_activity_20261110)
 chỉ chứa text không rỗng và ID chưa chia sẻ. Manifest ghi source/giới hạn,
 checksum raw/CSV/Excel và checksum JS extractor. Bản cũ giữ nguyên để audit;
 không đoán sửa mention từ CSV cũ thiếu DOM. Tên dạng text không phân biệt chắc
@@ -77,7 +77,7 @@ với nội dung vẫn giữ, nên không gọi dữ liệu là ẩn danh hoàn 
 
 ## Pilot người gán là P0
 
-[Hai file pilot và hướng dẫn](../data/tasks/source_quality_pilot_20261110/README.md)
+[Hai file pilot và hướng dẫn](../../data/tasks/source_quality_pilot_20261110/README.md)
 đã có 70 fanpage + 130 group, lấy ngẫu nhiên seed 42, cùng phim Mưa Đỏ, không
 lọc theo nhãn luật hoặc độ dài. Pool group 141 dòng là snapshot mới sau bản vá;
 raw pool đã bỏ 55 mention. File A/B cùng 200 ID/text nhưng thứ tự khác, không

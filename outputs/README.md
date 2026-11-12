@@ -26,7 +26,7 @@ checkout code trên máy khác không tự có những dữ liệu này.
 | 186 nhãn sentiment đã nhập | [sentiment.csv](phase_g2/human_import_01/sentiment.csv) |
 | 64 quyết định EXCLUDE giữ riêng | [excluded.csv](phase_g2/human_import_01/excluded.csv) |
 | Đủ 250 quyết định đã chuẩn hóa | [decisions.csv](phase_g2/human_import_01/decisions.csv) |
-| History, receipt và input snapshot | [human_import_01/](phase_g2/human_import_01/) |
+| History, receipt và input snapshot | [human_import_01/](phase_g2/human_import_01) |
 | Workbook 250 câu người dùng đã gán | [legacy_train_candidates.xlsx](phase_g2/annotation_task/legacy_train_candidates.xlsx) |
 | Audit toàn bộ 29.688 dòng legacy | [legacy_quality_report.json](phase_g2/legacy_audit/legacy_quality_report.json) |
 | Master 39.842 records, gồm nguồn chưa xác minh | [master.csv](phase_g/master/master.csv) |

@@ -2,6 +2,9 @@
 import csv
 import hashlib
 import io
+import posixpath
+import zipfile
+import xml.etree.ElementTree as ET
 import json
 from pathlib import Path
 import tempfile
@@ -59,6 +62,17 @@ def write_jsonl(path, rows):
         for row in rows: f.write(json.dumps(row, ensure_ascii=False, sort_keys=True, allow_nan=False) + '\n')
 
 
+def literal_text(value):
+    """Undo only the XLSX literal escape used for a leading equals sign."""
+    return value[1:] if value.startswith("'=") else value
+
+
+def validate_review_ids(rows, expected, count, message):
+    """Shared coverage/uniqueness integrity; decision semantics belong to callers."""
+    if len(rows)!=count or len({row['id'] for row in rows})!=count or {row['id'] for row in rows}!=set(expected):
+        raise ValueError(message)
+
+
 @contextmanager
 def staged(output):
     output = Path(output).resolve()
@@ -86,3 +100,34 @@ def verify(directory, mutable_files=()):
         if not path.is_file() or sha(path) != checksum:
             raise ValueError('Manifest checksum mismatch: '+relative)
     return manifest
+
+
+NS={'s':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+
+
+def read_sheet(path,name):
+    with zipfile.ZipFile(path) as z:
+        wb=ET.fromstring(z.read('xl/workbook.xml'))
+        sheet=next(s for s in wb.findall('s:sheets/s:sheet',NS) if s.get('name')==name)
+        rid=sheet.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id')
+        rel=next(r for r in ET.fromstring(z.read('xl/_rels/workbook.xml.rels')) if r.get('Id')==rid)
+        target=rel.get('Target');target=target.lstrip('/') if target.startswith('/') else posixpath.normpath('xl/'+target)
+        if not target.startswith('xl/worksheets/'):raise ValueError('External/invalid sheet')
+        strings=[]
+        if 'xl/sharedStrings.xml' in z.namelist():strings=[''.join(t.text or '' for t in s.iter('{'+NS['s']+'}t')) for s in ET.fromstring(z.read('xl/sharedStrings.xml'))]
+        tree=ET.fromstring(z.read(target));grid=[]
+        for row in tree.findall('s:sheetData/s:row',NS):
+            cells={}
+            for cell in row.findall('s:c',NS):
+                if cell.find('s:f',NS) is not None:raise ValueError('Formulas not allowed in manual quality data')
+                address=cell.get('r');col=''.join(c for c in address if c.isalpha());n=0
+                for c in col:n=n*26+ord(c)-64
+                value=cell.findtext('s:v','',NS)
+                if cell.get('t')=='s':value=strings[int(value)]
+                elif cell.get('t')=='inlineStr':value=''.join(t.text or '' for t in cell.findall('.//s:t',NS))
+                cells[n]=value
+            if cells:grid.append(cells)
+        headers=[grid[0].get(i,'') for i in range(1,max(grid[0])+1)]
+        if len(set(headers))!=len(headers):raise ValueError('Duplicate headers')
+        rows=[{header:r.get(i,'') for i,header in enumerate(headers,1)} for r in grid[1:] if r.get(1)]
+        return headers,rows,tree

@@ -1,3 +1,2 @@
-# Python 3.12 CPU wheel. For CUDA, select a matching official PyTorch wheel.
---index-url https://download.pytorch.org/whl/cpu
-torch==2.14.1
+# Compatibility include; canonical environment is under requirements/.
+-r requirements/torch-cpu.txt

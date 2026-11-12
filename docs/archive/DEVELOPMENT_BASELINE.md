@@ -1,8 +1,8 @@
 # Baseline thăm dò trên nhãn người đã duyệt
 
 Cập nhật 11/11/2026. Đã nhập 19 quyết định: 11 CHANGE và 8 KEEP, không còn
-pending. Dùng [V2.1](guidelines/MOVIE_SENTIMENT_V2_1.md) cho đợt duyệt mới;
-metadata của task gốc vẫn theo [V2.0](guidelines/MOVIE_SENTIMENT_V2_0.md).
+pending. Dùng [V2.1](../guidelines/MOVIE_SENTIMENT_V2_1.md) cho đợt duyệt mới;
+metadata của task gốc vẫn theo [V2.0](../guidelines/MOVIE_SENTIMENT_V2_0.md).
 Hai guideline bất biến và các workbook nguồn giữ nguyên checksum.
 
 ## Dữ liệu sau duyệt

@@ -1,2 +1,2 @@
--r requirements-phase-e-lock.txt
-matplotlib==3.11.2
+# Compatibility include; canonical environment is under requirements/.
+-r requirements/analysis-plots.txt

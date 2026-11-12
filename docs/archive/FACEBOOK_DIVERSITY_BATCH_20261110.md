@@ -37,7 +37,7 @@ Ba bài chưa crawl sâu:
 - Một bài Resident Evil: nhiều công kích người viết và tranh luận game; ưu tiên
   bài review Resident Evil còn lại. Không loại vì bài phê bình hoặc ý kiến chê.
 
-[Danh sách 12 nguồn và quyết định screening](../data/imports/facebook_diversity_batch_20261110/source_list.csv)
+[Danh sách 12 nguồn và quyết định screening](../../data/imports/facebook_diversity_batch_20261110/source_list.csv)
 ghi URL, số bình luận hiển thị, số mẫu/thread, lý do giữ hoặc hoãn, kết quả và
 thời gian từng bài. Một bài Avatar 2 hiển thị 339 bình luận, vượt khoảng ưu tiên
 50–300 nhưng phù hợp nội dung; vẫn áp dụng giới hạn thu thập như các bài khác.
@@ -96,7 +96,7 @@ fanpage. Không train model trong đợt này.
 
 ## Provenance và kiểm tra
 
-[Thư mục dữ liệu](../data/imports/facebook_diversity_batch_20261110/) có CSV,
+[Thư mục dữ liệu](../../data/imports/facebook_diversity_batch_20261110) có CSV,
 Excel đã wrap/filter/freeze, `import_config.json`, `export_manifest.json` và
 `source_list.csv`. Manifest ghi checksum, giới hạn, loại trừ và các chỉ số theo bài.
 Config dùng đường dẫn từ thư mục gốc repo và map trường `text_raw` sang `text`.

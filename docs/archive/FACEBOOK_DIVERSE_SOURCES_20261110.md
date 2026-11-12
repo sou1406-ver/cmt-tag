@@ -38,11 +38,11 @@ nhưng số truy cập được vẫn thấp hơn counter Facebook. Chưa có b�
 Thời gian trong bảng đo monotonic quanh engine, không gồm tìm/chọn nguồn,
 chẩn đoán DOM hoặc xuất file. Không tối ưu tốc độ hoặc thay kiến trúc ở đợt này.
 
-[Dữ liệu CSV/Excel và manifest](../data/imports/facebook_diverse_sources_20261110/)
+[Dữ liệu CSV/Excel và manifest](../../data/imports/facebook_diverse_sources_20261110)
 có cùng 19 cột như đợt bulk. Chỉ bỏ link mention nhận dạng được trong body;
 giữ nguyên tên dạng text mơ hồ, phủ định, emoji và xuống dòng. Không thu cột
 tên/ID tác giả; không gọi là ẩn danh hoàn toàn. Không tạo nhãn hoặc gọi API LLM.
 
 Cộng hai đợt sau bản vá là 2.420 dòng text mới. Chất lượng POS/NEG/NEU/usable
-vẫn chờ [pilot người gán 70 fanpage + 130 group](../data/tasks/source_quality_pilot_20261110/README.md),
+vẫn chờ [pilot người gán 70 fanpage + 130 group](../../data/tasks/source_quality_pilot_20261110/README.md),
 không dùng số tương tác hoặc độ dài làm bằng chứng gold hay hiệu năng mô hình.

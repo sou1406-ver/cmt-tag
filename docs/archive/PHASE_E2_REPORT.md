@@ -69,19 +69,19 @@ lớp ít mẫu. Các score quantiles và toàn bộ curve points có trong resu
 
 ### Other → Mưa Đỏ
 
-![ROC](figures/phase_e2/other_to_mua_do_roc.png)
+![ROC](../figures/phase_e2/other_to_mua_do_roc.png)
 
-![Precision Recall](figures/phase_e2/other_to_mua_do_pr.png)
+![Precision Recall](../figures/phase_e2/other_to_mua_do_pr.png)
 
-![Decision score distributions](figures/phase_e2/other_to_mua_do_scores.png)
+![Decision score distributions](../figures/phase_e2/other_to_mua_do_scores.png)
 
 ### Mưa Đỏ → Other
 
-![ROC](figures/phase_e2/mua_do_to_other_roc.png)
+![ROC](../figures/phase_e2/mua_do_to_other_roc.png)
 
-![Precision Recall](figures/phase_e2/mua_do_to_other_pr.png)
+![Precision Recall](../figures/phase_e2/mua_do_to_other_pr.png)
 
-![Decision score distributions](figures/phase_e2/mua_do_to_other_scores.png)
+![Decision score distributions](../figures/phase_e2/mua_do_to_other_scores.png)
 
 ## Tái lập và kiểm tra
 

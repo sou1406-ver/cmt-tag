@@ -129,4 +129,4 @@ vẫn có thể nhầm trong câu đặc biệt; người dùng cần duyệt wo
 hợp khó trước khi chốt phiên bản. Số token thay chỉ đo khối lượng thay đổi.
 
 Code/config/spec nằm Git; comment, IDs, before/after, workbook và manifests
-chi tiết chỉ local/gitignored. [Hướng dẫn rule, tái lập và import](PHASE_I4_1_NORMALIZATION_SPEC.md).
+chi tiết chỉ local/gitignored. [Hướng dẫn rule, tái lập và import](../PHASE_I4_1_NORMALIZATION_SPEC.md).

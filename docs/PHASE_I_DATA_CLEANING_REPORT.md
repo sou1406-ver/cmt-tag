@@ -127,7 +127,7 @@ unless all three real prediction files and metadata sidecars validate.
 All comment-bearing data, IDs, labels, examples, candidate manifests, duplicate
 pairs and predictions remain local under the ignored path
 `outputs/phase_i/v5/`. The tracked dictionary is
-[`DATA_DICTIONARY_PHASE_I.md`](DATA_DICTIONARY_PHASE_I.md). Rebuild with the
+[`DATA_DICTIONARY_PHASE_I.md`](reference/DATA_DICTIONARY_PHASE_I.md). Rebuild with the
 pinned local environment:
 
 ```powershell

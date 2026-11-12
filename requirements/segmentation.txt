@@ -1,0 +1,3 @@
+# Existing local Phase E dependency reused only for offline word segmentation.
+# No sentiment training, transformer or LLM inference in this phase.
+underthesea==8.3.0

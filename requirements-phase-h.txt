@@ -1,10 +1,2 @@
-# Install PyTorch from the official selector for the host CPU/CUDA build first.
-# The selected wheel version and CUDA runtime must be recorded in the local manifest.
-transformers==4.57.1
-sentencepiece==0.2.1
-accelerate==1.10.1
-safetensors==0.6.2
-protobuf==6.33.5
-py_vncorenlp==0.1.4
-scikit-learn==1.7.2
-numpy==2.3.4
+# Compatibility include; canonical environment is under requirements/.
+-r requirements/transformer.txt

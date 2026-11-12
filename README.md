@@ -3,18 +3,17 @@
 Pipeline Python CLI phân loại **POS / NEG / NEU**, giữ provenance và chống
 leakage. Không xây web/dashboard.
 
-**Hiện tại: REBUILD_VERIFIED / QUALITY_REVIEW_PENDING.** Đã rebuild từ raw,
-loại đúng block 1.200 dòng legacy; còn **38.642 records**, 642 quyết định người
-và **524 nhãn sentiment**. Không thay nhãn, không duyệt corpus, không train/API.
+**Hiện tại: filtered candidate 25.810 comment, chưa quality-approved.**
+Facebook7.146 /legacy18.664;425 nhãn sentiment người còn lại. Đã bỏ legacy
+chứa `_`, legacy>1.000 ký tự, human EXCLUDE và exact duplicates; không phục hồi
+word segmentation. Raw và lịch sử650 quyết định giữ nguyên.
 
-[Dữ liệu canonical để kiểm tra](data/canonical/README.md) được đưa lên Git theo
-yêu cầu chủ repo: CSV raw/normalized tách cột, ledger loại và workbook 200 câu.
-Đây là snapshot chờ review, **không phải dataset đã được duyệt**.
+[Report lọc dữ liệu](docs/DATASET_FILTER_REPORT.md) · Dataset local:
+`outputs/canonical/versions/filtered_20261112_final/comments.csv` · Pool đề xuất6.968,
+**approved0**; không train/API hoặc đổi active pointer.
 
-Candidate mới [plain_text_v3_2](docs/CLEANING_V3_2_REPORT.md) đã chạy trên đủ
-38.642 dòng: 1.833 view thay đổi, nhãn/raw giữ nguyên, pool đề xuất8.812/approved0.
-Corpus và workbook100 mới giữ **local** tại `outputs/canonical/versions/cleaning_v3_2_candidate/`;
-snapshot Git v3.1 không bị thay thế, active pointer chưa đổi.
+[Canonical snapshot cũ trên Git](data/canonical/README.md) vẫn giữ nguyên.
+Corpus filtered mới không commit theo yêu cầu. Thử nghiệm v3.2 tạm dừng. Facebook>1.000 giữ REVIEW; legacy>1.000 loại. Không tự gán NEU.
 
 ## Quickstart
 

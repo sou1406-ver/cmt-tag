@@ -1,3 +1,12 @@
+# Dataset filtering — candidate hiện tại
+
+Dùng canonical raw làm input, giữ legacy không `_` và <=1.000 ký tự; Facebook
+>1.000 giữ REVIEW, không vào pool trước review. Không tự gán NEU. Exact-only dedup, minimal NFC/valid HTML/whitespace,
+không dùng v3.2. [Report và CLI](DATASET_FILTER_REPORT.md):25.810 records/425
+human sentiment/6.968 proposed, approved0. Dataset local
+`outputs/canonical/versions/filtered_20261112_final/`; active pointer không đổi.
+Các mô tả rebuild/v3.2 bên dưới là lịch sử, không phải default mới được duyệt.
+
 # Canonical raw rebuild — trạng thái mới nhất (12/11/2026)
 
 **Candidate preprocessing mới:** `plain_text_v3_2`, local

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from src.dataset.master import build,rebuild_canonical,promote_canonical,rebuild_cleaning
+from src.dataset.master import build,rebuild_canonical,promote_canonical,rebuild_cleaning,filter_canonical
 
 
 def publish_review_data(version,workbook,output):
@@ -50,6 +50,9 @@ def main():
     p.add_argument('--config', type=Path, default=Path('configs/master_dataset.json'))
     p.add_argument('--output', type=Path, default=Path('outputs/phase_g/master'))
     p.add_argument('--canonical',action='store_true',help='Raw-derived curated rebuild; never auto-promotes')
+    p.add_argument('--filter-canonical',type=Path,help='Simple raw-based dataset filter; no complex normalization')
+    p.add_argument('--legacy-max-characters',type=int,default=1000)
+    p.add_argument('--facebook-max-characters',type=int)
     p.add_argument('--cleaning-v3-2',type=Path,help='Verified local canonical source to derive a v3.2 candidate')
     p.add_argument('--promote',type=Path,help='Verified canonical version to promote, only with explicit approval')
     p.add_argument('--approval',type=Path)
@@ -57,6 +60,11 @@ def main():
     p.add_argument('--publish-data',type=Path,help='Explicit review-only publication of a verified canonical version')
     p.add_argument('--workbook',type=Path)
     args = p.parse_args()
+    if args.filter_canonical:
+        if args.canonical or args.cleaning_v3_2 or args.promote or args.publish_data:p.error('Filtering cannot rebuild, promote or publish other versions')
+        if args.output==Path('outputs/phase_g/master'):args.output=Path('outputs/canonical/versions/filtered_20261112_final')
+        result=filter_canonical(args.filter_canonical,args.output,args.legacy_max_characters,args.facebook_max_characters)
+        print(json.dumps({k:result[k] for k in ('status','input_records','records','human_sentiment_retained','proposed_annotation_pool')}));return
     if args.cleaning_v3_2:
         if args.canonical or args.promote or args.publish_data:p.error('Cleaning cannot publish, promote or rebuild old canonical')
         if args.output==Path('outputs/phase_g/master'):args.output=Path('outputs/canonical/versions/cleaning_v3_2')

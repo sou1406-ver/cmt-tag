@@ -1,3 +1,11 @@
+# Trạng thái mới: simple filtered candidate
+
+[DATASET_FILTER_REPORT](DATASET_FILTER_REPORT.md) là báo cáo hiện tại:
+25.810 records,425 retained sentiment,6.968 proposed annotation candidates,
+approved0. Legacy raw `_` và >1.000 ký tự đã loại khỏi tập sử dụng; raw/history/
+locked results giữ nguyên. Thử nghiệm v3.2 không dùng làm preprocessing cho
+candidate này. Các số liệu canonical/v3.2/J bên dưới là snapshot lịch sử.
+
 # Canonical rebuild readiness — 12/11/2026
 
 Candidate cleaning mới `plain_text_v3_2` đã được kiểm full-corpus, vẫn pending:

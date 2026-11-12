@@ -1,3 +1,16 @@
+# Dataset filtered hiện tại
+
+- Dataset CSV: `canonical/versions/filtered_20261112_final/comments.csv` (25.810 rows).
+- Exclusions/ID + lý do: `canonical/versions/filtered_20261112_final/exclusions.csv`.
+- Pool6.968 chưa duyệt, history650, guards và examples ở cùng thư mục.
+- Repro: `canonical_support/filtered_20261112_final_repro/`.
+- Verification: `canonical_support/filter_verification_20261112_final/`.
+- Code thử nghiệm v3.2 đang dở đã lưu tại `canonical_support/paused_punctuation_work_20261112/`.
+
+Raw và artifacts cũ không bị xóa. Dataset mới local, không commit comment data.
+[Report](../docs/DATASET_FILTER_REPORT.md); không có workbook/phase mới.
+Các mục dưới là lịch sử, không chuyển source/quality approval tự động.
+
 # Canonical candidate mới — 12/11/2026
 
 V3.2 candidate bàn giao **local, chưa approved**:

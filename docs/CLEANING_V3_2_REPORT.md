@@ -1,3 +1,10 @@
+# HISTORICAL — v3.2 tạm dừng
+
+Hướng hiện tại là [simple dataset filtering](DATASET_FILTER_REPORT.md), không
+mở rộng normalizer. Nội dung dưới giữ làm lịch sử; không dùng các candidate
+hoặc approvals cũ làm corpus hiện tại. Diễn giải57 blank v3.2 thành ACCEPT đã
+được supersede theo xác nhận mới của người duyệt; v3.2 cần decision tường minh.
+
 # plain_text_v3_2 — evidence-based cleaning candidate
 
 Ngày 12/11/2026. **Candidate, QUALITY_REVIEW_PENDING, approved = 0.** Không train,

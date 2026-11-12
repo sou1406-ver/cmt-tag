@@ -1,3 +1,13 @@
+# Trạng thái sau simple filtering
+
+Candidate hiện tại: `outputs/canonical/versions/filtered_20261112_final/`.
+[Report](DATASET_FILTER_REPORT.md):25.810 comments,425 nhãn sentiment còn lại,
+6.968 annotation candidates chưa approved. Không tạo workbook mới trong task này.
+Các task normalization/workbook v3.2 bên dưới đã tạm dừng, không cần tiếp tục
+điền để dùng bộ lọc. Receipt suy diễn57 ô trống v3.2 thành ACCEPT đã bị thay thế
+bởi xác nhận mới: blank=ACCEPT chỉ áp dụng workbook v3.1; v3.2 cần decision tường
+minh. Không dùng receipt đó hoặc approval mẫu cũ để duyệt corpus filtered.
+
 # Việc cần làm với canonical candidate mới
 
 **V3.2 đã nhập review:** 57 ACCEPT /43 REJECT theo convention được người dùng

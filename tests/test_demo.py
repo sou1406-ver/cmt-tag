@@ -1,10 +1,12 @@
 import tempfile
+import importlib.util
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 from src.dataset.common import load, seal, sha, write_jsonl
 from src.models import demo
+from src.models import transformer_demo
 
 
 class DemoTests(unittest.TestCase):
@@ -34,6 +36,8 @@ class DemoTests(unittest.TestCase):
         model = demo.load_model(self.output)
         self.assertEqual(demo.predict(model, 'excellent acting'), 'POS')
         self.assertFalse(load(self.output/'model_info.json')['metrics_computed'])
+        for name in demo.MODELS:
+            self.assertEqual(demo.predict(demo.load_model(self.output,name), 'excellent acting'), 'POS')
         with self.assertRaises(FileExistsError):
             demo.build(self.output, self.root)
 
@@ -51,7 +55,7 @@ class DemoTests(unittest.TestCase):
 
     def test_tamper_rejected_before_deserialization(self):
         demo.build(self.output, self.root)
-        (self.output/'model.joblib').write_bytes(b'tampered')
+        (self.output/'tfidf_char_svm.joblib').write_bytes(b'tampered')
         with patch.object(demo.joblib, 'load') as loader:
             with self.assertRaisesRegex(ValueError, 'checksum'):
                 demo.load_model(self.output)
@@ -71,6 +75,59 @@ class DemoTests(unittest.TestCase):
             with patch.object(model, 'predict') as predict:
                 demo.interactive(model, unittest.mock.Mock(side_effect=error), emitted.append)
                 predict.assert_not_called()
+
+    def test_menu_compare_switch_and_invalid_selection(self):
+        model=unittest.mock.Mock()
+        model.predict.return_value=['NEU']
+        lines=iter(['bad','5','synthetic comment','/model','1','another comment',''])
+        emitted=[]
+        with patch.object(demo,'load_model',return_value=model):
+            demo.menu(self.output,lambda _:next(lines),emitted.append)
+        self.assertEqual(model.predict.call_count,5)
+        self.assertIn('Lua chon khong hop le.',emitted)
+        for name in demo.MODELS.values():self.assertIn(name+': NEU',emitted)
+
+    def test_transformer_views_and_label_mapping(self):
+        self.assertEqual(transformer_demo.text_view('  movie :))  ','visobert'),'movie :))')
+        with patch('pyvi.ViTokenizer.tokenize',return_value='word_segmented') as segment:
+            self.assertEqual(transformer_demo.text_view('movie','phobert'),'word_segmented')
+            segment.assert_called_once_with('movie')
+
+    def test_missing_transformer_keeps_menu_usable(self):
+        model=unittest.mock.Mock()
+        model.predict.return_value=['NEU']
+        lines=iter(['6','2','synthetic comment',''])
+        emitted=[]
+        with patch.object(demo,'load_model',return_value=model), patch.object(transformer_demo,'TransformerPredictor',side_effect=ValueError('checkpoint missing')):
+            demo.menu(self.output,lambda _:next(lines),emitted.append)
+        self.assertTrue(any('checkpoint missing' in message for message in emitted))
+        model.predict.assert_called_once()
+
+    @unittest.skipUnless(importlib.util.find_spec('torch'), 'Optional PyTorch runtime not installed')
+    def test_transformer_prediction_uses_checkpoint_mapping(self):
+        import torch
+        predictor=object.__new__(transformer_demo.TransformerPredictor)
+        predictor.name='visobert';predictor.info={'config':{'max_length':128}}
+        predictor.tokenizer=unittest.mock.Mock(return_value={'input_ids':torch.tensor([[1]])})
+        predictor.model=unittest.mock.Mock()
+        predictor.model.return_value.logits=torch.tensor([[0.,4.,1.]])
+        predictor.model.config.id2label={0:'NEG',1:'POS',2:'NEU'}
+        self.assertEqual(predictor.predict(['synthetic comment']),['POS'])
+
+    @unittest.skipUnless(importlib.util.find_spec('torch') and importlib.util.find_spec('transformers'), 'Optional Transformer runtime not installed')
+    def test_transformer_missing_checkpoint_fails_without_remote_load(self):
+        with patch('transformers.AutoModelForSequenceClassification.from_pretrained') as factory:
+            with self.assertRaises(FileNotFoundError):
+                transformer_demo.TransformerPredictor(self.root/'missing')
+            factory.assert_not_called()
+
+    @unittest.skipUnless(importlib.util.find_spec('torch') and importlib.util.find_spec('transformers'), 'Optional Transformer runtime not installed')
+    def test_transformer_guard_blocks_before_download(self):
+        with patch.object(transformer_demo,'training_rows',side_effect=ValueError('reserved')):
+            with patch.object(transformer_demo,'ROOT',self.root), patch('huggingface_hub.HfApi') as api:
+                with self.assertRaisesRegex(ValueError,'reserved'):
+                    transformer_demo.train('visobert',self.root/'outputs/new')
+                api.assert_not_called()
 
 
 if __name__ == '__main__':

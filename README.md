@@ -306,19 +306,33 @@ outputs/         Dataset và kết quả local
 
 ## Nhập bình luận để demo
 
-Model demo học từ 425 nhãn người development, dùng TF-IDF char_wb (3–5) và
-LinearSVC balanced với cấu hình cố định. Không dùng gold để train hoặc tune.
+Model demo học từ 425 nhãn người development, với cấu hình cố định.
+Không dùng gold để train hoặc tune.
 Tạo model local một lần bằng `python -m src.models build-demo`, sau đó chạy:
 
 ```powershell
 .\.venv\Scripts\python.exe -m src.models predict
 ```
 
-Nhập từng bình luận để nhận POS/NEG/NEU; Enter trống hoặc Ctrl+C để kết thúc.
-Có thể dùng `python -m src.models predict --text "Diễn xuất rất hay"`.
-Model nằm ở `outputs/demo_sentiment_425/`, không commit. Bình luận vừa nhập
+Menu có BoW + MultinomialNB, BoW + ComplementNB, TF-IDF word + SVM,
+TF-IDF char_wb + SVM, so sánh bốn baseline, PhoBERT và ViSoBERT.
+Nhập `/model` để đổi model; Enter trống hoặc Ctrl+C để kết thúc.
+Có thể dùng `python -m src.models predict --model bow_complement_nb --text "Diễn xuất rất hay"`.
+Bốn baseline nằm ở `outputs/demo_baselines_425/`; checkpoint Transformer
+nằm ở `outputs/demo_transformers_425/`, không commit. Bình luận vừa nhập
 không được lưu. Đây là demo dự đoán, có thể sai; không trả xác suất và không
 phải một lần đánh giá gold mới.
+
+Transformer cần PyTorch (`requirements/torch-cpu.txt`) và
+`requirements/demo-transformers.txt`, cài cùng requirements classical hiện tại.
+Train demo bằng `python -m src.models build-transformer-demo --model phobert`
+hoặc `--model visobert`: 3 epoch cố định, batch 8, max length 128, AdamW 2e-5,
+seed 20261113, chỉ 425 nhãn development, không chọn epoch theo gold.
+PhoBERT dùng PyVi 0.1.1 để tách từ nhất quán lúc train/inference; đây là
+xấp xỉ, khác bộ RDRSegmenter được tác giả khuyến nghị.
+Xem model card [PhoBERT](https://huggingface.co/vinai/phobert-base-v2) và
+[ViSoBERT](https://huggingface.co/uitnlp/visobert). Hai checkpoint demo mới
+chưa được đánh giá độc lập; tên model không bảo đảm dự đoán tốt hơn baseline.
 
 ## Kiểm thử và tài liệu
 

@@ -17,24 +17,37 @@ def main():
     a.add_argument('--config',type=Path,default=Path('configs/development_human_expansion.json'))
     a.add_argument('--output',type=Path,default=Path('outputs/ai_labeling/pilot_20261113/development_plan'))
     a=s.add_parser('build-demo',help='Fit and save a fixed demo on existing 425 human dev labels; no gold evaluation')
-    a.add_argument('--output',type=Path,default=Path('outputs/demo_sentiment_425'))
+    a.add_argument('--output',type=Path,default=Path('outputs/demo_baselines_425'))
     a=s.add_parser('predict',help='Predict a typed movie comment using the local demo model')
-    a.add_argument('--model-dir',type=Path,default=Path('outputs/demo_sentiment_425'))
+    a.add_argument('--model-dir',type=Path,default=Path('outputs/demo_baselines_425'))
+    a.add_argument('--model',choices=['bow_multinomial_nb','bow_complement_nb','tfidf_word_svm','tfidf_char_svm','phobert','visobert'])
     inputs=a.add_mutually_exclusive_group()
     inputs.add_argument('--text');inputs.add_argument('--interactive',action='store_true')
+    a=s.add_parser('build-transformer-demo',help='Train fixed PhoBERT/ViSoBERT demos on 425 development labels only')
+    a.add_argument('--model',choices=['phobert','visobert'],required=True)
+    a.add_argument('--output',type=Path)
     args=p.parse_args()
     try:
-        if args.cmd=='build-demo':
+        if args.cmd=='build-transformer-demo':
+            from .transformer_demo import train as train_transformer
+            print(train_transformer(args.model,args.output))
+        elif args.cmd=='build-demo':
             import json
             from .demo import build
             print(json.dumps(build(args.output),ensure_ascii=True))
         elif args.cmd=='predict':
             import json
-            from .demo import load_model,predict,interactive
+            from .demo import load_model,predict,interactive,menu
             if not (args.model_dir/'model_info.json').is_file():raise ValueError('Run python -m src.models build-demo first')
-            model=load_model(args.model_dir)
-            if args.text is not None:print(json.dumps({'label':predict(model,args.text)},ensure_ascii=True))
-            else:interactive(model)
+            if args.text is not None or args.model:
+                name=args.model or 'tfidf_char_svm'
+                if name in ('phobert','visobert'):
+                    from .transformer_demo import TransformerPredictor
+                    model=TransformerPredictor(args.model_dir.parent/'demo_transformers_425'/name)
+                else:model=load_model(args.model_dir,name)
+                if args.text is not None:print(json.dumps({'model':name,'label':predict(model,args.text)},ensure_ascii=True))
+                else:interactive(model)
+            else:menu(args.model_dir)
         elif args.cmd=='plan-expansion':
             import json
             from .human_expansion import prepare

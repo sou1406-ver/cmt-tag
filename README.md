@@ -153,6 +153,17 @@ chia sẻ. Chỉ tải `web_upload/batch_NNN_comments_N.json` và dán `PROMPT.t
 coordinator/manifest hoặc nhãn AI khác. Không lặp calibration và không đoán phim
 cho legacy. Kết quả AI vẫn chỉ là silver candidate, không tự approve/train.
 
+Nếu Claude hết usage, nhập GPT và Gemini như bình thường rồi chạy:
+
+```powershell
+python -m src.annotation pilot analyze --directory outputs/ai_labeling/expansion_web_20261113/batch_001 --providers GPT Gemini
+```
+
+Kết quả riêng trong `analysis_GPT_Gemini/`: agreement/Kappa giữa hai AI,
+ứng viên sentiment đồng thuận chưa approved và nhóm cần review. Không điền thay
+slot Claude, không gọi là đồng thuận 3/3 hay accuracy. Có thể bổ sung Claude sau;
+kết quả hai bên cũ được giữ nguyên. Không có nhãn người trong batch để tính F1.
+
 Audit lỗi tại `pilot_20261113/error_analysis/REPORT.md`: tách nhóm 3/3 và bất đồng;
 những dấu hiệu cảm xúc/mỉa mai/đích người chỉ là review cue, không phải nguyên
 nhân đã xác minh. Trong 14 lệch ở nhóm 3/3, 11 thuộc REVIEW/EXCLUDE, 3 thuộc

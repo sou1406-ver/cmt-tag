@@ -33,6 +33,33 @@ def response(p,items,label='POS'):
 
 
 class PilotTests(TestCase):
+    def test_pair_comparison_no_imputed_third_vote_and_calibration_excluded(self):
+        with TemporaryDirectory() as tmp:
+            p=Path(tmp);items=fixture(p)
+            web_labels.import_web(p,'GPT',response(p/'gpt.json',items))
+            labels=['POS','POS','POS','NEG','EXCLUDE','REVIEW']
+            values=[dict(record_id=r['record_id'],predicted_label=labels[i],reason='fixture') for i,r in enumerate(items)]
+            gemini=p/'gemini.json';gemini.write_text(json.dumps(values),encoding='utf8')
+            web_labels.import_web(p,'Gemini',gemini)
+            report=pilot.summarize_pair(p,['GPT','Gemini'])
+            self.assertEqual(report['complete_two'],6)
+            self.assertEqual(report['counts'],{'AGREE':3,'DISAGREE':3})
+            self.assertEqual(report['two_ai_silver_candidates'],1)
+            self.assertEqual(report['needs_review'],3)
+            self.assertEqual(report['missing_slots'],{'Claude':6})
+            self.assertFalse(report['approved'])
+            self.assertEqual(pilot.summarize_pair(p,['GPT','Gemini']),report)
+            self.assertFalse(any(slot=='Claude' for rid,slot in web_labels.successes(p)))
+            with self.assertRaises(ValueError):pilot.summarize_pair(p,['GPT','GPT'])
+
+    def test_pair_incomplete_not_treated_as_disagreement(self):
+        with TemporaryDirectory() as tmp:
+            p=Path(tmp);items=fixture(p)
+            web_labels.import_web(p,'GPT',response(p/'gpt.json',items))
+            report=pilot.summarize_pair(p,['GPT','Gemini'])
+            self.assertEqual(report['counts'],{'INCOMPLETE':6})
+            self.assertIsNone(report['agreement_rate'])
+            self.assertEqual(report['two_ai_silver_candidates'],0)
     def test_expansion_returns_unread_assignment_and_reuses_web_import(self):
         with TemporaryDirectory() as tmp:
             root=Path(tmp);previous=root/'outputs/ai_labeling/previous';previous.mkdir(parents=True)

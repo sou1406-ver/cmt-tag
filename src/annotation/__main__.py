@@ -36,6 +36,9 @@ def main():
             q.add_argument('--response',type=Path,required=True);q.add_argument('--model',default='UNKNOWN_WEB_MODEL')
             q.add_argument('--allow-partial',action='store_true')
         if command=='audit-errors':q.add_argument('--output',type=Path,help='New diagnostics directory under pilot; default error_analysis')
+        if command=='analyze':
+            q.add_argument('--providers',nargs=2,choices=['GPT','Claude','Gemini'],help='Compare exactly two actual AI responses; omit for original 3-AI analysis')
+            q.add_argument('--output',type=Path,help='New two-AI analysis directory under the batch')
         if command=='friend-import':
             q.add_argument('--annotator',required=True)
             q.add_argument('--origin',choices=['human','human_reviewed_ai','ai'],required=True)
@@ -61,7 +64,8 @@ def main():
             elif args.pilot_command=='prepare-expansion':result=pilot.prepare_expansion(args.directory,previous=args.previous)
             elif args.pilot_command=='export-web':result=web_labels.export_web(args.directory)
             elif args.pilot_command=='import-web':result=web_labels.import_web(args.directory,args.provider,args.response,args.model,args.allow_partial)
-            elif args.pilot_command=='analyze':result=pilot.summarize(args.directory)
+            elif args.pilot_command=='analyze':
+                result=pilot.summarize_pair(args.directory,args.providers,args.output) if args.providers else pilot.summarize(args.directory)
             elif args.pilot_command=='audit-errors':
                 from .audit import analyze_errors
                 result=analyze_errors(args.directory,args.output or args.directory/'error_analysis')

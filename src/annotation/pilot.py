@@ -385,6 +385,61 @@ def classification(truth,pred):
         confusion_matrix=[[sum(a==t and b==p for a,b in zip(truth,pred)) for p in labels] for t in SENTIMENT])
 
 
+def summarize_pair(directory,providers,output=None):
+    """Two actual providers, not a substituted or imputed third vote."""
+    from .web_labels import successes,SLOTS
+    from sklearn.metrics import cohen_kappa_score,confusion_matrix
+    directory=Path(directory).resolve();providers=list(providers)
+    if len(providers)!=2 or len(set(providers))!=2 or not set(providers)<=set(SLOTS):
+        raise ValueError('Select exactly two distinct providers')
+    m,items,c=task(directory);predictions=successes(directory)
+    output=Path(output).resolve() if output else directory/('analysis_'+'_'.join(providers))
+    if not output.is_relative_to(directory):raise ValueError('Keep analysis under the batch directory')
+    context=dict(selection_sha256=sha(directory/'selection_manifest.json'),
+        predictions_sha256=sha(directory/'model_predictions.local.jsonl'),providers=providers)
+    if output.exists():
+        verify(output)
+        if load(output/'inputs.json')!=context:raise FileExistsError('Predictions changed; choose a new analysis output')
+        return load(output/'summary.json')
+    candidates=[];review=[];pairs=[];agreements=Counter()
+    for r in items:
+        rid=r['record_id']
+        values=[predictions.get((rid,p),{}).get('predicted_label') for p in providers]
+        complete=None not in values
+        if complete:pairs.append(values)
+        same=complete and values[0]==values[1]
+        category='INCOMPLETE' if not complete else 'AGREE' if same else 'DISAGREE'
+        agreements[category]+=1
+        calibration=rid in c['calibration_labels']
+        candidate=same and values[0] in SENTIMENT and not calibration
+        entry=dict(record_id=rid,text_sha256=digest(r['text']),providers=providers,
+            predictions=dict(zip(providers,values)),agreement=category,
+            status='TWO_AI_SILVER_CANDIDATE' if candidate else 'NEEDS_REVIEW',
+            calibration=calibration,approved=False,human_confirmed=False)
+        if calibration:continue
+        (candidates if candidate else review).append(entry)
+    left=[p[0] for p in pairs];right=[p[1] for p in pairs]
+    kappa=float(cohen_kappa_score(left,right,labels=CATEGORIES)) if pairs and len(set(left+right))>1 else None
+    report=dict(records=len(items),providers=providers,complete_two=len(pairs),counts=dict(agreements),
+        agreement_rate=agreements['AGREE']/len(pairs) if pairs else None,kappa=kappa,
+        labels=CATEGORIES,confusion_matrix=confusion_matrix(left,right,labels=CATEGORIES).tolist() if pairs else [],
+        provider_label_counts={p:dict(Counter(v['predicted_label'] for (rid,slot),v in predictions.items() if slot==p)) for p in providers},
+        missing_slots={p:len(items)-sum((r['record_id'],p) in predictions for r in items) for p in SLOTS if p not in providers},
+        two_ai_silver_candidates=len(candidates),needs_review=len(review),
+        agreed_non_sentiment=sum(p[0]==p[1] and p[0] not in SENTIMENT for p in pairs),
+        calibration_excluded=len(c['calibration_labels']),approved=False,train_run=False,
+        note='Inter-model agreement, not accuracy or human agreement. No third vote imputed; two-AI candidates remain unapproved.')
+    with staged(output) as out:
+        save(out/'inputs.json',context);save(out/'summary.json',report)
+        write_jsonl(out/'two_ai_candidates.local.jsonl',candidates)
+        write_jsonl(out/'needs_review.local.jsonl',review)
+        (out/'REPORT.md').write_text('# Batch — đối chiếu hai AI\n\n'+json.dumps(report,ensure_ascii=False,indent=2)+
+            '\n\nKhông có ground truth trong batch để tính accuracy/F1. Đồng thuận hai AI không phải nhãn người '
+            'hoặc đồng thuận 3/3; chưa approved hay train.\n',encoding='utf8')
+        seal(out,dict(kind='TWO_AI_COMPARISON',approved=False))
+    return report
+
+
 def summarize(directory):
     directory=Path(directory);m,inputs,c=task(directory)
     from .web_labels import successes,provider_config,usage_summary

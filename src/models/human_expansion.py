@@ -64,7 +64,10 @@ def prepare(config,output,root=ROOT):
     owner=read_jsonl(pilot/'human_audit.local.jsonl');receipt=load(pilot/'human_audit_receipt.local.json')
     if receipt['human_decisions_sha256']!=sha(pilot/'human_audit.local.jsonl'):raise ValueError('Owner human audit checksum mismatch')
     additions=list(owner);friend=root/cfg['friend_import'];friend_status='PENDING_UNREAD_WORKBOOK';friend_count=0
-    if friend.exists():
+    assignment=pilot/'friend_assignment_status.json'
+    returned=assignment.exists() and load(assignment)['status']=='RETURNED_TO_UNLABELED'
+    if returned:friend_status='RETURNED_TO_UNLABELED'
+    if friend.exists() and not returned:
         verify(friend);r=load(friend/'receipt.json')
         if r['data_sha256']!=sha(friend/'decisions.local.jsonl'):raise ValueError('Friend data checksum mismatch')
         if r['human_confirmed']:
@@ -86,13 +89,14 @@ def prepare(config,output,root=ROOT):
         raise ValueError('Frozen fold schedule differs from the configured 5x5 design')
     summary=dict(status='PLAN_ONLY_NOT_TRAINED',baseline=425,additional_human_sentiment=len(extra),augmented_known=425+len(extra),
         additional_statuses=dict(Counter(r['label'] for r in additions)),friend_status=friend_status,friend_imported=friend_count,
-        pending_friend_assignment=len(load(pilot/'friend_task.local.json')['rows']) if friend_status!='IMPORTED_HUMAN' else 0,
+        pending_friend_assignment=len(load(pilot/'friend_task.local.json')['rows']) if friend_status=='PENDING_UNREAD_WORKBOOK' else 0,
         folds=len(folds),seeds=sorted({f['seed'] for f in folds}),shared_validation_ids=True,
         legacy_note='79 baseline legacy record groups do not guarantee post independence',
         fit_called=False,predict_called=False,approved_release=False,gold_used=False,silver_used=False)
     inputs={str(p):sha(p) for p in [Path(config),baseline/'manifest.json',annotation/'manifest.json',frozen,
         pilot/'human_audit.local.jsonl',pilot/'human_audit_receipt.local.json',pilot/'selection_manifest.json']}
     if friend.exists():inputs.update({str(p):sha(p) for p in [friend/'receipt.json',friend/'decisions.local.jsonl']})
+    if assignment.exists():inputs[str(assignment)]=sha(assignment)
     with staged(output) as out:
         save(out/'summary.json',summary);save(out/'config.json',cfg);save(out/'folds.local.json',folds)
         save(out/'inputs.json',inputs)
@@ -103,7 +107,7 @@ def prepare(config,output,root=ROOT):
         vectorizers={name:{k:estimator(name,20261113).named_steps['vectorizer'].get_params()[k] for k in ['analyzer','token_pattern','lowercase','ngram_range']} for name in cfg['models']}
         save(out/'vectorizers.json',vectorizers)
         lines=['# Kế hoạch CV nhãn người — chưa chạy','',
-            f"Baseline 425; thêm {len(extra)} nhãn sentiment người đã có, tổng biết {425+len(extra)}. Bạn vẫn đang gán, không đọc workbook 350 trong bước chuẩn bị.", '',
+            f"Baseline 425; thêm {len(extra)} nhãn sentiment người đã có, tổng biết {425+len(extra)}. Trạng thái phân công bạn: {friend_status}; không đọc workbook cũ trong bước chuẩn bị.", '',
             'Giữ đúng 25 fold (5 fold × 5 seed) của baseline hiện có. Mỗi cặp baseline/augmented đánh giá trên cùng validation IDs thuộc 425 nhãn cũ. '
             'Augmented chỉ thêm nhãn mới vào train khi post không thuộc validation; record của post mới có fold theo hash seed/group, không dựa nhãn. '
             'Không so điểm tuyệt đối trên hai validation population khác nhau.', '',
@@ -114,7 +118,7 @@ def prepare(config,output,root=ROOT):
             'Không PyVi hay rule mới trong primary comparison; sai khác view giữa nguồn là giới hạn cần báo. '
             'BoW + ComplementNB / word TF-IDF + balanced LinearSVC / char_wb (3,5) + balanced LinearSVC theo cấu hình đã định. '
             'Word token_pattern r"(?u)[^\\s]+", lowercase=False trong vectorizer. Fit vectorizer chỉ train khi được phép chạy sau này.', '',
-            'Chờ friend-import nguồn human/human_reviewed_ai hợp lệ rồi tạo một kế hoạch output mới. '
+            'Nếu có nhãn người mới từ một task hợp lệ thì tạo kế hoạch output mới. '
             'Không nhập nhãn AI-only hoặc 150 calibration lần hai. REVIEW/EXCLUDE giữ lịch sử và ngoài sentiment training. '
             'Chưa approve release, không fit/predict, không metrics giả, không gold evaluation.']
         (out/'REPORT.md').write_text('\n'.join(lines)+'\n',encoding='utf-8')

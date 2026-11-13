@@ -131,23 +131,27 @@ gold. Report và mọi dữ liệu/predictions/workbook chỉ lưu local trong p
 
 Đã nhập đủ 600 ID từ mỗi web. Trên 150 nhãn development: Macro-F1 GPT 0,7008,
 Claude 0,6972, Gemini 0,6843; không phải kết quả independent test. 383/600 đồng
-thuận 3/3; 184 silver candidate chưa approved. Phân công người: review_blind.xlsx
-100 câu và friend_share/review_friend_350.xlsx 350 câu còn lại, không trùng ID,
-ẩn nhãn AI; giữ riêng 150 calibration. Các file chia sẻ chỉ local, không push data.
+thuận 3/3; 184 silver candidate lịch sử chưa approved. 100 câu review đã được
+người duyệt; 350 câu phân công cũ đã trả về UNLABELED theo yêu cầu người dùng.
+Workbook bạn cũ chỉ giữ lịch sử, importer chặn nhập task đã hủy. Giữ riêng 150
+calibration; các file chia sẻ chỉ local, không push data.
 
-Trong lúc chờ 350 câu, có các bước **không train**:
+Xuất tiếp dữ liệu chưa nhãn cho GPT/Claude/Gemini qua web, **không API/train**:
 
 ```powershell
-python -m src.annotation pilot audit-errors
-# Chỉ khi bạn đã trả workbook; khai báo đúng nguồn, không tự coi nhãn AI là người:
-python -m src.annotation pilot friend-import --annotator friend --origin human
-python -m src.models plan-expansion
+python -m src.annotation pilot prepare-expansion
+# Mỗi batch: gửi cùng comments_N.json và PROMPT.txt cho cả 3 AI ở chat độc lập.
+python -m src.annotation pilot import-web --directory outputs/ai_labeling/expansion_web_20261113/batch_001 --provider GPT --response PATH.csv --model "model hiển thị trên web"
+python -m src.annotation pilot analyze --directory outputs/ai_labeling/expansion_web_20261113/batch_001
 ```
 
-`friend-import` kiểm đúng ID/text/hash/guideline, không trùng 100 câu hoặc 150
-calibration; hỗ trợ nguồn `human`, `human_reviewed_ai`, `ai`. AI-only vẫn là
-suggestion, không vào training plan. Import giống hệt có thể lặp; bản sửa nhãn
-phải dùng output mới để giữ lịch sử. File đang gán chỉ được đọc khi gọi import.
+Batch ở `outputs/ai_labeling/expansion_web_20261113/`: tối đa 600 câu/file,
+không áp quota post/phim cho đợt gán toàn pool theo yêu cầu người dùng. Không lặp ID giữa
+batch; chặn chất lượng, human decision, reserved/test/holdout và exact/near
+duplicate. Chỉ xuất Facebook; legacy giữ pool local chờ xác minh nguồn/quyền
+chia sẻ. Chỉ tải `web_upload/batch_NNN_comments_N.json` và dán `PROMPT.txt`, không gửi
+coordinator/manifest hoặc nhãn AI khác. Không lặp calibration và không đoán phim
+cho legacy. Kết quả AI vẫn chỉ là silver candidate, không tự approve/train.
 
 Audit lỗi tại `pilot_20261113/error_analysis/REPORT.md`: tách nhóm 3/3 và bất đồng;
 những dấu hiệu cảm xúc/mỉa mai/đích người chỉ là review cue, không phải nguyên
@@ -157,9 +161,9 @@ sentiment. Không suy rộng tỷ lệ trên mẫu có chủ đích thành lỗi
 `configs/development_human_expansion.json` chuẩn bị 425 cũ vs 425 + human mới:
 validation giữ nguyên 25 fold của 425 cũ cho cả hai điều kiện; thêm nhãn vào train
 khi post và exact/near duplicate không chạm validation. Hiện biết 425 + 86 = 511
-nhãn sentiment, 14 EXCLUDE giữ lịch sử, 350 câu vẫn chờ. Kế hoạch local ở
+nhãn sentiment, 14 EXCLUDE giữ lịch sử; 350 câu không còn là phân công chờ. Kế hoạch local cũ ở
 `pilot_20261113/development_plan/REPORT.md`; chưa có fit/predict/metrics mới,
-không dùng silver hoặc gold và chưa approved release. Sau khi nhập bạn, tạo
+không dùng silver hoặc gold và chưa approved release. Khi có nhãn người mới, tạo
 kế hoạch output mới để giữ bản trước; không ghi đè artifact.
 
 ## Candidate mới: lọc tag-only và URL

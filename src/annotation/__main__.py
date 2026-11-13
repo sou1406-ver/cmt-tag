@@ -25,9 +25,12 @@ def main():
     a.add_argument('--right',type=Path,required=True); a.add_argument('--output',type=Path,required=True)
     pilot=s.add_parser('pilot',help='One 600-record blinded file for manual GPT/Claude/Gemini web labeling')
     ps=pilot.add_subparsers(dest='pilot_command',required=True)
-    for command in ('prepare','export-web','import-web','analyze','audit-import','audit-errors','friend-import'):
+    for command in ('prepare','prepare-expansion','export-web','import-web','analyze','audit-import','audit-errors','friend-import'):
         q=ps.add_parser(command);q.add_argument('--directory',type=Path,default=Path('outputs/ai_labeling/pilot_20261113'))
         if command=='prepare':q.add_argument('--source',type=Path,default=Path('outputs/canonical/versions/filtered_20261113_quality_v1'))
+        if command=='prepare-expansion':
+            q.set_defaults(directory=Path('outputs/ai_labeling/expansion_web_20261113'))
+            q.add_argument('--previous',type=Path,default=Path('outputs/ai_labeling/pilot_20261113'))
         if command=='import-web':
             q.add_argument('--provider',choices=['GPT','Claude','Gemini'],required=True)
             q.add_argument('--response',type=Path,required=True);q.add_argument('--model',default='UNKNOWN_WEB_MODEL')
@@ -55,6 +58,7 @@ def main():
             from . import pilot
             from . import web_labels
             if args.pilot_command=='prepare':result=pilot.prepare(args.directory,args.source)
+            elif args.pilot_command=='prepare-expansion':result=pilot.prepare_expansion(args.directory,previous=args.previous)
             elif args.pilot_command=='export-web':result=web_labels.export_web(args.directory)
             elif args.pilot_command=='import-web':result=web_labels.import_web(args.directory,args.provider,args.response,args.model,args.allow_partial)
             elif args.pilot_command=='analyze':result=pilot.summarize(args.directory)

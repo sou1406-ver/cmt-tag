@@ -228,6 +228,133 @@ def prepare(directory=DEFAULT,source=ROOT/'outputs/canonical/versions/filtered_2
     return summary
 
 
+def prepare_expansion(directory,source=ROOT/'outputs/canonical/versions/filtered_20261113_quality_v1',previous=DEFAULT,root=ROOT):
+    """Return the unread friend assignment and export remaining safe Facebook rows.
+
+    Previous AI suggestions remain historical, never human labels. Legacy stays
+    local pending provenance/sharing verification; no provider is contacted.
+    """
+    directory,source,previous,root=map(lambda p:Path(p).resolve(),(directory,source,previous,root))
+    if not directory.is_relative_to(root/'outputs/ai_labeling'):raise ValueError('Keep expansion local in outputs/ai_labeling')
+    if directory.exists():raise FileExistsError('Expansion already exists; no silent resampling')
+    _,_,old=task(previous)
+    if (previous/'friend_import').exists():raise ValueError('Friend import exists; do not discard decisions')
+    friend=load(previous/'friend_task.local.json')
+    if friend['selection_manifest_sha256']!=sha(previous/'selection_manifest.json'):raise ValueError('Friend task mismatch')
+    returned={r['id'] for r in friend['rows']}
+    owner_path=previous/'human_audit.local.jsonl';receipt=load(previous/'human_audit_receipt.local.json')
+    if receipt['human_decisions_sha256']!=sha(owner_path):raise ValueError('Human audit checksum mismatch')
+    owner={r['id'] for r in read_jsonl(owner_path)}
+    if returned&owner or returned&set(old['calibration_labels']) or returned!=set(old['unlabeled_ids'])-owner:
+        raise ValueError('Returned assignment overlaps confirmed decisions or calibration')
+    verify(source);validate_guideline(GUIDELINE_VERSION,sha(GUIDELINE))
+    from src.models.preprocessing_cv import snapshot
+    before=snapshot(root,source)
+    context={str(p):sha(p) for p in (previous/'friend_task.local.json',owner_path,
+        previous/'human_audit_receipt.local.json',previous/'selection_manifest.json')}
+    rows=read_jsonl(source/'candidate.local.jsonl');guard=protection(rows,source,root)
+    human=[r for r in rows if r.get('human_decisions') or r.get('human_label') or r['record_id'] in owner]
+    exact={normal(r['text_annotation_view']) for r in human}
+    near=reference_index([fingerprints(r['text_annotation_view']) for r in human])
+    eligible=[];rejected=[];legacy=[]
+    from src.data.quality import verified_post
+    for r in rows:
+        rid=r['record_id'];reason=None
+        if r.get('human_decisions') or r.get('human_label') or rid in owner:reason='HUMAN_DECISION_PRESENT'
+        elif r['quality_decision']!='KEEP':reason='QUALITY_'+r['quality_decision']
+        elif r.get('proposed_decision') in ('REVIEW','EXCLUDE'):reason='QUALITY_HUMAN_FLAG_ONLY'
+        else:reason=guard_reason(r,guard)
+        if not reason and (normal(r['text_annotation_view']) in exact or near_any(r['text_annotation_view'],near)):
+            reason='EXACT_NEAR_HUMAN_DECISION'
+        if not reason and r['source_dataset']=='facebook' and not verified_post(r):reason='UNVERIFIED_FACEBOOK_IDENTITY'
+        if not reason and r['source_dataset']!='facebook' and r['annotation_eligibility']!='ELIGIBLE_PROPOSED':reason='LEGACY_OLD_ELIGIBILITY'
+        if reason:rejected.append(dict(record_id=rid,reason=reason));continue
+        if r['source_dataset']=='facebook':eligible.append(r)
+        else:legacy.append(r)
+    # Deterministic representatives; exact and high-similarity duplicates are
+    # removed only from this handoff, never physically from the source dataset.
+    random.Random(SEED).shuffle(eligible)
+    unique=[];seen=set();index=reference_index([])
+    for r in eligible:
+        text=r['text_annotation_view'];key=normal(text)
+        if key in seen or near_any(text,index):
+            rejected.append(dict(record_id=r['record_id'],reason='EXACT_NEAR_BATCH_DUPLICATE'));continue
+        unique.append(r);seen.add(key);value=fingerprints(text)
+        if value:
+            i=len(index['sets']);index['sets'].append(value)
+            for token in value:index['postings'][token].add(i)
+    batches=expansion_batches(unique)
+    safe_ids={r['record_id'] for r in unique}
+    returned_web=returned&safe_ids
+    report=dict(status='MANUAL_WEB_EXPANSION_NOT_LABELED',returned_assignment=len(returned),
+        returned_in_web=len(returned_web),returned_blocked=len(returned-returned_web),
+        confirmed_owner_preserved=len(owner),facebook_eligible_before_batch_dedup=len(eligible),
+        web_records=len(unique),batches=len(batches),batch_sizes=[len(b) for b in batches],
+        facebook_posts=len({r['post_id'] for r in unique}),facebook_movies=len({r.get('movie_id') for r in unique}),
+        legacy_unlabeled_local_only=len(legacy),seed=SEED,max_per_file=600,post_cap_per_file=None,movie_cap_per_file=None,
+        quota_protocol='User authorized full-corpus labeling in files of at most 600; no post/movie per-file caps. Seeded post round robin, not a representative test sample.',
+        rejections=dict(Counter(r['reason'] for r in rejected)),silver_approved=False,
+        api_calls=0,train_run=False,calibration_repeated=False,
+        note='Human decisions preserved. Old AI predictions are historical suggestions, not labels. Legacy excluded from web pending provenance/sharing verification.')
+    from .web_labels import export_web
+    with staged(directory) as out:
+        write_jsonl(out/'returned_unlabeled.local.jsonl',[dict(record_id=i,status='UNLABELED',
+            human_confirmed=False,in_web=i in returned_web) for i in sorted(returned)])
+        write_jsonl(out/'unlabeled_pool.local.jsonl',[dict(record_id=r['record_id'],source=r['source_dataset'],
+            status='UNLABELED',web_allowed=r['source_dataset']=='facebook') for r in unique+legacy])
+        write_jsonl(out/'pool_rejections.local.jsonl',rejected)
+        for n,selected in enumerate(batches,1):
+            batch=out/f'batch_{n:03d}';batch.mkdir()
+            assert_allowed([dict(r,id=r['record_id'],text_view=r['text_annotation_view']) for r in selected],
+                'pseudo_labeling',reservation_root=root/'outputs/phase_g/blind_test',registry=root/'data/test_reservations')
+            items=[dict(record_id=r['record_id'],text=r['text_annotation_view']) for r in selected]
+            meta=[dict(record_id=r['record_id'],source='facebook',post_id=r['post_id'],
+                movie_id=r.get('movie_id'),text_sha256=digest(r['text_annotation_view'])) for r in selected]
+            write_jsonl(batch/'pilot_input.local.jsonl',items)
+            save(batch/'coordinator.local.json',dict(rows=meta,calibration_labels={},
+                unlabeled_ids=[r['record_id'] for r in selected],summary=dict(report,selected=len(items),mode='UNLABELED_EXPANSION')))
+            save(batch/'selection_manifest.json',dict(repository_root=str(root),purpose='UNLABELED_EXPANSION',
+                seed=SEED,rows=meta,input_sha256=sha(batch/'pilot_input.local.jsonl'),
+                coordinator_sha256=sha(batch/'coordinator.local.json'),source_sha256=dict(guard['checksums'],**context),
+                dataset_path=str(source),dataset_manifest_sha256=sha(source/'manifest.json'),
+                guideline_version=GUIDELINE_VERSION,guideline_sha256=sha(GUIDELINE),calibration_never_silver=True))
+            seal(batch,dict(status='UNLABELED_EXPANSION_PREPARED'))
+            export_web(batch)
+        save(out/'summary.json',report)
+        if snapshot(root,source)!=before or any(sha(p)!=h for p,h in context.items()):raise ValueError('Immutable source changed')
+        (out/'README.md').write_text('# Gán nhãn web — dữ liệu chưa nhãn\n\n'
+            'Mỗi batch: chỉ tải web_upload/batch_NNN_comments_N.json và dán PROMPT.txt cho GPT, Claude, Gemini trong các chat độc lập. '
+            'Không tải coordinator, manifest hoặc kết quả AI khác. Tải CSV về theo header record_id,predicted_label,reason.\n\n'
+            'Nhập bằng python -m src.annotation pilot import-web --directory PATH_BATCH --provider GPT --response FILE.csv '
+            '--model "tên hiển thị trên web"; đổi provider cho Claude/Gemini. '
+            'Sau đủ ba bên chạy pilot analyze --directory PATH_BATCH. Nhãn AI chỉ là silver candidate chưa approved.\n\n'
+            '350 câu phân công cũ đã trả về UNLABELED; giữ workbook cũ làm lịch sử, không nhập nó nữa. '
+            'Legacy giữ local, chưa đưa lên web. Không có API call hoặc training.\n',encoding='utf8')
+        save(out/'manifest.json',dict(kind='UNLABELED_WEB_EXPANSION',approved=False,
+            output_sha256={p.relative_to(out).as_posix():sha(p) for p in sorted(out.rglob('*'))
+                           if p.is_file() and p.name!='REPORT.md'}))
+    status=previous/'friend_assignment_status.json'
+    event=dict(status='RETURNED_TO_UNLABELED',records=len(returned),created_at=now(),
+        task_sha256=sha(previous/'friend_task.local.json'),expansion_directory=str(directory),human_labels_imported=False)
+    if status.exists():
+        if load(status)['status']!='RETURNED_TO_UNLABELED':raise ValueError('Conflicting assignment status')
+    else:save(status,event)
+    return report
+
+
+def expansion_batches(rows):
+    """Full corpus, no dropped tail: seeded post round robin, chunks <=600."""
+    rng=random.Random(SEED);posts=defaultdict(list)
+    for r in sorted(rows,key=lambda r:r['record_id']):posts[r['post_id']].append(r)
+    order=sorted(posts);rng.shuffle(order)
+    for values in posts.values():rng.shuffle(values)
+    ordered=[]
+    while any(posts.values()):
+        for post in order:
+            if posts[post]:ordered.append(posts[post].pop())
+    return [ordered[i:i+600] for i in range(0,len(ordered),600)]
+
+
 def task(directory):
     directory=Path(directory);verify(directory);m=load(directory/'selection_manifest.json')
     if sha(directory/'pilot_input.local.jsonl')!=m['input_sha256'] or sha(directory/'coordinator.local.json')!=m['coordinator_sha256']:
@@ -292,7 +419,7 @@ def summarize(directory):
     calibration={};ids=list(c['calibration_labels']);truth=[c['calibration_labels'][rid] for rid in ids]
     for model in models:calibration[model]=classification(truth,[predictions.get((rid,model),{}).get('predicted_label','ERROR') for rid in ids])
     agreed_ids=[rid for rid in ids if rid in unanimous]
-    calibration['consensus_3_of_3']=dict(coverage=len(agreed_ids)/len(ids),unanimous_count=len(agreed_ids),
+    calibration['consensus_3_of_3']=dict(coverage=len(agreed_ids)/len(ids) if ids else None,unanimous_count=len(agreed_ids),
         all_150_with_abstentions=classification(truth,[unanimous.get(rid,'ABSTAIN') for rid in ids]),
         conditional=classification([c['calibration_labels'][rid] for rid in agreed_ids],[unanimous[rid] for rid in agreed_ids]))
     breakdown={}

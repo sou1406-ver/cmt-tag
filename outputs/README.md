@@ -10,7 +10,8 @@ thành những mục riêng. Những đường dẫn bên dưới giữ nguyên;
 | Pilot 600 để tải web | [pilot_600.json](ai_labeling/pilot_20261113/web_upload/pilot_600.json) | Một file mù, cùng prompt cho 3 AI |
 | Kết quả 3 AI | [REPORT.md](ai_labeling/pilot_20261113/REPORT.md) | Đã nhập đủ 1.800 quyết định; 184 silver candidate chưa approved |
 | Người duyệt tiếp | [review_blind.xlsx](ai_labeling/pilot_20261113/review_blind.xlsx) | 100 câu: 50 đồng thuận + 50 bất đồng, ẩn nhãn AI |
-| Bạn gán phần còn lại | [review_friend_350.xlsx](ai_labeling/pilot_20261113/friend_share/review_friend_350.xlsx) | 350 câu riêng, không trùng 100 câu review; có guideline cạnh file |
+| Phân công bạn cũ | [review_friend_350.xlsx](ai_labeling/pilot_20261113/friend_share/review_friend_350.xlsx) | Đã hủy phân công; 350 ID trả về chưa nhãn, không nhập workbook này |
+| Gán AI tiếp qua web | [README.md](ai_labeling/expansion_web_20261113/README.md) | Batch Facebook chưa nhãn, tối đa 600/file; chỉ gửi JSON và prompt trong web_upload |
 | Preprocessing CV | [REPORT.md](preprocessing_experiments/REPORT.md) | Kết quả development, không phải independent test |
 | Quality filter | [REPORT.md](quality_filter_review/REPORT.md) | Ví dụ raw/DOM/view và kiểm tra rule local |
 | Gold đã evaluate | [thư mục](gold/) | Khóa/receipt/results giữ nguyên; không dùng lại để tune |

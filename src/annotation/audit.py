@@ -104,6 +104,9 @@ def analyze_errors(directory,output):
 
 def import_friend(directory,annotator,origin,workbook_path=None,output=None):
     directory=Path(directory);_,_,c=task(directory)
+    assignment=directory/'friend_assignment_status.json'
+    if assignment.exists() and load(assignment)['status']=='RETURNED_TO_UNLABELED':
+        raise ValueError('Friend assignment returned to unlabeled; create a new task before importing')
     bound=directory/'friend_task.local.json';coordinator=load(bound)
     if coordinator['selection_manifest_sha256']!=sha(directory/'selection_manifest.json') or coordinator['guideline_sha256']!=sha(GUIDELINE):
         raise ValueError('Friend task input/guideline changed')

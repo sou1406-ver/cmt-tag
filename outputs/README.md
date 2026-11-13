@@ -1,26 +1,28 @@
 # Dữ liệu và kết quả local
 
-Dataset hiện tại: `canonical/versions/filtered_20261112_final/`.
-**25.810 comment; 425 nhãn sentiment người; 6.968 ứng viên chưa được duyệt.**
+Mở `../cmt-tag.code-workspace` trong VS Code để thấy code và các thư mục đang dùng
+thành những mục riêng. Những đường dẫn bên dưới giữ nguyên; không chuyển active pointer.
 
-| File | Mục đích |
-| --- | --- |
-| [comments.csv](canonical/versions/filtered_20261112_final/comments.csv) | Xem dữ liệu sau lọc, cột raw và minimal riêng |
-| [exclusions.csv](canonical/versions/filtered_20261112_final/exclusions.csv) | ID đã loại và lý do, không xóa nguồn gốc |
-| [annotation_candidates.local.csv](canonical/versions/filtered_20261112_final/annotation_candidates.local.csv) | Ứng viên gán nhãn; chưa phải task được duyệt |
-| `human_history.local.jsonl` | Giữ lịch sử quyết định người, kể cả mẫu đã loại |
-| `protection.local.json`, `direct_near_duplicates.local.csv` | Frozen-test/leakage protection và near-duplicate evidence |
-| `manifest.json`, `summary.json` | Checksum và thống kê |
+| Mục đang dùng | Đường dẫn | Trạng thái |
+|---|---|---|
+| Dataset sau lọc | [comments.csv](canonical/versions/filtered_20261112_final/comments.csv) | 25.810 câu, 425 nhãn sentiment người; bất biến |
+| Candidate quality | [comments.csv](canonical/versions/filtered_20261113_quality_v1/comments.csv) | Giữ mọi record + flags; 315 tag-only EXCLUDE, 154 REVIEW; chưa approved |
+| Pilot 600 để tải web | [pilot_600.json](ai_labeling/pilot_20261113/web_upload/pilot_600.json) | Một file mù, cùng prompt cho 3 AI |
+| Kết quả 3 AI | [REPORT.md](ai_labeling/pilot_20261113/REPORT.md) | Đã nhập đủ 1.800 quyết định; 184 silver candidate chưa approved |
+| Người duyệt tiếp | [review_blind.xlsx](ai_labeling/pilot_20261113/review_blind.xlsx) | 100 câu: 50 đồng thuận + 50 bất đồng, ẩn nhãn AI |
+| Bạn gán phần còn lại | [review_friend_350.xlsx](ai_labeling/pilot_20261113/friend_share/review_friend_350.xlsx) | 350 câu riêng, không trùng 100 câu review; có guideline cạnh file |
+| Preprocessing CV | [REPORT.md](preprocessing_experiments/REPORT.md) | Kết quả development, không phải independent test |
+| Quality filter | [REPORT.md](quality_filter_review/REPORT.md) | Ví dụ raw/DOM/view và kiểm tra rule local |
+| Gold đã evaluate | [thư mục](gold/) | Khóa/receipt/results giữ nguyên; không dùng lại để tune |
 
-Raw/provenance nguồn vẫn được lưu. Canonical nguồn ở
-`canonical/versions/rebuild_20261112/`; các output/model/nhãn cũ giữ nguyên tại
-vị trí đã pin. Không di chuyển hay xóa các folder đó chỉ để Explorer trông gọn.
-Chúng là bằng chứng lịch sử, không phải những bước phải chạy lại.
+Pool pilot riêng sau mở post development: 12.308 KEEP (5.372 Facebook, 6.936 legacy).
+Điều này không thay pool eligible hoặc trạng thái approved của các version cũ.
+150 câu calibration có nhãn người không vào silver. 3/3 agreement không phải accuracy.
 
-Quy trình chính: [README](../README.md). Quy tắc lọc và số liệu:
-[báo cáo lọc](../docs/DATASET_FILTER_REPORT.md). Các hướng đã bỏ:
-[lịch sử](../docs/PROJECT_HISTORY.md).
+Các thư mục phase cũ, raw, nhãn, model, split và canonical version được manifest pin
+vẫn ở nguyên vị trí để tái lập. Chỉ dọn cache/junction và bản sao verification có
+payload trùng SHA với bản giữ lại, không có tham chiếu bên ngoài. Bản ghi cleanup
+local: `local_cleanup_20261113.json`. Không coi các phase cũ là bước phải chạy lại.
 
-Không tự đổi active pointer hoặc approve candidate. Không commit comment data mới.
-Chỉ mục này được đưa lên Git; những file local được liên kết ở trên không tự có
-khi clone repository. Snapshot `data/canonical/` trên Git là bản review cũ.
+Không commit comment, prediction hoặc workbook mới. Clone repo không tự có toàn bộ
+các file local này. Quy trình chính: [README](../README.md).

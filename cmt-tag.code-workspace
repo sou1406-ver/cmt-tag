@@ -5,8 +5,24 @@
       "path": "."
     },
     {
-      "name": "Dữ liệu sau lọc",
+      "name": "Dataset sau lọc — bản gốc bất biến",
       "path": "outputs/canonical/versions/filtered_20261112_final"
+    },
+    {
+      "name": "Candidate quality — chưa approved",
+      "path": "outputs/canonical/versions/filtered_20261113_quality_v1"
+    },
+    {
+      "name": "Pilot 600 — kết quả AI và review mù",
+      "path": "outputs/ai_labeling/pilot_20261113"
+    },
+    {
+      "name": "Báo cáo preprocessing CV",
+      "path": "outputs/preprocessing_experiments"
+    },
+    {
+      "name": "Ví dụ quality filter",
+      "path": "outputs/quality_filter_review"
     }
   ],
   "settings": {
@@ -16,7 +32,10 @@
     "files.exclude": {
       "**/__pycache__": true,
       "**/.pytest_cache": true,
-      "**/node_modules": true
+      "**/node_modules": true,
+      "outputs": true,
+      "data": true,
+      ".venv": true
     }
   }
 }

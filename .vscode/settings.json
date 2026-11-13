@@ -6,7 +6,9 @@
     ".venv*": true,
     "data/browser_profile*": true,
     "data/selenium_cache": true,
-    "outputs": true
+    "outputs": true,
+    "data": true,
+    "**/node_modules": true
   },
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe"
 }

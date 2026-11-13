@@ -129,6 +129,12 @@ abstention; pairwise/Fleiss; human audit tối đa 50 đồng thuận + 50 bất
 nhãn AI. SILVER_CANDIDATE chưa approved; không tự tạo release, train hoặc chạy lại
 gold. Report và mọi dữ liệu/predictions/workbook chỉ lưu local trong pilot folder.
 
+Đã nhập đủ 600 ID từ mỗi web. Trên 150 nhãn development: Macro-F1 GPT 0,7008,
+Claude 0,6972, Gemini 0,6843; không phải kết quả independent test. 383/600 đồng
+thuận 3/3; 184 silver candidate chưa approved. Phân công người: review_blind.xlsx
+100 câu và friend_share/review_friend_350.xlsx 350 câu còn lại, không trùng ID,
+ẩn nhãn AI; giữ riêng 150 calibration. Các file chia sẻ chỉ local, không push data.
+
 ## Candidate mới: lọc tag-only và URL
 
 ```powershell

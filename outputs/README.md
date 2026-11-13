@@ -1,29 +1,40 @@
-# Dữ liệu và kết quả local
+# Dữ liệu local sau dọn
 
-Mở `../cmt-tag.code-workspace` trong VS Code để thấy code và các thư mục đang dùng
-thành những mục riêng. Những đường dẫn bên dưới giữ nguyên; không chuyển active pointer.
-
-| Mục đang dùng | Đường dẫn | Trạng thái |
+| Cần xem | Đường dẫn | Ý nghĩa |
 |---|---|---|
-| Dataset sau lọc | [comments.csv](canonical/versions/filtered_20261112_final/comments.csv) | 25.810 câu, 425 nhãn sentiment người; bất biến |
-| Candidate quality | [comments.csv](canonical/versions/filtered_20261113_quality_v1/comments.csv) | Giữ mọi record + flags; 315 tag-only EXCLUDE, 154 REVIEW; chưa approved |
-| Pilot 600 để tải web | [pilot_600.json](ai_labeling/pilot_20261113/web_upload/pilot_600.json) | Một file mù, cùng prompt cho 3 AI |
-| Kết quả 3 AI | [REPORT.md](ai_labeling/pilot_20261113/REPORT.md) | Đã nhập đủ 1.800 quyết định; 184 silver candidate chưa approved |
-| Người duyệt tiếp | [review_blind.xlsx](ai_labeling/pilot_20261113/review_blind.xlsx) | 100 câu: 50 đồng thuận + 50 bất đồng, ẩn nhãn AI |
-| Phân công bạn cũ | [review_friend_350.xlsx](ai_labeling/pilot_20261113/friend_share/review_friend_350.xlsx) | Đã hủy phân công; 350 ID trả về chưa nhãn, không nhập workbook này |
-| Gán AI tiếp qua web | [README.md](ai_labeling/expansion_web_20261113/README.md) | Batch Facebook chưa nhãn, tối đa 600/file; chỉ gửi JSON và prompt trong web_upload |
-| Preprocessing CV | [REPORT.md](preprocessing_experiments/REPORT.md) | Kết quả development, không phải independent test |
-| Quality filter | [REPORT.md](quality_filter_review/REPORT.md) | Ví dụ raw/DOM/view và kiểm tra rule local |
-| Gold đã evaluate | [thư mục](gold/) | Khóa/receipt/results giữ nguyên; không dùng lại để tune |
+| Một dataset tham chiếu | [comments.csv](canonical/versions/filtered_20261112_final/comments.csv) | 25.810 dòng, Facebook/legacy phân biệt bằng source; raw và minimal riêng |
+| Manifest dataset | [manifest.json](canonical/versions/filtered_20261112_final/manifest.json) | 11 artifact bất biến; SHA manifest 602d98e0ee184c8c01f7bd89e2e129918341a367fcfcf862e7b9f56d3352d0f6 |
+| Quality view lịch sử | [thư mục](canonical/versions/filtered_20261113_quality_v1/) | View/flags cũ, chưa approved |
+| Nhãn người phát triển V1 | [thư mục](development/) | 425 sentiment trong dataset sau lọc; không tự chuyển sang nhãn V2 |
+| AI và human audit V1 | [thư mục](ai_labeling/) | Quyết định nguồn giữ riêng; 350 task cũ đã trả UNLABELED, silver chưa approved |
+| Gold V1 | [thư mục](gold/) | Đã khóa và evaluate một lần; giữ lịch sử, không train/tune lại |
+| Thực nghiệm gần nhất V1 | [REPORT.md](development_silver_cv_20261113_partial_03/REPORT.md) | Kết quả tạm thời với silver chưa approved |
+| Output lịch sử đã gom | [history_before_v2_20261113.zip](../data/archive/history_before_v2_20261113.zip) | Bản sao nguyên byte; ARCHIVE_INDEX.json chứa đường dẫn/SHA từng file |
+| Biên bản dọn local | [thư mục](local_cleanup_20261113_v2/) | Plan, SHA trước/sau, receipt xóa và unittest log |
 
-Pool pilot riêng sau mở post development: 12.308 KEEP (5.372 Facebook, 6.936 legacy).
-Điều này không thay pool eligible hoặc trạng thái approved của các version cũ.
-150 câu calibration có nhãn người không vào silver. 3/3 agreement không phải accuracy.
+## Cách dùng
 
-Các thư mục phase cũ, raw, nhãn, model, split và canonical version được manifest pin
-vẫn ở nguyên vị trí để tái lập. Chỉ dọn cache/junction và bản sao verification có
-payload trùng SHA với bản giữ lại, không có tham chiếu bên ngoài. Bản ghi cleanup
-local: `local_cleanup_20261113.json`. Không coi các phase cũ là bước phải chạy lại.
+Dùng dataset sau lọc ở dòng đầu để tham chiếu. Không nối các snapshot cleaning/phase
+vào nó: chúng thường là các phiên bản của cùng ID, nối sẽ nhân đôi dữ liệu.
+Không đổi active pointer, raw hoặc nhãn; không tạo một ground truth mới từ AI.
 
-Không commit comment, prediction hoặc workbook mới. Clone repo không tự có toàn bộ
-các file local này. Quy trình chính: [README](../README.md).
+V2 đã chọn **cảm xúc chung của toàn bình luận**. Nhãn và kết quả V1 theo mục tiêu
+sentiment về phim chỉ là lịch sử; chưa phải nhãn/metric V2. Chưa crawl, gán hoặc
+train lại trong lần dọn này.
+
+Các phase cũ đã được lưu ZIP rồi xóa bản rời sau khi kiểm SHA từng file. Khi cần
+replay một bước lịch sử, đọc ARCHIVE_INDEX.json, khôi phục đúng prefix cần thiết
+về root repo và không ghi đè file hiện có. Không phải giải nén tất cả để chạy
+workflow hiện tại. ZIP là backup nghiên cứu local, không được push.
+
+Giữ phase_g/master và blind_test, phase_g1/phase_g2 vì code gold/exposure còn đọc
+chúng; giữ rebuild_20261112 để đối chiếu provenance/bộ lọc. Các đường dẫn này cùng
+raw/journal, labels, test reservations và evaluation receipts không bị chuyển.
+Một log trong development_support chưa đọc được nên giữ nguyên thư mục này.
+
+Cache pretrained đã xóa; demo checkpoint đã fine-tune vẫn còn. Chạy lại huấn luyện
+Transformer cần tải pretrained theo revision/checksum cũ. Không khởi động lại run
+đã hủy. Code WIP của run hủy vẫn được bảo toàn và chưa nằm trong commit dọn.
+
+Mọi data/import/task/comment chỉ lưu local và bị .gitignore chặn. Ngừng track không
+xóa các bản trong Git history; không rewrite history trong nhiệm vụ này.

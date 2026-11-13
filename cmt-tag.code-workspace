@@ -21,8 +21,8 @@
       "path": "outputs/preprocessing_experiments"
     },
     {
-      "name": "Ví dụ quality filter",
-      "path": "outputs/quality_filter_review"
+      "name": "Lịch sử V1 — ZIP tham chiếu",
+      "path": "data/archive"
     }
   ],
   "settings": {

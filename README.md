@@ -304,6 +304,22 @@ data/            Snapshot dữ liệu/nhãn đã lưu
 outputs/         Dataset và kết quả local
 ```
 
+## Nhập bình luận để demo
+
+Model demo học từ 425 nhãn người development, dùng TF-IDF char_wb (3–5) và
+LinearSVC balanced với cấu hình cố định. Không dùng gold để train hoặc tune.
+Tạo model local một lần bằng `python -m src.models build-demo`, sau đó chạy:
+
+```powershell
+.\.venv\Scripts\python.exe -m src.models predict
+```
+
+Nhập từng bình luận để nhận POS/NEG/NEU; Enter trống hoặc Ctrl+C để kết thúc.
+Có thể dùng `python -m src.models predict --text "Diễn xuất rất hay"`.
+Model nằm ở `outputs/demo_sentiment_425/`, không commit. Bình luận vừa nhập
+không được lưu. Đây là demo dự đoán, có thể sai; không trả xác suất và không
+phải một lần đánh giá gold mới.
+
 ## Kiểm thử và tài liệu
 
 ```powershell

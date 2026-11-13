@@ -16,9 +16,26 @@ def main():
     a=s.add_parser('plan-expansion',help='Prepare fixed paired development folds, without training')
     a.add_argument('--config',type=Path,default=Path('configs/development_human_expansion.json'))
     a.add_argument('--output',type=Path,default=Path('outputs/ai_labeling/pilot_20261113/development_plan'))
+    a=s.add_parser('build-demo',help='Fit and save a fixed demo on existing 425 human dev labels; no gold evaluation')
+    a.add_argument('--output',type=Path,default=Path('outputs/demo_sentiment_425'))
+    a=s.add_parser('predict',help='Predict a typed movie comment using the local demo model')
+    a.add_argument('--model-dir',type=Path,default=Path('outputs/demo_sentiment_425'))
+    inputs=a.add_mutually_exclusive_group()
+    inputs.add_argument('--text');inputs.add_argument('--interactive',action='store_true')
     args=p.parse_args()
     try:
-        if args.cmd=='plan-expansion':
+        if args.cmd=='build-demo':
+            import json
+            from .demo import build
+            print(json.dumps(build(args.output),ensure_ascii=True))
+        elif args.cmd=='predict':
+            import json
+            from .demo import load_model,predict,interactive
+            if not (args.model_dir/'model_info.json').is_file():raise ValueError('Run python -m src.models build-demo first')
+            model=load_model(args.model_dir)
+            if args.text is not None:print(json.dumps({'label':predict(model,args.text)},ensure_ascii=True))
+            else:interactive(model)
+        elif args.cmd=='plan-expansion':
             import json
             from .human_expansion import prepare
             print(json.dumps(prepare(args.config,args.output),ensure_ascii=True))

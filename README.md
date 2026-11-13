@@ -89,6 +89,46 @@ Hiện chưa có approved release cho dataset filtered, nên không đưa trực
 vào train. Output đã tồn tại không được ghi đè. Clone repo không tự có toàn bộ
 raw, coordinator và model local cần cho các lệnh trên.
 
+## Pilot 3 AI qua web — một file 600 câu
+
+```powershell
+python -m src.annotation pilot prepare
+python -m src.annotation pilot export-web
+# Tự tải cùng file/prompt lên ba chat web độc lập, rồi nhập CSV/JSON tải về:
+python -m src.annotation pilot import-web --provider GPT --response PATH.csv --model "model hiển thị trên web"
+python -m src.annotation pilot import-web --provider Claude --response PATH.csv --model "model hiển thị trên web"
+python -m src.annotation pilot import-web --provider Gemini --response PATH.csv --model "model hiển thị trên web"
+python -m src.annotation pilot analyze
+python -m src.annotation pilot audit-import
+```
+
+Gửi **cùng một file đủ 600 câu**, không chia 500+100:
+`outputs/ai_labeling/pilot_20261113/web_upload/pilot_600.json` và hướng dẫn trong
+`PROMPT.txt` cạnh đó. Dùng chat mới, không đưa kết quả AI khác vào prompt.
+Không tải coordinator/report/private manifest lên AI. Không có API client/key hay
+token billing trong workflow; người dùng tự thao tác web. Kết quả cần đủ ID,
+nhãn POS/NEG/NEU/REVIEW/EXCLUDE, reason ngắn. Import từ chối ID lạ/trùng/thiếu,
+nhãn sai hoặc sửa nhãn cũ; có --allow-partial để giữ phần đúng nếu web cắt output.
+Model web không rõ phiên bản thì ghi UNKNOWN_WEB_MODEL, không tự đoán.
+
+Pool pilot riêng mở Facebook trong post development, giữ chặn quality
+EXCLUDE/REVIEW, test/reserved/holdout và exact/near duplicate. Pool KEEP từ 6.967
+lên 12.308: Facebook 31 → 5.372 (3 → 46 post), legacy giữ 6.936. 954 Facebook
+record thiếu identity đủ tin cậy vẫn ngoài pool; không đoán post/comment ID.
+
+Đã niêm phong **450 Facebook chưa nhãn** từ 46 post/31 mã phim (cap 12/post,
+36/phim; thực tế tối đa 10/post), trộn mù với **150 calibration từ 425 nhãn người**
+(50 POS/62 NEG/38 NEU, gồm 129 Facebook + 21 legacy). AI chỉ thấy record_id/text,
+không thấy cohort/nhãn/metadata. Calibration không bao giờ vào silver; movie_id
+legacy để null. Không PyVi cho input AI. Trước khi tải dữ liệu lên web vẫn cần
+quyền chia sẻ nguồn: 21 legacy calibration chưa có xác minh quyền gửi ra ngoài.
+20 mẫu tag-only mới đạt kiểm tra cấu trúc, chưa có semantic human review/FPR.
+
+Sau import ba bên: metrics hiệu chuẩn từng AI/đồng thuận 3/3 có coverage và
+abstention; pairwise/Fleiss; human audit tối đa 50 đồng thuận + 50 bất đồng, ẩn
+nhãn AI. SILVER_CANDIDATE chưa approved; không tự tạo release, train hoặc chạy lại
+gold. Report và mọi dữ liệu/predictions/workbook chỉ lưu local trong pilot folder.
+
 ## Candidate mới: lọc tag-only và URL
 
 ```powershell

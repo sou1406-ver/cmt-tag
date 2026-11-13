@@ -23,6 +23,15 @@ def main():
     a.add_argument('--adjudication',action='store_true',help='Explicit resolution event after independent review')
     a=s.add_parser('agreement'); a.add_argument('--left',type=Path,required=True)
     a.add_argument('--right',type=Path,required=True); a.add_argument('--output',type=Path,required=True)
+    pilot=s.add_parser('pilot',help='One 600-record blinded file for manual GPT/Claude/Gemini web labeling')
+    ps=pilot.add_subparsers(dest='pilot_command',required=True)
+    for command in ('prepare','export-web','import-web','analyze','audit-import'):
+        q=ps.add_parser(command);q.add_argument('--directory',type=Path,default=Path('outputs/ai_labeling/pilot_20261113'))
+        if command=='prepare':q.add_argument('--source',type=Path,default=Path('outputs/canonical/versions/filtered_20261113_quality_v1'))
+        if command=='import-web':
+            q.add_argument('--provider',choices=['GPT','Claude','Gemini'],required=True)
+            q.add_argument('--response',type=Path,required=True);q.add_argument('--model',default='UNKNOWN_WEB_MODEL')
+            q.add_argument('--allow-partial',action='store_true')
     g=s.add_parser('gold',help='One-annotator new-Facebook gold: sample, recheck, agreement, evaluate')
     gs=g.add_subparsers(dest='gold_command',required=True)
     for command in ('sample','recheck','agreement','evaluate'):
@@ -37,7 +46,15 @@ def main():
         elif command=='agreement':q.add_argument('--final',action='store_true',help='Import filled label_final from gold_disagreements.xlsx and lock')
     args=p.parse_args()
     try:
-        if args.cmd=='gold':
+        if args.cmd=='pilot':
+            from . import pilot
+            from . import web_labels
+            if args.pilot_command=='prepare':result=pilot.prepare(args.directory,args.source)
+            elif args.pilot_command=='export-web':result=web_labels.export_web(args.directory)
+            elif args.pilot_command=='import-web':result=web_labels.import_web(args.directory,args.provider,args.response,args.model,args.allow_partial)
+            elif args.pilot_command=='analyze':result=pilot.summarize(args.directory)
+            else:result=pilot.import_audit(args.directory)
+        elif args.cmd=='gold':
             from . import gold
             if args.gold_command=='sample':result=gold.sample(args.export,args.posts,args.directory,run_id=args.run)
             elif args.gold_command=='recheck':result=gold.recheck(args.directory,args.annotator)

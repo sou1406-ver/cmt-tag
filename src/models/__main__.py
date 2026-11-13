@@ -13,9 +13,16 @@ def main():
     a=s.add_parser('evaluate'); a.add_argument('--run',type=Path,required=True); a.add_argument('--output',type=Path,required=True)
     a=s.add_parser('preprocessing-cv',help='Development-only fixed preprocessing comparisons; never evaluates gold')
     a.add_argument('--output',type=Path,default=Path('outputs/preprocessing_experiments'))
+    a=s.add_parser('plan-expansion',help='Prepare fixed paired development folds, without training')
+    a.add_argument('--config',type=Path,default=Path('configs/development_human_expansion.json'))
+    a.add_argument('--output',type=Path,default=Path('outputs/ai_labeling/pilot_20261113/development_plan'))
     args=p.parse_args()
     try:
-        if args.cmd=='preprocessing-cv':
+        if args.cmd=='plan-expansion':
+            import json
+            from .human_expansion import prepare
+            print(json.dumps(prepare(args.config,args.output),ensure_ascii=True))
+        elif args.cmd=='preprocessing-cv':
             import json
             from .preprocessing_cv import run
             print(json.dumps(run(args.output),ensure_ascii=True))

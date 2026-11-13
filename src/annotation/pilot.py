@@ -341,6 +341,11 @@ def import_audit(directory):
     directory=Path(directory);_,_,c=task(directory);coord=load(directory/'audit_coordinator.local.json')
     if coord['agreement_sha256']!=sha(directory/'agreement_report.json'):raise ValueError('Audit source changed')
     decisions=_labels(directory/'review_blind.xlsx',coord['rows'])
+    existing=directory/'human_audit.local.jsonl';existing_report=directory/'human_audit_report.json'
+    if existing.exists() or existing_report.exists():
+        if existing.exists() and existing_report.exists() and {r['id']:r for r in read_jsonl(existing)}==decisions:
+            return dict(audited=len(decisions),already_imported=True,silver_approved=False)
+        raise FileExistsError('Existing human audit differs or is incomplete; preserve history, do not overwrite')
     from .web_labels import successes,provider_config
     cfg=provider_config();predictions=successes(directory,cfg);result={}
     for p in cfg['providers']:

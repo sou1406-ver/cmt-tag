@@ -1,0 +1,20 @@
+{
+  "kind": "DEVELOPMENT_HUMAN_EXPANSION_PLAN_ONLY",
+  "baseline_dataset": "outputs/canonical/versions/filtered_20261112_final",
+  "annotation_dataset": "outputs/canonical/versions/filtered_20261113_quality_v1",
+  "baseline_fold_file": "outputs/preprocessing_experiments/folds.json",
+  "pilot_directory": "outputs/ai_labeling/pilot_20261113",
+  "friend_import": "outputs/ai_labeling/pilot_20261113/friend_import",
+  "models": ["bow_complement_nb", "tfidf_word_svm", "tfidf_char_svm"],
+  "model_parameters": {"bow_complement_nb": {"alpha": 1.0}, "tfidf_word_svm": {"C": 1.0, "class_weight": "balanced"}, "tfidf_char_svm": {"C": 1.0, "class_weight": "balanced"}},
+  "n_splits": 5,
+  "seeds": [20261113, 42, 123, 2026, 17],
+  "text_recipe": "annotation_view_lowercase; old human view must equal immutable minimal view",
+  "primary_validation": "Same original-425 validation IDs for baseline and augmented training; never compare scores on different validation populations",
+  "additional_labels": "human or human_reviewed_ai only; REVIEW/EXCLUDE and AI-only suggestions stay outside training",
+  "new_post_assignment": "Existing baseline post follows frozen fold; unseen post hash(seed,group) modulo 5; no label-dependent assignment",
+  "leakage": "Hold complete post groups out; remove additional train exact/near validation matches; block if baseline frozen split leaks",
+  "execution_allowed": false,
+  "gold_allowed": false,
+  "silver_allowed": false
+}

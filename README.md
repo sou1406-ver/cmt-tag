@@ -135,6 +135,33 @@ thuận 3/3; 184 silver candidate chưa approved. Phân công người: review_b
 100 câu và friend_share/review_friend_350.xlsx 350 câu còn lại, không trùng ID,
 ẩn nhãn AI; giữ riêng 150 calibration. Các file chia sẻ chỉ local, không push data.
 
+Trong lúc chờ 350 câu, có các bước **không train**:
+
+```powershell
+python -m src.annotation pilot audit-errors
+# Chỉ khi bạn đã trả workbook; khai báo đúng nguồn, không tự coi nhãn AI là người:
+python -m src.annotation pilot friend-import --annotator friend --origin human
+python -m src.models plan-expansion
+```
+
+`friend-import` kiểm đúng ID/text/hash/guideline, không trùng 100 câu hoặc 150
+calibration; hỗ trợ nguồn `human`, `human_reviewed_ai`, `ai`. AI-only vẫn là
+suggestion, không vào training plan. Import giống hệt có thể lặp; bản sửa nhãn
+phải dùng output mới để giữ lịch sử. File đang gán chỉ được đọc khi gọi import.
+
+Audit lỗi tại `pilot_20261113/error_analysis/REPORT.md`: tách nhóm 3/3 và bất đồng;
+những dấu hiệu cảm xúc/mỉa mai/đích người chỉ là review cue, không phải nguyên
+nhân đã xác minh. Trong 14 lệch ở nhóm 3/3, 11 thuộc REVIEW/EXCLUDE, 3 thuộc
+sentiment. Không suy rộng tỷ lệ trên mẫu có chủ đích thành lỗi toàn pool.
+
+`configs/development_human_expansion.json` chuẩn bị 425 cũ vs 425 + human mới:
+validation giữ nguyên 25 fold của 425 cũ cho cả hai điều kiện; thêm nhãn vào train
+khi post và exact/near duplicate không chạm validation. Hiện biết 425 + 86 = 511
+nhãn sentiment, 14 EXCLUDE giữ lịch sử, 350 câu vẫn chờ. Kế hoạch local ở
+`pilot_20261113/development_plan/REPORT.md`; chưa có fit/predict/metrics mới,
+không dùng silver hoặc gold và chưa approved release. Sau khi nhập bạn, tạo
+kế hoạch output mới để giữ bản trước; không ghi đè artifact.
+
 ## Candidate mới: lọc tag-only và URL
 
 ```powershell

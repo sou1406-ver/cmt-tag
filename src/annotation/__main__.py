@@ -25,13 +25,18 @@ def main():
     a.add_argument('--right',type=Path,required=True); a.add_argument('--output',type=Path,required=True)
     pilot=s.add_parser('pilot',help='One 600-record blinded file for manual GPT/Claude/Gemini web labeling')
     ps=pilot.add_subparsers(dest='pilot_command',required=True)
-    for command in ('prepare','export-web','import-web','analyze','audit-import'):
+    for command in ('prepare','export-web','import-web','analyze','audit-import','audit-errors','friend-import'):
         q=ps.add_parser(command);q.add_argument('--directory',type=Path,default=Path('outputs/ai_labeling/pilot_20261113'))
         if command=='prepare':q.add_argument('--source',type=Path,default=Path('outputs/canonical/versions/filtered_20261113_quality_v1'))
         if command=='import-web':
             q.add_argument('--provider',choices=['GPT','Claude','Gemini'],required=True)
             q.add_argument('--response',type=Path,required=True);q.add_argument('--model',default='UNKNOWN_WEB_MODEL')
             q.add_argument('--allow-partial',action='store_true')
+        if command=='audit-errors':q.add_argument('--output',type=Path,help='New diagnostics directory under pilot; default error_analysis')
+        if command=='friend-import':
+            q.add_argument('--annotator',required=True)
+            q.add_argument('--origin',choices=['human','human_reviewed_ai','ai'],required=True)
+            q.add_argument('--workbook',type=Path);q.add_argument('--output',type=Path)
     g=s.add_parser('gold',help='One-annotator new-Facebook gold: sample, recheck, agreement, evaluate')
     gs=g.add_subparsers(dest='gold_command',required=True)
     for command in ('sample','recheck','agreement','evaluate'):
@@ -53,6 +58,12 @@ def main():
             elif args.pilot_command=='export-web':result=web_labels.export_web(args.directory)
             elif args.pilot_command=='import-web':result=web_labels.import_web(args.directory,args.provider,args.response,args.model,args.allow_partial)
             elif args.pilot_command=='analyze':result=pilot.summarize(args.directory)
+            elif args.pilot_command=='audit-errors':
+                from .audit import analyze_errors
+                result=analyze_errors(args.directory,args.output or args.directory/'error_analysis')
+            elif args.pilot_command=='friend-import':
+                from .audit import import_friend
+                result=import_friend(args.directory,args.annotator,args.origin,args.workbook,args.output)
             else:result=pilot.import_audit(args.directory)
         elif args.cmd=='gold':
             from . import gold

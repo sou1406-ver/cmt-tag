@@ -1,0 +1,16 @@
+{
+  "kind": "PROVISIONAL_SILVER_DEVELOPMENT_CV",
+  "baseline_dataset": "outputs/canonical/versions/filtered_20261112_final",
+  "annotation_dataset": "outputs/canonical/versions/filtered_20261113_quality_v1",
+  "baseline_fold_file": "outputs/preprocessing_experiments/folds.json",
+  "expansion_directory": "outputs/ai_labeling/expansion_web_20261113",
+  "models": ["bow_multinomial_nb", "bow_complement_nb", "tfidf_word_svm", "tfidf_char_svm"],
+  "n_splits": 5,
+  "seeds": [20261113, 42, 123, 2026, 17],
+  "selection": "At least two actual AI responses, unanimous across every available response for that ID; sentiment only",
+  "text_recipe": "immutable minimal/annotation view lowercased; no new preprocessing",
+  "silver_weight": 1.0,
+  "allow_unapproved_silver_for_exploratory_cv": true,
+  "gold_allowed": false,
+  "approved_release": false
+}

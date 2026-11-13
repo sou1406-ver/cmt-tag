@@ -18,6 +18,9 @@ def main():
     a.add_argument('--output',type=Path,default=Path('outputs/ai_labeling/pilot_20261113/development_plan'))
     a=s.add_parser('build-demo',help='Fit and save a fixed demo on existing 425 human dev labels; no gold evaluation')
     a.add_argument('--output',type=Path,default=Path('outputs/demo_baselines_425'))
+    a=s.add_parser('silver-cv',help='Explicit provisional human-only vs human+silver paired development CV; no gold')
+    a.add_argument('--config',type=Path,default=Path('configs/development_silver_cv.json'))
+    a.add_argument('--output',type=Path,default=Path('outputs/development_silver_cv_20261113_partial'))
     a=s.add_parser('predict',help='Predict a typed movie comment using the local demo model')
     a.add_argument('--model-dir',type=Path,default=Path('outputs/demo_baselines_425'))
     a.add_argument('--model',choices=['bow_multinomial_nb','bow_complement_nb','tfidf_word_svm','tfidf_char_svm','phobert','visobert'])
@@ -28,7 +31,11 @@ def main():
     a.add_argument('--output',type=Path)
     args=p.parse_args()
     try:
-        if args.cmd=='build-transformer-demo':
+        if args.cmd=='silver-cv':
+            import json
+            from .human_expansion import run_silver_cv
+            print(json.dumps(run_silver_cv(args.config,args.output),ensure_ascii=True))
+        elif args.cmd=='build-transformer-demo':
             from .transformer_demo import train as train_transformer
             print(train_transformer(args.model,args.output))
         elif args.cmd=='build-demo':

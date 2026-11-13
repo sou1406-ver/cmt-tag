@@ -164,6 +164,25 @@ Kết quả riêng trong `analysis_GPT_Gemini/`: agreement/Kappa giữa hai AI,
 slot Claude, không gọi là đồng thuận 3/3 hay accuracy. Có thể bổ sung Claude sau;
 kết quả hai bên cũ được giữ nguyên. Không có nhãn người trong batch để tính F1.
 
+### Thực nghiệm mở rộng tạm thời cho báo cáo
+
+```powershell
+python -m src.models silver-cv --output outputs/development_silver_cv_NEW_RUN
+```
+
+Chỉ chạy khi đã chủ động cho phép thực nghiệm với silver chưa duyệt. Config
+`configs/development_silver_cv.json` cố định bốn baseline và 25 fold cũ của 425
+nhãn người. Hai điều kiện dùng cùng validation; silver chỉ vào train nếu nhóm
+bài và exact/near duplicate không chạm validation. Nhãn phải đồng thuận tất cả
+AI đang có cho ID đó, tối thiểu hai; GPT đơn lẻ không vào silver. Không thay
+approved release, dataset, model demo hoặc gold. Không tune theo điểm vừa chạy.
+
+Output bất biến có `comparison.csv`, `paired_deltas.csv`, metric từng seed/fold,
+confusion matrix seed đầu tiên, phân tích lỗi theo lớp/phim/nguồn và
+`section_8.tex` để chèn mục 8. Snapshot journal và danh sách silver được giữ
+local; gán thêm dữ liệu thì dùng output mới. Kết quả là development CV tạm
+thời, không phải independent test; legacy theo record group còn thiếu provenance.
+
 Audit lỗi tại `pilot_20261113/error_analysis/REPORT.md`: tách nhóm 3/3 và bất đồng;
 những dấu hiệu cảm xúc/mỉa mai/đích người chỉ là review cue, không phải nguyên
 nhân đã xác minh. Trong 14 lệch ở nhóm 3/3, 11 thuộc REVIEW/EXCLUDE, 3 thuộc

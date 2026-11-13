@@ -10,7 +10,7 @@ from src.annotation.audit import analyze_errors,import_friend,label_error
 from src.annotation.gold import workbook
 from src.annotation.guidelines import GUIDELINE
 from src.dataset.common import load,save,sha,digest,read_jsonl,write_jsonl
-from src.models.human_expansion import additional_fold_rows
+from src.models.human_expansion import additional_fold_rows,consensus_rows,cv_estimator,run_silver_cv
 
 
 def friend_fixture(p):
@@ -24,6 +24,33 @@ def friend_fixture(p):
 
 
 class HumanAuditToolsTests(TestCase):
+    def test_consensus_requires_two_and_respects_dissenting_third(self):
+        items=[dict(record_id=str(i),text='Synthetic movie') for i in range(5)]
+        predictions={('0','GPT'):{'predicted_label':'POS'},
+            ('1','GPT'):{'predicted_label':'POS'},('1','Gemini'):{'predicted_label':'POS'},
+            ('2','GPT'):{'predicted_label':'POS'},('2','Gemini'):{'predicted_label':'POS'},('2','Claude'):{'predicted_label':'NEG'},
+            ('3','GPT'):{'predicted_label':'REVIEW'},('3','Claude'):{'predicted_label':'REVIEW'},
+            ('4','GPT'):{'predicted_label':'NEG'},('4','Claude'):{'predicted_label':'NEG'}}
+        selected=consensus_rows(items,predictions,{'4'})
+        self.assertEqual([r['record_id'] for r in selected],['1'])
+        self.assertFalse(selected[0]['human_confirmed'])
+        self.assertEqual(selected[0]['providers'],['GPT','Gemini'])
+
+    def test_cv_estimators_have_fixed_tokens_and_nb_no_class_weight(self):
+        for name in ['bow_multinomial_nb','bow_complement_nb']:
+            model=cv_estimator(name,42)
+            self.assertEqual(model.named_steps['vectorizer'].token_pattern,r'(?u)[^\s]+')
+            self.assertNotIn('class_weight',model.named_steps['model'].get_params())
+        model=cv_estimator('tfidf_char_svm',42)
+        self.assertEqual(model.named_steps['vectorizer'].analyzer,'char_wb')
+        self.assertEqual(model.named_steps['model'].class_weight,'balanced')
+
+    def test_provisional_cv_refuses_without_explicit_exploratory_scope(self):
+        with TemporaryDirectory() as tmp:
+            p=Path(tmp);config=p/'config.json'
+            save(config,dict(allow_unapproved_silver_for_exploratory_cv=False,gold_allowed=False,approved_release=False))
+            with patch('sklearn.pipeline.Pipeline.fit',side_effect=AssertionError('No fit')):
+                with self.assertRaisesRegex(ValueError,'provisional-only'):run_silver_cv(config,p/'outputs/run',p)
     def test_label_error_categories_are_not_semantic_claims(self):
         self.assertEqual(label_error('EXCLUDE','POS'),'AI_SENTIMENT_ON_HUMAN_EXCLUDE')
         self.assertEqual(label_error('NEU','POS'),'AI_POLARITY_ON_HUMAN_NEU')

@@ -39,6 +39,64 @@ def workbook(path, rows, formula=False, fields=None, sheet_name='Gán nhãn'):
 
 
 class SentimentPilotTests(unittest.TestCase):
+    def final_fixture(self, complete=False):
+        a=[dict(comment_id=str(i),text_clean=f'Synthetic full pilot {i}',sentiment_label=p.LABELS[i%5],note='context' if i%5==3 else '') for i in range(200)]
+        b=copy.deepcopy(a);b[0]['sentiment_label']='NEG'
+        selected=p.adjudication_selection(a,b)
+        reviews=[dict(**r['data'],review_type=r['review_type'],adjudicator_id='user' if complete else '') for r in selected['rows']]
+        if complete:
+            for r in reviews:r.update(final_label=r['label_A'],adjudication_note='fixture review')
+        return a,b,reviews
+
+    def test_full_200_pending_does_not_inherit_required_labels(self):
+        a,b,reviews=self.final_fixture();original=copy.deepcopy((a,b));kappa=p.metrics([r['sentiment_label'] for r in a],[r['sentiment_label'] for r in b])
+        rows,summary=p.final_decisions(a,b,reviews)
+        self.assertEqual(len(rows),200);self.assertEqual(len({r['comment_id'] for r in rows}),200)
+        self.assertEqual(summary['label_sources'],dict(AB_AGREE=179,ADJUDICATED=0,PENDING_REVIEW=21))
+        self.assertEqual(summary['status'],'INCOMPLETE_ADJUDICATION')
+        required={r['comment_id'] for r in reviews}
+        self.assertTrue(all(not r['final_label'] for r in rows if r['comment_id'] in required))
+        self.assertTrue(all(r['final_label']==r['label_A']==r['label_B'] for r in rows if r['comment_id'] not in required))
+        self.assertEqual((a,b),original)
+        self.assertEqual(p.metrics([r['sentiment_label'] for r in a],[r['sentiment_label'] for r in b]),kappa)
+
+    def test_full_200_complete_keeps_changed_agreement_provenance(self):
+        a,b,reviews=self.final_fixture(complete=True)
+        agreement=next(r for r in reviews if r['review_type']=='AGREEMENT_AUDIT')
+        agreement['final_label']='NEG' if agreement['label_A']!='NEG' else 'POS'
+        rows,summary=p.final_decisions(a,b,reviews)
+        self.assertEqual(summary['status'],'PILOT_ADJUDICATION_COMPLETE')
+        self.assertEqual(summary['label_sources'],dict(AB_AGREE=179,ADJUDICATED=21,PENDING_REVIEW=0))
+        self.assertEqual(sum(summary['final_label_counts'].values()),200)
+        self.assertEqual(summary['trainable']+summary['review_exclude'],200)
+        self.assertEqual(summary['changed_agreements'],1)
+        actual=next(r for r in rows if r['comment_id']==agreement['comment_id'])
+        self.assertEqual(actual['label_A'],actual['label_B']);self.assertNotEqual(actual['final_label'],actual['label_A'])
+        self.assertEqual(actual['adjudicator_id'],'user');self.assertEqual(actual['label_source'],'ADJUDICATED')
+
+    def test_full_partial_disagreement_and_audited_agreement_stay_pending(self):
+        a,b,reviews=self.final_fixture(complete=True)
+        reviews[0]['final_label']=''
+        next(r for r in reviews if r['review_type']=='AGREEMENT_AUDIT')['final_label']=''
+        rows,summary=p.final_decisions(a,b,reviews)
+        self.assertEqual(summary['label_sources']['PENDING_REVIEW'],2)
+        self.assertEqual(summary['status'],'INCOMPLETE_ADJUDICATION')
+        self.assertTrue(all(not r['adjudicator_id'] for r in rows if r['label_source']=='PENDING_REVIEW'))
+
+    def test_full_merge_rejects_identity_source_edits_and_review_without_note(self):
+        a,b,reviews=self.final_fixture(complete=True)
+        for kind in ('missing_ab','duplicate_ab','unknown_review','duplicate_review','missing_disagreement','text','label_A','review_note'):
+            left,right,decisions=copy.deepcopy((a,b,reviews))
+            if kind=='missing_ab':right.pop()
+            if kind=='duplicate_ab':left.append(left[0])
+            if kind=='unknown_review':decisions[0]['comment_id']='unknown'
+            if kind=='duplicate_review':decisions.append(decisions[0])
+            if kind=='missing_disagreement':decisions.pop(0)
+            if kind=='text':decisions[0]['text_clean']+=' edited'
+            if kind=='label_A':decisions[0]['label_A']='EXCLUDE'
+            if kind=='review_note':decisions[0].update(final_label='REVIEW',adjudication_note='')
+            with self.subTest(kind=kind),self.assertRaises(ValueError):p.final_decisions(left,right,decisions)
+
     def test_adjudication_keeps_all_disagreements_and_random_agreement_audit(self):
         a=[dict(comment_id=str(i),text_clean=f'Synthetic {i}',sentiment_label='POS',note='') for i in range(100)]
         b=copy.deepcopy(a)
@@ -185,11 +243,24 @@ class SentimentPilotTests(unittest.TestCase):
                     w=csv.DictWriter(f,fieldnames=p.ADJUDICATION_FIELDS);w.writeheader();w.writerows(rows)
             decisions_csv(adjudication)
             imported=p.import_adjudication(directory,directory/'comparison',decisions)
-            self.assertEqual(imported['reviewed'],21);self.assertEqual(imported['unreviewed'],179)
-            self.assertEqual(imported['status'],'REVIEWED_PILOT_SUBSET_NOT_GOLD')
+            self.assertEqual(imported['label_sources']['ADJUDICATED'],21);self.assertEqual(imported['label_sources']['AB_AGREE'],179)
+            self.assertEqual(imported['status'],'PILOT_ADJUDICATION_COMPLETE')
+            with (directory/'comparison/adjudicated/pilot_final_decisions.local.csv').open(encoding='utf-8-sig') as f:full=list(csv.DictReader(f))
+            with (directory/'comparison/adjudicated/pilot_trainable.local.csv').open(encoding='utf-8-sig') as f:train=list(csv.DictReader(f))
+            self.assertEqual(len(full),200);self.assertEqual(len({r['comment_id'] for r in full}),200)
+            self.assertEqual({r['comment_id'] for r in full},{r['comment_id'] for r in input_rows})
+            self.assertTrue(all(r['final_label'] in p.LABELS[:3] and r['label_source']!='PENDING_REVIEW' for r in train))
+            self.assertEqual(len(train),imported['trainable'])
             self.assertEqual({str(file):sha(file) for file in map(Path,frozen)},frozen)
             self.assertEqual(json.loads((directory/'comparison/agreement.json').read_text())['kappa'],out['kappa'])
-            for issue in ('text','label_A','note_B','id','missing','duplicate','blank_final','invalid_final','review_note'):
+            partial=copy.deepcopy(adjudication);partial[0]['final_label']='';partial[1]['final_label']=''
+            decisions_csv(partial)
+            partial_summary=p.import_adjudication(directory,directory/'comparison',decisions,root/'partial')
+            self.assertEqual(partial_summary['label_sources']['PENDING_REVIEW'],2)
+            self.assertEqual(partial_summary['status'],'INCOMPLETE_ADJUDICATION')
+            with (root/'partial/pilot_trainable.local.csv').open(encoding='utf-8-sig') as f:partial_train=list(csv.DictReader(f))
+            self.assertFalse({partial[0]['comment_id'],partial[1]['comment_id']}&{r['comment_id'] for r in partial_train})
+            for issue in ('text','label_A','note_B','id','missing','duplicate','invalid_final','review_note'):
                 changed=copy.deepcopy(adjudication)
                 if issue=='text':changed[0]['text_clean']+=' edit'
                 if issue=='label_A':changed[0]['label_A']='EXCLUDE'
@@ -197,7 +268,6 @@ class SentimentPilotTests(unittest.TestCase):
                 if issue=='id':changed[0]['comment_id']='wrong'
                 if issue=='missing':changed.pop()
                 if issue=='duplicate':changed.append(changed[0])
-                if issue=='blank_final':changed[0]['final_label']=''
                 if issue=='invalid_final':changed[0]['final_label']='MIXED'
                 if issue=='review_note':changed[0].update(final_label='REVIEW',adjudication_note='')
                 decisions_csv(changed)
@@ -205,7 +275,7 @@ class SentimentPilotTests(unittest.TestCase):
                 self.assertFalse((root/'invalid').exists())
             review_xlsx=directory/'filled.xlsx'
             workbook(review_xlsx,adjudication,fields=p.ADJUDICATION_FIELDS,sheet_name='Đối soát')
-            self.assertEqual(p.import_adjudication(directory,directory/'comparison',review_xlsx,root/'xlsx_review')['reviewed'],21)
+            self.assertEqual(p.import_adjudication(directory,directory/'comparison',review_xlsx,root/'xlsx_review')['label_sources']['ADJUDICATED'],21)
             self.assertEqual((directory/'sampling_manifest.json').read_bytes(),original_manifest)
             with self.assertRaises(FileExistsError):p.compare(directory)
             (directory/'sampling_manifest.json').write_text('{}',encoding='utf8')

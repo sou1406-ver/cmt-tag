@@ -203,10 +203,17 @@ label_B, note_A, note_B, final_label, adjudication_note`. Toàn bộ bất đồ
 ngẫu nhiên bằng seed cố định để kiểm tra chất lượng (tô xanh). Có thể chỉnh số
 câu đồng thuận qua `--agreement-audit-count`, không đổi mẫu pilot 200 câu.
 `final_label` để trống ở cả hai nhóm. Chỉ nhập hai cột cuối; REVIEW cần note.
-Importer từ chối sửa ID/text/nhãn hoặc note gốc A/B, thiếu/trùng dòng, nhãn cuối
-trống/sai. Kết quả lưu riêng tại `comparison/adjudicated/`, có receipt/hash và
-giữ nguyên A/B cùng Kappa. Các câu đồng thuận chưa được kiểm tra không tự được
-điền nhãn cuối; không tự tạo Gold hoặc ghi canonical. Workbook chứa comment chỉ local.
+Importer từ chối sửa ID/text/nhãn hoặc note gốc A/B, thiếu/trùng dòng và nhãn cuối
+không hợp lệ. Nhãn cuối trống trên câu bắt buộc kiểm tra được giữ `PENDING_REVIEW`;
+không tự lấy nhãn A/B. Kết quả lưu riêng tại `comparison/adjudicated/`, có receipt/hash,
+giữ nguyên A/B cùng Kappa. `pilot_final_decisions.local.csv` luôn đủ 200 ID:
+đồng thuận **ngoài mẫu kiểm tra** lấy nhãn A=B (`AB_AGREE`); câu có nhãn do người dùng
+chốt là `ADJUDICATED`. Đồng thuận thuộc mẫu kiểm tra vẫn phải được người dùng chốt.
+`pilot_trainable.local.csv` chỉ gồm POS/NEG/NEU đã có final, không REVIEW/EXCLUDE/pending;
+đây chỉ là export, không tự đưa vào train hoặc Gold. `summary.json` báo số nguồn nhãn,
+phân bố nhãn cuối, trainable, REVIEW/EXCLUDE và số đồng thuận bị sửa. Còn pending thì
+`INCOMPLETE_ADJUDICATION`; chỉ đủ 200 final hợp lệ mới `PILOT_ADJUDICATION_COMPLETE`.
+Workbook và mọi output chứa comment chỉ lưu local, không commit.
 
 Chỉ commit code, tài liệu, config và fixture tổng hợp. `.gitignore` chặn dữ liệu,
 outputs, venv, profile, secrets và model. Không dùng `git add -f` để đẩy các file này.

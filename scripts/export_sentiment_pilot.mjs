@@ -114,7 +114,7 @@ async function exportAdjudication(directory) {
     'Được xem label_A, label_B và note_A/note_B. Chỉ dùng text_clean, không tra parent/post để suy cảm xúc.',
     'Không sửa ID, text hoặc nhãn/ghi chú gốc của A/B. Cần đọc câu dài thì xem thêm Đọc dài nếu có.',
     'Kappa nằm ở agreement.json, đã tính trên toàn bộ nhãn gốc A/B TRƯỚC đối soát. Không tính lại từ final_label.',
-    'Kết quả kiểm duyệt lưu riêng qua sentiment-pilot adjudicate; không tự tạo Gold, không tự chốt các câu đồng thuận chưa được kiểm tra.'
+    'Import xuất đủ 200 quyết định: đồng thuận ngoài mẫu kiểm tra → AB_AGREE; câu đã chọn kiểm tra còn trống → PENDING_REVIEW. Không tự tạo Gold.'
   ];
   guide.getRange(`A1:A${notes.length}`).values=notes.map(v=>[v]);guide.getRange(`A1:A${notes.length}`).format={font:{name:'Arial',size:12},wrapText:true,rowHeight:55,verticalAlignment:'top'};
   if(longParts.length){const l=wb.worksheets.add('Đọc dài');l.showGridLines=false;l.getRange(`A1:C${longParts.length+1}`).values=[['comment_id','Phần','text_clean — chỉ để đọc'],...longParts];l.getRange(`A1:C${longParts.length+1}`).format={font:{name:'Arial',size:11},wrapText:true,verticalAlignment:'top'};l.getRange('A:A').format.columnWidth=28;l.getRange('A:A').format.numberFormat='@';l.getRange('B:B').format.columnWidth=7;l.getRange('C:C').format.columnWidth=100;for(const [i,r] of longParts.entries()){const lines=String(r[2]).split('\n').reduce((n,t)=>n+Math.max(1,Math.ceil([...t].length/86)),0);l.getRange(`A${i+2}:C${i+2}`).format.rowHeight=Math.min(390,Math.max(80,lines*18+20));}l.freezePanes.freezeRows(1);}

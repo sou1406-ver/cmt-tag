@@ -284,7 +284,7 @@ def compare(directory=DEFAULT, output=None, agreement_audit_count=20):
 
 
 def import_adjudication(directory, comparison, decisions, output=None, adjudicator='user'):
-    """Store only the adjudicator's reviewed decisions, never mutate A/B or Gold."""
+    """Combine all A/B agreements and explicit review decisions; never write Gold."""
     directory=Path(directory).resolve();comparison=Path(comparison).resolve();decisions=Path(decisions).resolve()
     if not adjudicator.strip():raise ValueError('Adjudicator ID is required')
     m=verify_manifest(directory);receipt=load(comparison/'receipt.json')
@@ -317,16 +317,67 @@ def import_adjudication(directory, comparison, decisions, output=None, adjudicat
         if digest(json.dumps(frozen,ensure_ascii=False,sort_keys=True))!=original['immutable_sha256']:
             raise ValueError('Adjudication text or original A/B decision edited')
         label=(row['final_label'] or '').strip().upper()
-        if label not in LABELS:raise ValueError('Every reviewed row needs an explicit valid final_label')
+        if label and label not in LABELS:raise ValueError('Invalid final_label')
         if label=='REVIEW' and not (row['adjudication_note'] or '').strip():raise ValueError('Final REVIEW requires a note')
-        records.append({**row,'final_label':label,'review_type':original['review_type'],'adjudicator_id':adjudicator})
+        records.append({**row,'final_label':label,'review_type':original['review_type'],
+                        'label_source':'ADJUDICATED' if label else 'PENDING_REVIEW','adjudicator_id':adjudicator if label else ''})
+    left=read_labels(directory/'pilot_sentiment_annotator_A.xlsx',m,'A')
+    right=read_labels(directory/'pilot_sentiment_annotator_B.xlsx',m,'B')
+    by_id={r['comment_id']:r for r in left}
+    left=[by_id[r['comment_id']] for r in m['selected_rows']]
+    full,summary=final_decisions(left,right,records)
+    if len(full)!=200 or {r['comment_id'] for r in full}!={r['comment_id'] for r in m['selected_rows']}:
+        raise ValueError('Final pilot must contain exactly the original 200 unique IDs')
+    trainable=[r for r in full if r['final_label'] in LABELS[:3] and r['label_source']!='PENDING_REVIEW']
     if sha(decisions)!=input_sha:raise ValueError('Adjudication input changed while reading')
     with staged(output or comparison/'adjudicated') as work:
         write_jsonl(work/'reviewed_decisions.local.jsonl',records)
         write_csv(work/'reviewed_decisions.local.csv',records,[*ADJUDICATION_FIELDS,'review_type','adjudicator_id'])
+        fields=[*ADJUDICATION_FIELDS,'label_source','adjudicator_id','review_type','agreement_changed']
+        write_csv(work/'pilot_final_decisions.local.csv',full,fields)
+        write_csv(work/'pilot_trainable.local.csv',trainable,fields)
+        save(work/'summary.json',summary)
         save(work/'receipt.json',dict(adjudicator=adjudicator,created_at=datetime.now(timezone.utc).isoformat(),
             comparison_receipt_sha256=sha(comparison/'receipt.json'),adjudication_input_sha256=input_sha,
             pilot_manifest_sha256=receipt['manifest_sha256'],guideline_sha256=m['guideline_sha256'],
-            reviewed=len(records),unreviewed=m['selected']-len(records),status='REVIEWED_PILOT_SUBSET_NOT_GOLD',
-            note='A/B original decisions and pre-adjudication metrics are unchanged; no labels auto-filled for unreviewed agreements'))
-    return dict(reviewed=len(records),unreviewed=m['selected']-len(records),status='REVIEWED_PILOT_SUBSET_NOT_GOLD')
+            summary=summary,status=summary['status'],scope='guideline_development_pilot_not_gold_test',
+            note='A/B originals and pre-adjudication Kappa unchanged; only agreements outside the review sample inherit A=B; no training or Gold import'))
+        for file,h in receipt['workbook_sha256'].items():
+            if sha(file)!=h:raise ValueError('Original A/B workbook changed during import')
+        if sha(comparison/'agreement.json')!=receipt['agreement_sha256']:raise ValueError('Original Kappa changed during import')
+    return summary
+
+
+def final_decisions(left, right, reviewed):
+    """Full pilot provenance; a blank required decision never inherits an A/B label."""
+    a={r['comment_id']:r for r in left};b={r['comment_id']:r for r in right}
+    review={r['comment_id']:r for r in reviewed}
+    if len(a)!=len(left) or len(b)!=len(right) or set(a)!=set(b) or len(review)!=len(reviewed) or not set(review)<=set(a):
+        raise ValueError('Full pilot IDs missing, duplicated or changed')
+    full=[]
+    for original in left:
+        rid=original['comment_id'];other=b[rid];same=original['sentiment_label']==other['sentiment_label']
+        if original['text_clean']!=other['text_clean']:raise ValueError('A/B text differs')
+        if not same and rid not in review:raise ValueError('Missing required disagreement review row')
+        row=dict(comment_id=rid,text_clean=original['text_clean'],label_A=original['sentiment_label'],label_B=other['sentiment_label'],
+                 note_A=original['note'],note_B=other['note'])
+        if rid in review:
+            decision=review[rid]
+            if any(decision[k]!=row[k] for k in ADJUDICATION_SOURCE_FIELDS):raise ValueError('Original A/B data edited in review')
+            label=decision['final_label']
+            if label and label not in LABELS:raise ValueError('Invalid final_label')
+            if label=='REVIEW' and not decision['adjudication_note'].strip():raise ValueError('Final REVIEW requires a note')
+            row.update(final_label=label,label_source='ADJUDICATED' if label else 'PENDING_REVIEW',
+                       adjudicator_id=decision['adjudicator_id'] if label else '',adjudication_note=decision['adjudication_note'],
+                       review_type=decision['review_type'],agreement_changed=bool(same and label and label!=row['label_A']))
+        else:
+            row.update(final_label=row['label_A'],label_source='AB_AGREE',adjudicator_id='',adjudication_note='',
+                       review_type='AGREEMENT_NOT_SAMPLED',agreement_changed=False)
+        full.append(row)
+    counts=Counter(r['label_source'] for r in full);labels=Counter(r['final_label'] for r in full if r['final_label'])
+    complete=not counts['PENDING_REVIEW'] and all(r['final_label'] in LABELS for r in full)
+    summary=dict(total=len(full),label_sources={k:counts[k] for k in ('AB_AGREE','ADJUDICATED','PENDING_REVIEW')},
+        final_label_counts={k:labels[k] for k in LABELS},trainable=sum(labels[k] for k in LABELS[:3]),
+        review_exclude=labels['REVIEW']+labels['EXCLUDE'],changed_agreements=sum(r['agreement_changed'] for r in full),
+        status='PILOT_ADJUDICATION_COMPLETE' if complete else 'INCOMPLETE_ADJUDICATION',scope='development_pilot_not_gold_test')
+    return full,summary

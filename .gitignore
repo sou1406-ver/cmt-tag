@@ -19,6 +19,11 @@ __pycache__/
 *.npy
 *.pkl
 *.model
+*.joblib
+*.safetensors
+*.pt
+*.pth
+*.onnx
 .pytest_cache/
 
 # Local secrets; keep example templates eligible for version control.

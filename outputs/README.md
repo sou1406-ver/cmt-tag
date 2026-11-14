@@ -8,6 +8,7 @@
 | Nhãn người phát triển V1 | [thư mục](development/) | 425 sentiment trong dataset sau lọc; không tự chuyển sang nhãn V2 |
 | AI và human audit V1 | [thư mục](ai_labeling/) | Quyết định nguồn giữ riêng; 350 task cũ đã trả UNLABELED, silver chưa approved |
 | Gold V1 | [thư mục](gold/) | Đã khóa và evaluate một lần; giữ lịch sử, không train/tune lại |
+| Crawl kiểm tra text sạch | [thư mục](crawler_review_20261114/) | Excel 65 dòng đầu; batch tiếp 95 dòng/3 phim, xem batch_summary.json để đến CSV export; không nhập canonical/train |
 | Thực nghiệm gần nhất V1 | [REPORT.md](development_silver_cv_20261113_partial_03/REPORT.md) | Kết quả tạm thời với silver chưa approved |
 | Output lịch sử đã gom | [history_before_v2_20261113.zip](../data/archive/history_before_v2_20261113.zip) | Bản sao nguyên byte; ARCHIVE_INDEX.json chứa đường dẫn/SHA từng file |
 | Biên bản dọn local | [thư mục](local_cleanup_20261113_v2/) | Plan, SHA trước/sau, receipt xóa và unittest log |

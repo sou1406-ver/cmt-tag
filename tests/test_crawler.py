@@ -64,6 +64,10 @@ class ParserTests(unittest.TestCase):
         for field in ('text_clean','url_count','clean_review_reasons','clean_status'):
             incomplete={k:v for k,v in row.items() if k!=field}
             self.assertEqual(observations([incomplete],POST['post_url'])[1],1)
+        reviewed={**row,'clean_status':'REVIEW','clean_review_reasons':['media_context_required'],
+                  'non_text_media_count':1}
+        self.assertEqual(observations([reviewed],POST['post_url'])[1],0)
+        self.assertEqual(observations([{**reviewed,'non_text_media_count':0}],POST['post_url'])[1],1)
         evidence=[{'kind':'mention','rule':'identity_link','raw_start':0,'raw_end':2},
                   {'kind':'url','rule':'explicit_url_text','raw_start':12,'raw_end':30}]
         self.assertEqual(observations([{**row,'clean_evidence':evidence}],POST['post_url'])[1],0)

@@ -357,9 +357,9 @@ class FacebookLayoutTests(unittest.TestCase):
             ('<a href="/fixture.a">An Bình</a>', '',1,0,'EXCLUDE'),
             ('Chưa dở https://example.org/review. :))', 'Chưa dở . :))',0,1,'KEEP'),
             ('ko https://example.org/?a=1&amp;b=2 hay www.example.org 😭', 'ko hay 😭',0,2,'KEEP'),
-            ('Chẳng tệ <a href="https://example.org/review">bản review dài</a> đâu!', 'Chẳng tệ đâu!',0,1,'KEEP'),
-            ('<span>giữ chữ <a href="/other/posts/777">bài chia sẻ</a> không tệ</span>', 'giữ chữ không tệ',0,1,'KEEP'),
-            ('<a href="https://l.facebook.com/l.php?u=https%3A%2F%2Fexample.org">Preview</a>', '',0,1,'EXCLUDE'),
+            ('Chẳng tệ <a href="https://example.org/review">https://example.org/review</a> đâu!', 'Chẳng tệ đâu!',0,1,'KEEP'),
+            ('<span>giữ chữ <a href="/other/posts/777"><img alt="Preview image">bài chia sẻ</a> không tệ</span>', 'giữ chữ không tệ',0,1,'KEEP'),
+            ('<a href="https://l.facebook.com/l.php?u=https%3A%2F%2Fexample.org"><img alt="Preview image">Preview</a>', '',0,1,'EXCLUDE'),
             ('😂 😭 ❤️', '😂 😭 ❤️',0,0,'KEEP'),
             ('<img alt="😂"><img alt="❤️">', '😂❤️',0,0,'KEEP'),
             ('ko đc cx mn :)) =)) :v :( :):) :-) -_- - hayyy!!!', 'ko đc cx mn :)) =)) :v :( :):) :-) -_- - hayyy!!!',0,0,'KEEP'),
@@ -371,7 +371,7 @@ class FacebookLayoutTests(unittest.TestCase):
             ('<a href="/fixture.a">An</a> :-)', ':-)',1,0,'KEEP'),
             ('https://example.org/:))', ':))',0,1,'KEEP'),
             ('www.example.org=))', '=))',0,1,'KEEP'),
-            ('<img alt="A photo of someone">', '',0,0,'REVIEW'),
+            ('<img alt="A photo of someone">', '',0,0,'EXCLUDE'),
             ('<a href="/fixture.a">An</a> https://example.org', '',1,1,'EXCLUDE'),
         ]
         for fragment,cleaned,mentions,urls,status in cases:
@@ -389,7 +389,7 @@ class FacebookLayoutTests(unittest.TestCase):
     def test_clean_view_nested_reply_never_inherits_parent_author_or_ui(self):
         self.load(self.fixture().replace('Đúng vậy 👍',
             '<a href="/profile.php?id=99">Tên được tag</a> Không dở 👍 '
-            '<a href="https://example.org">preview</a><button>Reply</button><time>3 giờ</time>'))
+            '<a href="https://example.org">https://example.org</a><button>Reply</button><time>3 giờ</time>'))
         rows,errors=observations(dom(self.driver,GROUP),GROUP)
         self.assertEqual(errors,0)
         parent=next(r for r in rows if r['comment_id']=='101')
@@ -415,7 +415,7 @@ class FacebookLayoutTests(unittest.TestCase):
 
     def test_clean_evidence_utf16_spans_without_account_ids(self):
         fragment='😂 <a href="/groups/example/user/42/">Chee</a> hay '
-        fragment+='https://example.org :)) <a href="https://example.net">preview</a>'
+        fragment+='https://example.org :)) <a href="https://example.net"><img alt="Preview">preview</a>'
         self.load(self.fixture().replace('Phim hay 😍!<br>ko dở.',
             '<span data-comment-body>'+fragment+'</span>'))
         rows,errors=observations(dom(self.driver,GROUP),GROUP)
@@ -428,6 +428,64 @@ class FacebookLayoutTests(unittest.TestCase):
         self.assertEqual(removed,['Chee','https://example.org','preview'])
         self.assertEqual([e['rule'] for e in events],['group_user_link','explicit_url_text','shared_link'])
         self.assertTrue(all(set(e)=={'kind','rule','raw_start','raw_end'} for e in events))
+
+    def test_media_presence_does_not_decide_text_sentiment_or_context(self):
+        cases=[('Phim rất hay 😂<img alt="A photo">','Phim rất hay 😂','KEEP',1),
+               ('<img alt="A photo">','','EXCLUDE',1),
+               ('<video><span>Generated caption</span></video>','','EXCLUDE',1),
+               ('Không dở <img alt="GIF animation">','Không dở','KEEP',1),
+               ('😂<img alt="A photo">','😂','KEEP',1),
+               (':))<img alt="A photo">',':))','KEEP',1),
+               ('<img alt="😂">','😂','KEEP',0)]
+        for fragment,expected,status,media_count in cases:
+            with self.subTest(fragment=fragment):
+                self.load(self.fixture().replace('Phim hay 😍!<br>ko dở.',
+                    '<span data-comment-body>'+fragment+'</span>'))
+                candidates=dom(self.driver,GROUP);raw=next(c for c in candidates if c.get('permalink','').endswith('comment_id=101'))['text_raw']
+                rows,errors=observations(candidates,GROUP);self.assertEqual(errors,0)
+                row=next(r for r in rows if r['comment_id']=='101')
+                self.assertEqual((row['text_clean'],row['clean_status'],row['non_text_media_count']),(expected,status,media_count))
+                self.assertEqual(row['text_raw'],raw)
+                self.assertNotIn('non_text_media',row['clean_review_reasons'])
+        # No keyword heuristic: a human may explicitly request REVIEW instead.
+        self.load(self.fixture().replace('Đúng vậy 👍','Như ảnh <img alt="A photo">'))
+        candidates=dom(self.driver,GROUP)
+        candidate=next(c for c in candidates if c.get('is_reply'))
+        original_raw=candidate['text_raw']
+        candidate.update(clean_status='REVIEW',clean_review_reasons=['media_context_required'])
+        rows,errors=observations([candidate],GROUP)
+        self.assertEqual(errors,0);self.assertEqual(rows[0]['clean_status'],'REVIEW')
+        self.assertEqual(rows[0]['text_raw'],original_raw)
+
+    def test_url_positions_fragments_and_ambiguous_anchor_prose(self):
+        cases=[('Phim này hay 😂 https://example.com','Phim này hay 😂',1,'KEEP'),
+               ('https://example.com phim dở thật','phim dở thật',1,'KEEP'),
+               ('Xem ở www.example.com nhé','Xem ở nhé',1,'KEEP'),
+               ('https://example.com http://example.net www.example.org','',3,'EXCLUDE'),
+               ('<a href="/fixture.a">Minh</a> https://example.com 😂','😂',1,'KEEP'),
+               ('Diễn xuất của Trấn Thành hay','Diễn xuất của Trấn Thành hay',0,'KEEP'),
+               ('https://exa<span>mple.com</span> phim hay','phim hay',1,'KEEP'),
+               ('<a href="https://example.com">Trấn Thành diễn hay</a> 😂','Trấn Thành diễn hay 😂',0,'REVIEW'),
+               ('<a href="/other/posts/777">Mưa Đỏ rất hay</a>','Mưa Đỏ rất hay',0,'REVIEW'),
+               ('<a href="https://example.org/hashtag/phim">đánh giá phim</a>','đánh giá phim',0,'REVIEW')]
+        for fragment,expected,urls,status in cases:
+            with self.subTest(fragment=fragment):
+                self.load(self.fixture().replace('Phim hay 😍!<br>ko dở.',
+                    '<span data-comment-body>'+fragment+'</span>'))
+                rows,errors=observations(dom(self.driver,GROUP),GROUP);self.assertEqual(errors,0)
+                row=next(r for r in rows if r['comment_id']=='101')
+                self.assertEqual((row['text_clean'],row['url_count'],row['clean_status']),(expected,urls,status))
+                self.assertNotRegex(row['text_clean'],r'https?://|www\.')
+
+    def test_reply_with_mention_and_media_keeps_only_its_own_text(self):
+        self.load(self.fixture().replace('Đúng vậy 👍',
+            '<a href="/profile.php?id=99">Minh</a> Không chán :))<img alt="A photo">'))
+        rows,errors=observations(dom(self.driver,GROUP),GROUP);self.assertEqual(errors,0)
+        reply=next(r for r in rows if r['comment_id']=='102')
+        self.assertEqual((reply['text_clean'],reply['clean_status'],reply['mention_count'],reply['non_text_media_count']),
+                         ('Không chán :))','KEEP',1,1))
+        self.assertEqual(reply['parent_comment_id'],'101')
+        self.assertNotIn('AUTHOR',reply['text_raw']);self.assertNotIn('Phim hay',reply['text_raw'])
 
     def test_innermost_source_dialog_excludes_outer_dialog_comments(self):
         start=self.fixture().index('<div role="dialog">')

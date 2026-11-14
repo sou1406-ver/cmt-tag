@@ -9,15 +9,24 @@ Run mới dùng `dom_text_v3`: `text_raw` giữ chữ gốc trong vùng comment,
 `text_without_mentions` chỉ bỏ account link, còn `text_clean` bỏ thêm URL/link
 chia sẻ. Không đọc toàn bộ article để lấy text. Link profile, people và
 `/groups/<id hoặc slug>/user/<id>/` là bằng chứng mention; tên viết thuần giữ nguyên.
-Link ngoài Facebook/redirect/link bài chia sẻ bỏ phần anchor; chữ ngoài anchor
-vẫn giữ. Hashtag giữ; link không xác định giữ text và gắn `REVIEW`.
+Chỉ bỏ anchor có nhãn URL hoặc cấu trúc media-card của link chia sẻ. Địa chỉ
+đích ngoài Facebook/redirect/post không tự chứng minh chữ trong anchor là preview.
+Anchor ngôn ngữ chưa rõ giữ chữ và gắn `REVIEW`; URL hiện trong chữ vẫn bỏ.
+Chữ ngoài anchor và hashtag giữ nguyên.
 `clean_status` là đề xuất kỹ thuật: `KEEP`, `EXCLUDE` khi chỉ còn trắng/tag/URL,
-`REVIEW` khi link mơ hồ hoặc có media không chuyển được thành chữ. Emoji-only
-được giữ, không tự gán sentiment. `url_count` và `clean_review_reasons` ghi lý do.
+`REVIEW` khi link mơ hồ. Có media không tự gây REVIEW: text/emoji/emoticon còn
+dùng được sẽ KEEP; media-only không có chữ/emoji hữu ích sẽ EXCLUDE khỏi tập text.
+`non_text_media_count` vẫn giữ; không OCR hoặc đọc caption tự sinh. KEEP là trạng
+thái kỹ thuật, không khẳng định câu độc lập với ảnh hoặc có sentiment rõ ràng.
+Người gán chọn REVIEW nếu cần ảnh mới hiểu. Metadata cũng nhận lý do tường minh
+`media_context_required` khi có media; crawler không tự suy diễn bằng từ khóa.
+Journal cũ dùng lý do `non_text_media` vẫn được đọc nguyên trạng.
+`url_count` và `clean_review_reasons` ghi số lượng/lý do, không tự gán sentiment.
 Chỉ còn dấu câu (ví dụ `?`) cũng là `REVIEW`; không áp dụng cho emoji/emoticon.
 `clean_evidence` lưu loại/rule và `raw_start`/`raw_end` của từng đoạn bị bỏ,
 theo đơn vị UTF-16 của JavaScript, không lưu href hay danh tính tài khoản mới.
-URL bị chia cắt qua nhiều text node mà không thể xóa chắc chắn được giữ để review.
+URL text được nhận diện trên chuỗi hiển thị nối từ các node, kể cả nhiều span;
+offset giữ liên hệ với raw. Chuỗi giống URL nhưng không phân tích được giữ REVIEW.
 Run cũ không có evidence vẫn đọc được; không bổ sung bằng chứng giả cho journal cũ.
 View sạch dành cho task gán nhãn/huấn luyện mới sau kiểm tra; import config cũ vẫn
 giữ `text_raw`, không tự đổi dataset hoặc protocol. Journal v2 vẫn đọc được và

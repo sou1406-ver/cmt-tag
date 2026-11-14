@@ -182,16 +182,20 @@
       try {
         const u=new URL(href,document.baseURI);
         if (!['http:','https:'].includes(u.protocol)) return 'ambiguous';
-        if (!/(^|\.)facebook\.com$/i.test(u.hostname)) return 'url';
-        if (/^\/hashtag\/[^/]+\/?$/.test(u.pathname)) return null;
-        if (identify(u.href) || /^\/(?:l\.php|photo(?:\.php)?|photos|share|watch|reels?|events)(?:\/|$)/i.test(u.pathname) ||
-            /^\/groups\/[A-Za-z0-9._-]+\/?$/.test(u.pathname)) return 'url';
+        if (/(^|\.)facebook\.com$/i.test(u.hostname) && /^\/hashtag\/[^/]+\/?$/.test(u.pathname)) return null;
+        // A destination alone does not prove that its language is a preview.
+        // Remove URL-labelled anchors or media cards, retain ordinary prose.
+        const label=clean(node.textContent);
+        const urlLabel=/^(?:https?:\/\/|www\.)\S+$/i.test(label);
+        const mediaCard=[...node.querySelectorAll('img,video,audio')].some(media=>
+          media.nodeName!=='IMG' || !emojiAlt(media.getAttribute('alt')||''));
+        if (urlLabel || mediaCard) return 'url';
       } catch { /* Keep ambiguous link text for review. */ }
       return 'ambiguous';
     };
     // Strip explicit URL tokens only; surrounding prose/punctuation is retained.
     const rawRanges=new WeakMap();
-    const stripURLs = (value,rawStart,events) => {
+    const stripURLs = (value,offsets,events) => {
       let count=0;
       const text=value.replace(/(?:https?:\/\/|\bwww\.)[^\s<>"'\p{Extended_Pictographic}]+/giu, (token,offset) => {
         let url=token,suffix='';
@@ -205,15 +209,21 @@
           const parsed=new URL(/^www\./i.test(url)?'https://'+url:url);
           if (!parsed.hostname.includes('.')) return token;
         } catch { return token; }
+        const start=offsets[offset],end=offsets[offset+url.length-1];
+        if (!Number.isInteger(start) || !Number.isInteger(end)) return token;
         count++;
-        events.push({kind:'url',rule:'explicit_url_text',raw_start:rawStart+offset,raw_end:rawStart+offset+url.length});
+        events.push({kind:'url',rule:'explicit_url_text',raw_start:start,raw_end:end+1});
         return suffix;
       });
       return {text,count};
     };
     const renderText = mode => {
       let text='',mentions=0,media=0,urls=0,removed=false;
-      const reasons=new Set(),events=[];
+      const reasons=new Set(),events=[],offsets=[];
+      const append=(value,rawStart=null)=>{
+        text+=value;
+        if (mode==='clean') for (let i=0;i<value.length;i++) offsets.push(rawStart===null?null:rawStart+i);
+      };
       const evidence=(node,kind)=>{
         const [start,end]=rawRanges.get(node);
         let rule='shared_link';
@@ -228,45 +238,49 @@
         const start=text.length;
         if (node.nodeType===Node.TEXT_NODE) {
           let value=node.textContent;
-          if (mode==='clean') {
-            const stripped=stripURLs(value,rawRanges.get(node)[0],events);
-            value=stripped.text;urls+=stripped.count;
-          }
           // Remove only a colon separator immediately after a removed mention.
           // Never strip the ':' from :)), :):), :-) or ordinary '-' prose.
           if (removed) value=value.replace(/^\s*:(?=\s)/u,'');
           if (value.trim()) removed=false;
-          text+=value;
+          append(value,mode==='clean'?rawRanges.get(node)[0]+node.textContent.length-value.length:null);
         }
-        else if (node.nodeName==='BR') text+='\n';
+        else if (node.nodeName==='BR') append('\n');
         else if (node.nodeName==='IMG') {
           const alt=node.getAttribute('alt')||'';
-          if (emojiAlt(alt)) text+=alt; else media++;
+          if (emojiAlt(alt)) append(alt,mode==='clean'?rawRanges.get(node)[0]:null); else media++;
+        } else if (['VIDEO','AUDIO','IFRAME','CANVAS','SVG','OBJECT','EMBED'].includes(node.nodeName)) {
+          media++;
+        } else if (node.getAttribute?.('role')==='img') {
+          const alt=node.getAttribute('aria-label')||'';
+          if (emojiAlt(alt)) append(alt,mode==='clean'?rawRanges.get(node)[0]:null); else media++;
         } else if (mode!=='raw' && accountLink(node)) {
-          mentions++; removed=true;if (text && !/\s$/.test(text)) text+=' ';
+          mentions++; removed=true;if (text && !/\s$/.test(text)) append(' ');
           if (mode==='clean') evidence(node,'mention');
         }
         else if (mode==='clean' && linkKind(node)==='url') {
-          urls++;if (text && !/\s$/.test(text)) text+=' ';
+          urls++;if (text && !/\s$/.test(text)) append(' ');
           evidence(node,'url');
         }
         else {
           if (mode==='clean' && linkKind(node)==='ambiguous') reasons.add('ambiguous_link');
-          if (['DIV','P'].includes(node.nodeName) && text && !text.endsWith('\n')) text+='\n';
+          if (['DIV','P'].includes(node.nodeName) && text && !text.endsWith('\n')) append('\n');
           node.childNodes.forEach(walk);
         }
         if (mode==='raw') rawRanges.set(node,[start,text.length]);
       };
       walk(body);
       if (mode==='clean') {
-        if (media) reasons.add('non_text_media');
+        const stripped=stripURLs(text,offsets,events);text=stripped.text;urls+=stripped.count;
+        // Media presence alone is not a semantic judgement. KEEP means the
+        // text is technically usable, not that it is independent of the image.
+        // An annotator can explicitly flag media_context_required for review.
         if (/(?:https?:\/\/|\bwww\.)/i.test(text)) reasons.add('fragmented_url');
         // Punctuation-only needs human review, while emoji and emoticons stay usable.
         if (text.trim() && !/[\p{L}\p{N}\p{Extended_Pictographic}\p{Emoji_Presentation}]/u.test(text) &&
             !/(?::[-^']?[)(]+|=[)(]+|:v|[;:][-^']?[dDpP]|-_-)/i.test(text)) reasons.add('punctuation_only');
       }
       if (mode==='clean' || mentions) text=text.replace(/[ \t]{2,}/g,' ').trim();
-      return {text,mentions,media,urls,reasons:[...reasons],events};
+      return {text,mentions,media,urls,reasons:[...reasons],events:events.sort((a,b)=>a.raw_start-b.raw_start)};
     };
     const original=renderText('raw'),withoutMentions=renderText('mentions'),cleaned=renderText('clean');
     if (!window.__cmtSeen.has(el)) window.__cmtSeen.set(el,String(++window.__cmtSeq));

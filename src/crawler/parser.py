@@ -15,11 +15,13 @@ def valid_text_metadata(row):
                 isinstance(row['text_clean'], str) and
                 type(row['url_count']) is int and row['url_count'] >= 0 and
                 isinstance(row['clean_review_reasons'], list) and
-                all(reason in ('ambiguous_link','non_text_media','punctuation_only','fragmented_url')
+                all(reason in ('ambiguous_link','non_text_media','punctuation_only','fragmented_url','media_context_required')
                     for reason in row['clean_review_reasons']) and
                 row['clean_status'] == ('REVIEW' if row['clean_review_reasons'] else
                                         'KEEP' if row['text_clean'].strip() else 'EXCLUDE')):
             return False
+        if 'media_context_required' in row['clean_review_reasons'] and not (
+                type(row.get('non_text_media_count')) is int and row['non_text_media_count']>0): return False
     if 'clean_evidence' in row:
         events=row['clean_evidence']
         if not has_clean or not isinstance(events,list) or not isinstance(row.get('text_raw'),str): return False

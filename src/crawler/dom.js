@@ -190,9 +190,10 @@
       return 'ambiguous';
     };
     // Strip explicit URL tokens only; surrounding prose/punctuation is retained.
-    const stripURLs = value => {
+    const rawRanges=new WeakMap();
+    const stripURLs = (value,rawStart,events) => {
       let count=0;
-      const text=value.replace(/(?:https?:\/\/|\bwww\.)[^\s<>"'\p{Extended_Pictographic}]+/giu, token => {
+      const text=value.replace(/(?:https?:\/\/|\bwww\.)[^\s<>"'\p{Extended_Pictographic}]+/giu, (token,offset) => {
         let url=token,suffix='';
         const expression=url.match(/(?::[)(]+|:-[)(]+|=[)(]+|:v)$/i)?.[0];
         if (expression) { suffix=expression;url=url.slice(0,-expression.length); }
@@ -204,16 +205,33 @@
           const parsed=new URL(/^www\./i.test(url)?'https://'+url:url);
           if (!parsed.hostname.includes('.')) return token;
         } catch { return token; }
-        count++; return suffix;
+        count++;
+        events.push({kind:'url',rule:'explicit_url_text',raw_start:rawStart+offset,raw_end:rawStart+offset+url.length});
+        return suffix;
       });
       return {text,count};
     };
     const renderText = mode => {
       let text='',mentions=0,media=0,urls=0,removed=false;
-      const reasons=new Set();
+      const reasons=new Set(),events=[];
+      const evidence=(node,kind)=>{
+        const [start,end]=rawRanges.get(node);
+        let rule='shared_link';
+        if (kind==='mention') {
+          const u=new URL(node.getAttribute('href'),document.baseURI);
+          rule=u.pathname==='/profile.php'?'profile_link':u.pathname.startsWith('/groups/')?'group_user_link':
+            u.pathname.startsWith('/people/')?'people_link':'identity_link';
+        }
+        events.push({kind,rule,raw_start:start,raw_end:end});
+      };
       const walk=node=>{
+        const start=text.length;
         if (node.nodeType===Node.TEXT_NODE) {
           let value=node.textContent;
+          if (mode==='clean') {
+            const stripped=stripURLs(value,rawRanges.get(node)[0],events);
+            value=stripped.text;urls+=stripped.count;
+          }
           // Remove only a colon separator immediately after a removed mention.
           // Never strip the ':' from :)), :):), :-) or ordinary '-' prose.
           if (removed) value=value.replace(/^\s*:(?=\s)/u,'');
@@ -226,23 +244,29 @@
           if (emojiAlt(alt)) text+=alt; else media++;
         } else if (mode!=='raw' && accountLink(node)) {
           mentions++; removed=true;if (text && !/\s$/.test(text)) text+=' ';
+          if (mode==='clean') evidence(node,'mention');
         }
         else if (mode==='clean' && linkKind(node)==='url') {
           urls++;if (text && !/\s$/.test(text)) text+=' ';
+          evidence(node,'url');
         }
         else {
           if (mode==='clean' && linkKind(node)==='ambiguous') reasons.add('ambiguous_link');
           if (['DIV','P'].includes(node.nodeName) && text && !text.endsWith('\n')) text+='\n';
           node.childNodes.forEach(walk);
         }
+        if (mode==='raw') rawRanges.set(node,[start,text.length]);
       };
       walk(body);
       if (mode==='clean') {
-        const stripped=stripURLs(text);text=stripped.text;urls+=stripped.count;
         if (media) reasons.add('non_text_media');
+        if (/(?:https?:\/\/|\bwww\.)/i.test(text)) reasons.add('fragmented_url');
+        // Punctuation-only needs human review, while emoji and emoticons stay usable.
+        if (text.trim() && !/[\p{L}\p{N}\p{Extended_Pictographic}\p{Emoji_Presentation}]/u.test(text) &&
+            !/(?::[-^']?[)(]+|=[)(]+|:v|[;:][-^']?[dDpP]|-_-)/i.test(text)) reasons.add('punctuation_only');
       }
       if (mode==='clean' || mentions) text=text.replace(/[ \t]{2,}/g,' ').trim();
-      return {text,mentions,media,urls,reasons:[...reasons]};
+      return {text,mentions,media,urls,reasons:[...reasons],events};
     };
     const original=renderText('raw'),withoutMentions=renderText('mentions'),cleaned=renderText('clean');
     if (!window.__cmtSeen.has(el)) window.__cmtSeen.set(el,String(++window.__cmtSeq));
@@ -251,6 +275,7 @@
     return [{text_raw:original.text,text_without_mentions:withoutMentions.text,
       mention_count:withoutMentions.mentions,non_text_media_count:original.media,text_extraction_version:'dom_text_v3',
       text_clean:cleaned.text,url_count:cleaned.urls,clean_review_reasons:cleaned.reasons,
+      clean_evidence:cleaned.events,
       clean_status:cleaned.reasons.length?'REVIEW':cleaned.text.trim()?'KEEP':'EXCLUDE',
       permalink:link?.href || null,observation_id:window.__cmtSeen.get(el),
       is_reply:commentSet.has(parent) || /^(reply|phản hồi)/i.test(el.getAttribute('aria-label') || ''),

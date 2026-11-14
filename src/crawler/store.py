@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from .parser import facebook_url, comment_identity, post_id, created_at, TEXT_FIELDS, CLEAN_FIELDS, valid_text_metadata
+from .parser import facebook_url, comment_identity, post_id, created_at, TEXT_FIELDS, CLEAN_FIELDS, EVIDENCE_FIELDS, valid_text_metadata
 
 
 def now():
@@ -252,10 +252,12 @@ def export_run(path, destination, *, allow_partial=False):
     with csv_path.open('x',encoding='utf-8-sig',newline='') as f:
         optional=list(TEXT_FIELDS) if any('text_extraction_version' in row for row in complete) else []
         if any('text_clean' in row for row in complete): optional+=list(CLEAN_FIELDS)
+        if any('clean_evidence' in row for row in complete): optional+=list(EVIDENCE_FIELDS)
         writer=csv.DictWriter(f,fieldnames=list(FIELDS)+['comment_permalink','possible_duplicate']+optional)
         writer.writeheader()
-        writer.writerows({**row, **({'clean_review_reasons':json.dumps(row['clean_review_reasons'],ensure_ascii=False)}
-                                  if 'clean_review_reasons' in row else {})} for row in complete)
+        writer.writerows({**row, **{key:json.dumps(row[key],ensure_ascii=False)
+                                   for key in ('clean_review_reasons',)+EVIDENCE_FIELDS if key in row}}
+                         for row in complete)
     config = {'schema_version':'1.0','inputs':[{'path':str(csv_path.resolve()),'format':'csv',
         'source_dataset':json.loads((path/'config.json').read_text(encoding='utf-8'))['source_dataset'],
         'post_namespace':'facebook','columns':{k:k for k in ('text_raw','comment_id','post_id','post_url',

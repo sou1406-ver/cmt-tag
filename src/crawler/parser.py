@@ -4,6 +4,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
 TEXT_FIELDS=('text_without_mentions','mention_count','non_text_media_count','text_extraction_version')
 CLEAN_FIELDS=('text_clean','clean_status','url_count','clean_review_reasons')
+EVIDENCE_FIELDS=('clean_evidence',)
 
 
 def valid_text_metadata(row):
@@ -14,10 +15,25 @@ def valid_text_metadata(row):
                 isinstance(row['text_clean'], str) and
                 type(row['url_count']) is int and row['url_count'] >= 0 and
                 isinstance(row['clean_review_reasons'], list) and
-                all(reason in ('ambiguous_link','non_text_media') for reason in row['clean_review_reasons']) and
+                all(reason in ('ambiguous_link','non_text_media','punctuation_only','fragmented_url')
+                    for reason in row['clean_review_reasons']) and
                 row['clean_status'] == ('REVIEW' if row['clean_review_reasons'] else
                                         'KEEP' if row['text_clean'].strip() else 'EXCLUDE')):
             return False
+    if 'clean_evidence' in row:
+        events=row['clean_evidence']
+        if not has_clean or not isinstance(events,list) or not isinstance(row.get('text_raw'),str): return False
+        length=len(row['text_raw'].encode('utf-16-le',errors='surrogatepass'))//2
+        kinds=[];end=0
+        for event in events:
+            if not isinstance(event,dict): return False
+            kind=event.get('kind');rules={'mention':('profile_link','group_user_link','people_link','identity_link'),
+                                         'url':('shared_link','explicit_url_text')}
+            if (not isinstance(kind,str) or kind not in rules or event.get('rule') not in rules[kind] or
+                type(event.get('raw_start')) is not int or type(event.get('raw_end')) is not int or
+                not end<=event['raw_start']<=event['raw_end']<=length): return False
+            end=event['raw_end'];kinds.append(kind)
+        if kinds.count('mention')!=row.get('mention_count') or kinds.count('url')!=row['url_count']:return False
     if not any(key in row for key in TEXT_FIELDS): return True
     return (all(key in row for key in TEXT_FIELDS) and isinstance(row['text_without_mentions'],str) and
             row['text_extraction_version'] in ('dom_text_v2','dom_text_v3') and
@@ -93,7 +109,7 @@ def observations(candidates, source_url):
             'extraction_status': 'truncated' if item.get('truncated') else 'complete',
             'dom_observation_id': item['observation_id'],
         }
-        row.update({key:item[key] for key in TEXT_FIELDS+CLEAN_FIELDS if key in item})
+        row.update({key:item[key] for key in TEXT_FIELDS+CLEAN_FIELDS+EVIDENCE_FIELDS if key in item})
         rows.append(row)
     return rows, errors
 

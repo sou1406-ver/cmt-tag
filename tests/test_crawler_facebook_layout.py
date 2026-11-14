@@ -400,6 +400,35 @@ class FacebookLayoutTests(unittest.TestCase):
         self.assertNotIn('AUTHOR',reply['text_raw'])
         self.assertNotIn('3 giờ',reply['text_raw'])
 
+    def test_punctuation_review_but_emoji_emoticons_kept(self):
+        for fragment,status in [('<a href="/fixture.a">Chee</a> ?','REVIEW'),
+                                ('?! ...','REVIEW'),(':))','KEEP'),(':):)','KEEP'),
+                                ('-_-','KEEP'),('❤️','KEEP'),('😂','KEEP')]:
+            with self.subTest(fragment=fragment):
+                self.load(self.fixture().replace('Phim hay 😍!<br>ko dở.',
+                    '<span data-comment-body>'+fragment+'</span>'))
+                rows,errors=observations(dom(self.driver,GROUP),GROUP)
+                self.assertEqual(errors,0)
+                row=next(r for r in rows if r['comment_id']=='101')
+                self.assertEqual(row['clean_status'],status)
+                if status=='REVIEW':self.assertIn('punctuation_only',row['clean_review_reasons'])
+
+    def test_clean_evidence_utf16_spans_without_account_ids(self):
+        fragment='😂 <a href="/groups/example/user/42/">Chee</a> hay '
+        fragment+='https://example.org :)) <a href="https://example.net">preview</a>'
+        self.load(self.fixture().replace('Phim hay 😍!<br>ko dở.',
+            '<span data-comment-body>'+fragment+'</span>'))
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,0)
+        row=next(r for r in rows if r['comment_id']=='101')
+        self.assertEqual(row['text_clean'],'😂 hay :))')
+        events=row['clean_evidence'];self.assertEqual(len(events),3)
+        raw=row['text_raw'].encode('utf-16-le')
+        removed=[raw[e['raw_start']*2:e['raw_end']*2].decode('utf-16-le') for e in events]
+        self.assertEqual(removed,['Chee','https://example.org','preview'])
+        self.assertEqual([e['rule'] for e in events],['group_user_link','explicit_url_text','shared_link'])
+        self.assertTrue(all(set(e)=={'kind','rule','raw_start','raw_end'} for e in events))
+
     def test_innermost_source_dialog_excludes_outer_dialog_comments(self):
         start=self.fixture().index('<div role="dialog">')
         inner=self.fixture()[start:]

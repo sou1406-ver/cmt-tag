@@ -14,6 +14,11 @@ vẫn giữ. Hashtag giữ; link không xác định giữ text và gắn `REVIE
 `clean_status` là đề xuất kỹ thuật: `KEEP`, `EXCLUDE` khi chỉ còn trắng/tag/URL,
 `REVIEW` khi link mơ hồ hoặc có media không chuyển được thành chữ. Emoji-only
 được giữ, không tự gán sentiment. `url_count` và `clean_review_reasons` ghi lý do.
+Chỉ còn dấu câu (ví dụ `?`) cũng là `REVIEW`; không áp dụng cho emoji/emoticon.
+`clean_evidence` lưu loại/rule và `raw_start`/`raw_end` của từng đoạn bị bỏ,
+theo đơn vị UTF-16 của JavaScript, không lưu href hay danh tính tài khoản mới.
+URL bị chia cắt qua nhiều text node mà không thể xóa chắc chắn được giữ để review.
+Run cũ không có evidence vẫn đọc được; không bổ sung bằng chứng giả cho journal cũ.
 View sạch dành cho task gán nhãn/huấn luyện mới sau kiểm tra; import config cũ vẫn
 giữ `text_raw`, không tự đổi dataset hoặc protocol. Journal v2 vẫn đọc được và
 export hỗn hợp để trống view mới cho dòng cũ; không suy diễn text sạch từ raw cũ.

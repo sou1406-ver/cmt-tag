@@ -64,6 +64,12 @@ class ParserTests(unittest.TestCase):
         for field in ('text_clean','url_count','clean_review_reasons','clean_status'):
             incomplete={k:v for k,v in row.items() if k!=field}
             self.assertEqual(observations([incomplete],POST['post_url'])[1],1)
+        evidence=[{'kind':'mention','rule':'identity_link','raw_start':0,'raw_end':2},
+                  {'kind':'url','rule':'explicit_url_text','raw_start':12,'raw_end':30}]
+        self.assertEqual(observations([{**row,'clean_evidence':evidence}],POST['post_url'])[1],0)
+        for invalid in (None,evidence[:1],[{**evidence[0],'raw_end':999},evidence[1]],
+                        [{**evidence[0],'kind':[]},evidence[1]]):
+            self.assertEqual(observations([{**row,'clean_evidence':invalid}],POST['post_url'])[1],1)
 
 
 class StoreTests(unittest.TestCase):
@@ -262,7 +268,9 @@ class StoreTests(unittest.TestCase):
         s.add(observation('2','An Không dở :)) https://example.org',
             text_without_mentions='Không dở :)) https://example.org',mention_count=1,
             non_text_media_count=0,text_extraction_version='dom_text_v3',
-            text_clean='Không dở :))',clean_status='KEEP',url_count=1,clean_review_reasons=[]),POST,'new')
+            text_clean='Không dở :))',clean_status='KEEP',url_count=1,clean_review_reasons=[],
+            clean_evidence=[{'kind':'mention','rule':'identity_link','raw_start':0,'raw_end':2},
+                            {'kind':'url','rule':'explicit_url_text','raw_start':16,'raw_end':35}]),POST,'new')
         raw=(s.path/'raw_comments.jsonl').read_bytes();self.assertTrue(raw.startswith(before))
         resumed=Store(self.root/'crawl_runs',resume=s.run_id)
         self.assertEqual(resumed.rows[-1]['text_clean'],'Không dở :))')
@@ -273,6 +281,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(rows[1]['text_raw'],'An Không dở :)) https://example.org')
         self.assertEqual(rows[1]['text_clean'],'Không dở :))')
         self.assertEqual(json.loads(rows[1]['clean_review_reasons']),[])
+        self.assertEqual(json.loads(rows[1]['clean_evidence']),resumed.rows[-1]['clean_evidence'])
         self.assertEqual((s.path/'raw_comments.jsonl').read_bytes(),raw)
 
 

@@ -55,6 +55,9 @@ class FacebookLayoutTests(unittest.TestCase):
     def tearDownClass(cls): cls.driver.quit()
 
     def load(self,html):
+        # collect() changes this shared driver's deadline; isolate fixture setup
+        # from a previous test's deliberately tiny crawl timeout.
+        self.driver.set_page_load_timeout(5)
         self.driver.get('data:text/html;charset=utf-8,'+quote('<meta charset="utf-8"><base href="https://www.facebook.com/">'+html))
 
     def test_access_barrier_survives_replaced_heading(self):
@@ -235,7 +238,7 @@ class FacebookLayoutTests(unittest.TestCase):
         self.assertEqual(row['text_raw'],'Bạn A Bạn B: Phim Mưa Đỏ hay! ❤️\nKhông dở.')
         self.assertEqual(row['text_without_mentions'],'Phim Mưa Đỏ hay! ❤️\nKhông dở.')
         self.assertEqual(row['mention_count'],2)
-        self.assertEqual(row['text_extraction_version'],'dom_text_v2')
+        self.assertEqual(row['text_extraction_version'],'dom_text_v3')
 
     def test_inline_mentions_removed_but_external_links_and_plain_names_kept(self):
         html=self.fixture().replace('Phim hay 😍!<br>ko dở.',
@@ -345,6 +348,57 @@ class FacebookLayoutTests(unittest.TestCase):
             f'<a href="{GROUP}?comment_id=101">time</a></div></div>')
         self.assertEqual(dom(self.driver,GROUP,'inspect')['status'],'missing_scope')
         self.assertEqual(dom(self.driver,GROUP),[])
+
+    def test_clean_view_mentions_urls_and_sentiment_signals(self):
+        cases=[
+            ('<a href="/fixture.a">An Bình</a>: ko dở :))', 'ko dở :))',1,0,'KEEP'),
+            ('<a href="/fixture.a">An</a> <a href="/profile.php?id=42">Bình</a> hayyy 😂', 'hayyy 😂',2,0,'KEEP'),
+            ('Không <a href="/groups/movie.group/user/42/">An Bình</a> chán!', 'Không chán!',1,0,'KEEP'),
+            ('<a href="/fixture.a">An Bình</a>', '',1,0,'EXCLUDE'),
+            ('Chưa dở https://example.org/review. :))', 'Chưa dở . :))',0,1,'KEEP'),
+            ('ko https://example.org/?a=1&amp;b=2 hay www.example.org 😭', 'ko hay 😭',0,2,'KEEP'),
+            ('Chẳng tệ <a href="https://example.org/review">bản review dài</a> đâu!', 'Chẳng tệ đâu!',0,1,'KEEP'),
+            ('<span>giữ chữ <a href="/other/posts/777">bài chia sẻ</a> không tệ</span>', 'giữ chữ không tệ',0,1,'KEEP'),
+            ('<a href="https://l.facebook.com/l.php?u=https%3A%2F%2Fexample.org">Preview</a>', '',0,1,'EXCLUDE'),
+            ('😂 😭 ❤️', '😂 😭 ❤️',0,0,'KEEP'),
+            ('<img alt="😂"><img alt="❤️">', '😂❤️',0,0,'KEEP'),
+            ('ko đc cx mn :)) =)) :v :( :):) :-) -_- - hayyy!!!', 'ko đc cx mn :)) =)) :v :( :):) :-) -_- - hayyy!!!',0,0,'KEEP'),
+            ('Trấn Thành và nhân vật Sen diễn hay', 'Trấn Thành và nhân vật Sen diễn hay',0,0,'KEEP'),
+            ('<a role="link">An Bình</a> phim hay', 'An Bình phim hay',0,0,'REVIEW'),
+            ('<a href="/groups/x/user/not-id/">An Bình</a> phim hay', 'An Bình phim hay',0,0,'REVIEW'),
+            ('<a href="/hashtag/phim">#phim</a> không dở', '#phim không dở',0,0,'KEEP'),
+            ('<a href="/fixture.a">An</a> :):) -_- - không dở', ':):) -_- - không dở',1,0,'KEEP'),
+            ('<a href="/fixture.a">An</a> :-)', ':-)',1,0,'KEEP'),
+            ('https://example.org/:))', ':))',0,1,'KEEP'),
+            ('www.example.org=))', '=))',0,1,'KEEP'),
+            ('<img alt="A photo of someone">', '',0,0,'REVIEW'),
+            ('<a href="/fixture.a">An</a> https://example.org', '',1,1,'EXCLUDE'),
+        ]
+        for fragment,cleaned,mentions,urls,status in cases:
+            with self.subTest(fragment=fragment):
+                self.load(self.fixture().replace('Phim hay 😍!<br>ko dở.',
+                    '<span data-comment-body>'+fragment+'</span>'))
+                rows,errors=observations(dom(self.driver,GROUP),GROUP)
+                self.assertEqual(errors,0)
+                row=next(r for r in rows if r['comment_id']=='101')
+                self.assertEqual(row['text_clean'],cleaned)
+                self.assertEqual((row['mention_count'],row['url_count'],row['clean_status']),(mentions,urls,status))
+                if status=='REVIEW': self.assertTrue(row['clean_review_reasons'])
+                if not mentions and not urls: self.assertEqual(row['text_raw'],cleaned)
+
+    def test_clean_view_nested_reply_never_inherits_parent_author_or_ui(self):
+        self.load(self.fixture().replace('Đúng vậy 👍',
+            '<a href="/profile.php?id=99">Tên được tag</a> Không dở 👍 '
+            '<a href="https://example.org">preview</a><button>Reply</button><time>3 giờ</time>'))
+        rows,errors=observations(dom(self.driver,GROUP),GROUP)
+        self.assertEqual(errors,0)
+        parent=next(r for r in rows if r['comment_id']=='101')
+        reply=next(r for r in rows if r['comment_id']=='102')
+        self.assertEqual(parent['text_clean'],'Phim hay 😍!\nko dở.')
+        self.assertEqual(reply['text_clean'],'Không dở 👍')
+        self.assertEqual(reply['parent_comment_id'],'101')
+        self.assertNotIn('AUTHOR',reply['text_raw'])
+        self.assertNotIn('3 giờ',reply['text_raw'])
 
     def test_innermost_source_dialog_excludes_outer_dialog_comments(self):
         start=self.fixture().index('<div role="dialog">')

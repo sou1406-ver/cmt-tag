@@ -3,12 +3,24 @@ import re
 from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
 TEXT_FIELDS=('text_without_mentions','mention_count','non_text_media_count','text_extraction_version')
+CLEAN_FIELDS=('text_clean','clean_status','url_count','clean_review_reasons')
 
 
 def valid_text_metadata(row):
+    has_clean = any(key in row for key in CLEAN_FIELDS)
+    if has_clean or row.get('text_extraction_version') == 'dom_text_v3':
+        if not (all(key in row for key in CLEAN_FIELDS) and
+                row.get('text_extraction_version') == 'dom_text_v3' and
+                isinstance(row['text_clean'], str) and
+                type(row['url_count']) is int and row['url_count'] >= 0 and
+                isinstance(row['clean_review_reasons'], list) and
+                all(reason in ('ambiguous_link','non_text_media') for reason in row['clean_review_reasons']) and
+                row['clean_status'] == ('REVIEW' if row['clean_review_reasons'] else
+                                        'KEEP' if row['text_clean'].strip() else 'EXCLUDE')):
+            return False
     if not any(key in row for key in TEXT_FIELDS): return True
     return (all(key in row for key in TEXT_FIELDS) and isinstance(row['text_without_mentions'],str) and
-            row['text_extraction_version']=='dom_text_v2' and
+            row['text_extraction_version'] in ('dom_text_v2','dom_text_v3') and
             all(type(row[key]) is int and row[key]>=0 for key in ('mention_count','non_text_media_count')))
 
 
@@ -81,7 +93,7 @@ def observations(candidates, source_url):
             'extraction_status': 'truncated' if item.get('truncated') else 'complete',
             'dom_observation_id': item['observation_id'],
         }
-        row.update({key:item[key] for key in TEXT_FIELDS if key in item})
+        row.update({key:item[key] for key in TEXT_FIELDS+CLEAN_FIELDS if key in item})
         rows.append(row)
     return rows, errors
 

@@ -153,7 +153,8 @@
       candidate_shapes:bodies.map(node=>({tag:node.tagName,chars:node.textContent.length,
         has_link:!!node.querySelector('a[href]'),has_button:!!node.querySelector('button,[role="button"]')}))}];
     const body = bodies[0].cloneNode(true);
-    body.querySelectorAll('[role="button"],button').forEach(node => node.remove());
+    body.querySelectorAll('[role="button"],button,time,script,style,[hidden],[aria-hidden="true"],'+boundary)
+      .forEach(node => node.remove());
     // Only use an image alt as text when it is an actual Unicode emoji
     // sequence. Never turn an attachment's generated caption into a comment.
     const emojiAlt = value => /^(?:[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\p{Emoji_Modifier}\uFE0E\uFE0F\u200D\u{E0020}-\u{E007F}]|[0-9#*]\uFE0F?\u20E3)+$/u.test(value);
@@ -166,37 +167,91 @@
         if (u.pathname==='/profile.php') return /^\d+$/.test(u.searchParams.get('id')||'');
         if (/\.php$/i.test(u.pathname)) return false;
         if (/^\/people\/[^/]+\/\d+\/?$/.test(u.pathname)) return true;
-        if (/^\/groups\/\d+\/user\/\d+\/?$/.test(u.pathname)) return true;
+        if (/^\/groups\/[A-Za-z0-9._-]+\/user\/\d+\/?$/.test(u.pathname)) return true;
         // A Facebook identity link can refer to a person or page. Strip only
         // that linked mention, never guess names from capitalized plain text.
         return /^\/[A-Za-z0-9.]+\/?$/.test(u.pathname) &&
-          !/^\/(?:photo|photos|watch|reel|reels|groups|events|pages|hashtag|share|stories|login|help|marketplace)\/?$/i.test(u.pathname);
+          !/^\/(?:photo|photos|watch|reel|reels|groups|events|pages|hashtag|share|stories|login|help|marketplace|about|privacy|settings|search|gaming|friends|notifications)\/?$/i.test(u.pathname);
       } catch { return false; }
     };
-    const renderText = removeMentions => {
-      let text='',mentions=0,media=0;
+    const linkKind = node => {
+      if (!node.matches?.('a,[role="link"]')) return null;
+      if (accountLink(node)) return 'mention';
+      const href=node.getAttribute('href');
+      if (!href || href.startsWith('#')) return 'ambiguous';
+      try {
+        const u=new URL(href,document.baseURI);
+        if (!['http:','https:'].includes(u.protocol)) return 'ambiguous';
+        if (!/(^|\.)facebook\.com$/i.test(u.hostname)) return 'url';
+        if (/^\/hashtag\/[^/]+\/?$/.test(u.pathname)) return null;
+        if (identify(u.href) || /^\/(?:l\.php|photo(?:\.php)?|photos|share|watch|reels?|events)(?:\/|$)/i.test(u.pathname) ||
+            /^\/groups\/[A-Za-z0-9._-]+\/?$/.test(u.pathname)) return 'url';
+      } catch { /* Keep ambiguous link text for review. */ }
+      return 'ambiguous';
+    };
+    // Strip explicit URL tokens only; surrounding prose/punctuation is retained.
+    const stripURLs = value => {
+      let count=0;
+      const text=value.replace(/(?:https?:\/\/|\bwww\.)[^\s<>"'\p{Extended_Pictographic}]+/giu, token => {
+        let url=token,suffix='';
+        const expression=url.match(/(?::[)(]+|:-[)(]+|=[)(]+|:v)$/i)?.[0];
+        if (expression) { suffix=expression;url=url.slice(0,-expression.length); }
+        while (/[.,!?;:…]$/.test(url) || [')',']','}'].some(c => url.endsWith(c) &&
+            url.split(c).length>url.split({')':'(',']':'[','}':'{'}[c]).length)) {
+          suffix=url.slice(-1)+suffix; url=url.slice(0,-1);
+        }
+        try {
+          const parsed=new URL(/^www\./i.test(url)?'https://'+url:url);
+          if (!parsed.hostname.includes('.')) return token;
+        } catch { return token; }
+        count++; return suffix;
+      });
+      return {text,count};
+    };
+    const renderText = mode => {
+      let text='',mentions=0,media=0,urls=0,removed=false;
+      const reasons=new Set();
       const walk=node=>{
-        if (node.nodeType===Node.TEXT_NODE) text+=node.textContent;
+        if (node.nodeType===Node.TEXT_NODE) {
+          let value=node.textContent;
+          // Remove only a colon separator immediately after a removed mention.
+          // Never strip the ':' from :)), :):), :-) or ordinary '-' prose.
+          if (removed) value=value.replace(/^\s*:(?=\s)/u,'');
+          if (value.trim()) removed=false;
+          text+=value;
+        }
         else if (node.nodeName==='BR') text+='\n';
         else if (node.nodeName==='IMG') {
           const alt=node.getAttribute('alt')||'';
           if (emojiAlt(alt)) text+=alt; else media++;
-        } else if (removeMentions && accountLink(node)) mentions++;
+        } else if (mode!=='raw' && accountLink(node)) {
+          mentions++; removed=true;if (text && !/\s$/.test(text)) text+=' ';
+        }
+        else if (mode==='clean' && linkKind(node)==='url') {
+          urls++;if (text && !/\s$/.test(text)) text+=' ';
+        }
         else {
+          if (mode==='clean' && linkKind(node)==='ambiguous') reasons.add('ambiguous_link');
           if (['DIV','P'].includes(node.nodeName) && text && !text.endsWith('\n')) text+='\n';
           node.childNodes.forEach(walk);
         }
       };
       walk(body);
-      if (removeMentions && mentions) text=text.replace(/^[\s,:;–—-]+/u,'').replace(/[ \t]{2,}/g,' ').trimEnd();
-      return {text,mentions,media};
+      if (mode==='clean') {
+        const stripped=stripURLs(text);text=stripped.text;urls+=stripped.count;
+        if (media) reasons.add('non_text_media');
+      }
+      if (mode==='clean' || mentions) text=text.replace(/[ \t]{2,}/g,' ').trim();
+      return {text,mentions,media,urls,reasons:[...reasons]};
     };
-    const original=renderText(false),withoutMentions=renderText(true);
+    const original=renderText('raw'),withoutMentions=renderText('mentions'),cleaned=renderText('clean');
     if (!window.__cmtSeen.has(el)) window.__cmtSeen.set(el,String(++window.__cmtSeq));
     const parent = el.parentElement?.closest(boundary);
     const parentLink = commentSet.has(parent) ? own(parent,'a[href]').find(a => /[?&]comment_id=\d+/.test(a.href)) : null;
     return [{text_raw:original.text,text_without_mentions:withoutMentions.text,
-      mention_count:withoutMentions.mentions,non_text_media_count:original.media,text_extraction_version:'dom_text_v2',
+      mention_count:withoutMentions.mentions,non_text_media_count:original.media,text_extraction_version:'dom_text_v3',
+      text_clean:cleaned.text,url_count:cleaned.urls,clean_review_reasons:cleaned.reasons,
+      clean_status:cleaned.reasons.length?'REVIEW':cleaned.text.trim()?'KEEP':'EXCLUDE',
       permalink:link?.href || null,observation_id:window.__cmtSeen.get(el),
       is_reply:commentSet.has(parent) || /^(reply|phản hồi)/i.test(el.getAttribute('aria-label') || ''),
       parent_permalink:parentLink?.href || null,

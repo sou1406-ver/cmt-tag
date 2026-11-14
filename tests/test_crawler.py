@@ -50,6 +50,21 @@ class ParserTests(unittest.TestCase):
         row['mention_count']=0
         self.assertEqual(observations([row],POST['post_url'])[1],0)
 
+    def test_clean_metadata_requires_version_types_and_consistent_status(self):
+        row={'text_raw':'An phim hay http://example.org','observation_id':'x',
+             'text_without_mentions':'phim hay http://example.org','mention_count':1,
+             'non_text_media_count':0,'text_extraction_version':'dom_text_v3',
+             'text_clean':'phim hay','clean_status':'KEEP','url_count':1,'clean_review_reasons':[]}
+        parsed,errors=observations([row],POST['post_url'])
+        self.assertEqual(errors,0);self.assertEqual(parsed[0]['text_clean'],'phim hay')
+        for changes in ({'text_clean':None},{'clean_status':'EXCLUDE'},{'url_count':True},
+                        {'clean_review_reasons':['unknown']},{'text_extraction_version':'dom_text_v2'}):
+            with self.subTest(changes=changes):
+                self.assertEqual(observations([{**row,**changes}],POST['post_url'])[1],1)
+        for field in ('text_clean','url_count','clean_review_reasons','clean_status'):
+            incomplete={k:v for k,v in row.items() if k!=field}
+            self.assertEqual(observations([incomplete],POST['post_url'])[1],1)
+
 
 class StoreTests(unittest.TestCase):
     def setUp(self):
@@ -240,6 +255,25 @@ class StoreTests(unittest.TestCase):
         # Phase B can still group the known post_url, but this is not proof
         # that share URLs from different runs identify independent posts.
         self.assertEqual(validate(s.path)['metadata_completeness_rate']['post_id'],0)
+
+    def test_clean_export_resume_preserve_legacy_and_new_raw(self):
+        s=self.store;s.add(observation('1'),POST,'old')
+        before=(s.path/'raw_comments.jsonl').read_bytes()
+        s.add(observation('2','An Không dở :)) https://example.org',
+            text_without_mentions='Không dở :)) https://example.org',mention_count=1,
+            non_text_media_count=0,text_extraction_version='dom_text_v3',
+            text_clean='Không dở :))',clean_status='KEEP',url_count=1,clean_review_reasons=[]),POST,'new')
+        raw=(s.path/'raw_comments.jsonl').read_bytes();self.assertTrue(raw.startswith(before))
+        resumed=Store(self.root/'crawl_runs',resume=s.run_id)
+        self.assertEqual(resumed.rows[-1]['text_clean'],'Không dở :))')
+        self.assertEqual(validate(s.path)['raw_validation_errors'],0)
+        out=export_run(s.path,self.root/'clean_export')
+        with (out/'comments.csv').open(encoding='utf-8-sig',newline='') as f: rows=list(csv.DictReader(f))
+        self.assertEqual(rows[0]['text_clean'],'') # No invented view for historical raw.
+        self.assertEqual(rows[1]['text_raw'],'An Không dở :)) https://example.org')
+        self.assertEqual(rows[1]['text_clean'],'Không dở :))')
+        self.assertEqual(json.loads(rows[1]['clean_review_reasons']),[])
+        self.assertEqual((s.path/'raw_comments.jsonl').read_bytes(),raw)
 
 
 @unittest.skipUnless(importlib.util.find_spec('selenium'),'Install requirements/crawler.txt and a Chrome/Brave browser for DOM tests')

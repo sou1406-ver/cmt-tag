@@ -5,6 +5,19 @@ Crawl comment/reply có thể truy xuất hợp lệ, giữ `comment_id`, `post_
 Account mention chỉ xóa khi DOM nhận dạng được; không đoán tên từ chữ hoa.
 Emoji/emoticon giữ trong text. Không có cam kết lấy đủ tổng bình luận Facebook.
 
+Run mới dùng `dom_text_v3`: `text_raw` giữ chữ gốc trong vùng comment,
+`text_without_mentions` chỉ bỏ account link, còn `text_clean` bỏ thêm URL/link
+chia sẻ. Không đọc toàn bộ article để lấy text. Link profile, people và
+`/groups/<id hoặc slug>/user/<id>/` là bằng chứng mention; tên viết thuần giữ nguyên.
+Link ngoài Facebook/redirect/link bài chia sẻ bỏ phần anchor; chữ ngoài anchor
+vẫn giữ. Hashtag giữ; link không xác định giữ text và gắn `REVIEW`.
+`clean_status` là đề xuất kỹ thuật: `KEEP`, `EXCLUDE` khi chỉ còn trắng/tag/URL,
+`REVIEW` khi link mơ hồ hoặc có media không chuyển được thành chữ. Emoji-only
+được giữ, không tự gán sentiment. `url_count` và `clean_review_reasons` ghi lý do.
+View sạch dành cho task gán nhãn/huấn luyện mới sau kiểm tra; import config cũ vẫn
+giữ `text_raw`, không tự đổi dataset hoặc protocol. Journal v2 vẫn đọc được và
+export hỗn hợp để trống view mới cho dòng cũ; không suy diễn text sạch từ raw cũ.
+
 ## Setup và đăng nhập Brave
 
 ```powershell

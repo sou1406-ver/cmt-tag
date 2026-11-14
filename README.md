@@ -29,6 +29,9 @@ py -3.12 -m venv .venv
 ```
 
 Repo đã được người dùng chuyển public. Nếu đã có `.venv`, dùng lại.
+**Lịch sử Git vẫn có dữ liệu Facebook**; bỏ track không xóa lịch sử. Người dùng
+chọn chưa đổi visibility ngày 15/11/2026. Xem [privacy audit](GIT_PRIVACY_AUDIT.md)
+và [kế hoạch dọn lịch sử, chưa thực hiện](GIT_HISTORY_CLEANUP_PLAN.md).
 Trong VS Code chọn `.venv/Scripts/python.exe`, hoặc mở `cmt-tag.code-workspace`.
 Các lệnh dưới gọi trực tiếp Python của venv, không cần activate.
 

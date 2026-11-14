@@ -19,6 +19,24 @@ FIELDS = ['comment_id', 'text_clean', 'sentiment_label', 'note', 'annotator_id',
 DEFAULT = ROOT/'outputs/sentiment_pilot_v3_1'
 SOURCE = ROOT/'data/imports/fb_54e6c18b6c514f9ab822354611ab3316/comments.csv'
 PROPOSAL = ROOT/'docs/guidelines/SENTIMENT_GUIDELINE_V3_1_PROPOSED.md'
+OFFICIAL = ROOT/'docs/guidelines/SENTIMENT_GUIDELINE_V3_1.md'
+# Pin only after the actual user-supplied official bytes have been verified.
+APPROVED_GUIDELINE_SHA256 = None
+
+
+def guideline_contract():
+    """Never relabel PROPOSED as approved. Use the separately supplied official file."""
+    supplied = OFFICIAL.is_file()
+    path = OFFICIAL if supplied else PROPOSAL
+    if not path.is_file() or not path.read_bytes().strip():
+        raise FileNotFoundError('Official guideline or explicit proposal required')
+    checksum = sha(path)
+    if supplied and APPROVED_GUIDELINE_SHA256 and checksum != APPROVED_GUIDELINE_SHA256:
+        raise ValueError('Official guideline differs from verified approved SHA256')
+    approved = supplied and checksum == APPROVED_GUIDELINE_SHA256
+    return dict(guideline_file=str(path), guideline_sha256=checksum,
+                status='READY' if approved else 'DRAFT_GUIDELINE_SOURCE_UNVERIFIED' if supplied else 'DRAFT_GUIDELINE_SOURCE_MISSING',
+                guideline_status='APPROVED_FOR_PILOT' if approved else 'OFFICIAL_PENDING_VERIFICATION' if supplied else 'PROPOSAL_NOT_APPROVED')
 
 
 def eligible(source, guard):
@@ -94,7 +112,8 @@ def select(pool, random_count=160, hard_count=40):
 
 def prepare(source=SOURCE, directory=DEFAULT):
     source = Path(source).resolve(); directory = Path(directory).resolve()
-    if not source.is_file() or not PROPOSAL.is_file(): raise FileNotFoundError('Source/proposal required')
+    if not source.is_file(): raise FileNotFoundError('Source required')
+    contract = guideline_contract()
     # Production reservation metadata and raw-only fingerprints; never locked labels.
     registry = ROOT/'data/test_reservations'
     if not list(registry.glob('*.json')): raise FileNotFoundError('Gold reservation registry required before sampling')
@@ -110,8 +129,7 @@ def prepare(source=SOURCE, directory=DEFAULT):
     assert_allowed([{**r, 'platform':'facebook', 'text_view':r['text_clean']} for r in selected], 'active_learning')
     if sha(source) != before or any(sha(p) != h for p,h in guard['checksums'].items()):
         raise ValueError('Protected/source input changed during prepare')
-    manifest = dict(status='DRAFT_GUIDELINE_SOURCE_MISSING', guideline_status='PROPOSAL_NOT_APPROVED',
-        guideline_file=str(PROPOSAL), guideline_sha256=sha(PROPOSAL), source_file=str(source), source_sha256=before,
+    manifest = dict(**contract, source_file=str(source), source_sha256=before,
         source_records=len(raw), eligible_records=len(allowed), selected=200, random_count=160, hard_count=40,
         seed=SEED, strata=strata, protected_checksums=guard['checksums'],
         selected_rows=[dict(comment_id=r['comment_id'], text_sha256=digest(r['text_clean']),
@@ -131,9 +149,12 @@ def prepare(source=SOURCE, directory=DEFAULT):
         (work/'sampling_manifest.sha256').write_text(sha(work/'sampling_manifest.json')+'\n', encoding='ascii')
         save(work/'workbook_input.local.json', [dict(comment_id=r['comment_id'], text_clean=r['text_clean']) for r in selected])
         write_csv(work/'exclusions.local.csv', rejected, ['comment_id','reason'])
-        (work/'README.md').write_text('''# Pilot sentiment text-only — DRAFT
+        guideline_note = ('Guideline chính thức do người dùng cung cấp: '+contract['guideline_file']+'. SHA256: '+contract['guideline_sha256']+'. READY / APPROVED_FOR_PILOT.'
+                          if contract['status']=='READY' else
+                          'File chính thức cần được xác minh và pin SHA256 trước khi giao gán.' if contract['guideline_status']=='OFFICIAL_PENDING_VERIFICATION' else
+                          'Chưa tìm được V3.1 chính thức. Bản bổ sung PROPOSED không phải bản được duyệt. Đối chiếu file chính thức trước khi giao gán.')
+        (work/'README.md').write_text('# Pilot sentiment text-only\n\n'+guideline_note+'\n'+'''
 
-Chưa tìm được V3 gốc. Bản bổ sung nằm ở docs/guidelines/SENTIMENT_GUIDELINE_V3_1_PROPOSED.md; chưa coi là V3.1 chính thức. Đối chiếu V3 trước khi giao gán.
 Hai workbook có cùng 200 ID/thứ tự, gồm 160 random + 40 hard, trộn mù; không có nhãn điền sẵn. Chỉ đọc text_clean, không parent/post; không dùng nhãn relevance cũ. Cột vàng sentiment_label/note để người gán điền; REVIEW phải có note ngắn, không có confidence bắt buộc. cleaning_issue dành cho lỗi text, không sửa text.
 Tái lập: python -m src.annotation sentiment-pilot prepare --directory outputs/sentiment_pilot_NEW
 Xuất Excel bằng scripts/export_sentiment_pilot.mjs với Node/@oai/artifact-tool bundled; builder không ghi đè workbook đã có.
@@ -141,7 +162,7 @@ Sau khi gán độc lập: python -m src.annotation sentiment-pilot compare --di
 Compare kiểm toàn bộ hai file trước khi xuất thư mục comparison riêng; lưu nhãn A/B, Kappa chính 5 nhãn, Kappa phụ 3 nhãn, disagreement và adjudication trống. Không ghi canonical/Gold. Không chạy compare trên workbook chưa điền.
 sampling_manifest.json khóa seed, nguồn, text SHA, cohort và exposure. Pilot/cùng post phải loại khỏi independent test tương lai; dùng manifest này khi kiểm exposure. Không sửa frozen split hoặc reservation cũ.
 ''', encoding='utf8')
-        (work/'REPORT.md').write_text('# Kết quả pilot sentiment\n\nChưa có nhãn sentiment thật; Kappa, agreement và confusion matrix: CHƯA CÓ.\nGuideline đang là đề xuất do thiếu V3 gốc. Không tự phê duyệt.\n', encoding='utf8')
+        (work/'REPORT.md').write_text('# Kết quả pilot sentiment\n\nChưa có nhãn sentiment thật; Kappa, agreement và confusion matrix: CHƯA CÓ.\n'+guideline_note+'\n', encoding='utf8')
     return {k: manifest[k] for k in ('status','eligible_records','selected','counts','exclusions')}
 
 

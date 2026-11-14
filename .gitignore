@@ -32,3 +32,22 @@ __pycache__/
 !.env.example
 !.env.sample
 /.playwright-browsers/
+
+# New research exports must not enter public Git, including outside data/outputs.
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+!configs/*.example.csv
+!tests/fixtures/*.csv
+*.jsonl
+!tests/fixtures/*.jsonl
+*.parquet
+*.zip
+*.7z
+/docs/annotation_reviews/
+**/node_modules/
+**/cookies.json
+**/cookies.txt
+**/storage_state.json
+**/browser_profile*/

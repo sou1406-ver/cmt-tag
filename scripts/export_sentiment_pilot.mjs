@@ -7,6 +7,9 @@ const directory = path.resolve(process.argv[2] || 'outputs/sentiment_pilot_v3_1'
 const rows=JSON.parse(await fs.readFile(path.join(directory,'workbook_input.local.json'),'utf8'));
 const manifest=JSON.parse(await fs.readFile(path.join(directory,'sampling_manifest.json'),'utf8'));
 const hash=text=>createHash('sha256').update(text).digest('hex');
+if(hash(await fs.readFile(path.join(directory,'sampling_manifest.json')))!==(await fs.readFile(path.join(directory,'sampling_manifest.sha256'),'utf8')).trim())throw Error('Manifest checksum changed');
+if(hash(await fs.readFile(manifest.guideline_file))!==manifest.guideline_sha256)throw Error('Guideline checksum changed');
+const approved=manifest.status==='READY' && manifest.guideline_status==='APPROVED_FOR_PILOT';
 if(rows.length!==200 || new Set(rows.map(r=>r.comment_id)).size!==200 || rows.some((r,i)=>r.comment_id!==manifest.selected_rows[i].comment_id || hash(r.text_clean)!==manifest.selected_rows[i].text_sha256)) throw Error('Invalid workbook input ID/text hash');
 const names=['A','B'].map(a=>path.join(directory,`pilot_sentiment_annotator_${a}.xlsx`));
 for(const name of names) {try {await fs.access(name);throw Error('Refusing to overwrite workbook: '+name);} catch(e) {if(e.code!=='ENOENT')throw e;}}
@@ -36,14 +39,14 @@ for(const [index,annotator] of ['A','B'].entries()) {
   }
   s.freezePanes.freezeRows(1);s.freezePanes.freezeColumns(2);s.tables.add('A1:F201',true,'SentimentInput');
   const instructions=[
-    `PILOT — NGƯỜI GÁN ${annotator} — DRAFT, CHƯA ĐỐI CHIẾU V3 GỐC`,
+    `PILOT — NGƯỜI GÁN ${annotator} — ${approved?'READY / APPROVED_FOR_PILOT':'DRAFT — CHỜ XÁC MINH GUIDELINE'}`,
     'Chỉ đọc text_clean của chính bình luận. Không đọc bài viết/comment cha; không xem nhãn của người còn lại.',
     'Cột C: POS / NEG / NEU / REVIEW / EXCLUDE. Nhãn để trống; không có dự đoán hoặc gợi ý.',
     'Cột D: note bắt buộc nếu REVIEW. Viết ngắn: thiếu ngữ cảnh / không hiểu tiếng lóng / hỗn hợp chưa rõ chiều.',
     'Cột F: báo lỗi cleaning nếu có. Không sửa ID, text_clean hoặc annotator_id. Không cần confidence.',
     'Đồng tình thuần túy → NEU; không hiểu câu → REVIEW, không đoán ngữ cảnh. Cảm xúc có thể hướng đến đối tượng bất kỳ.',
     'Nguồn: run Facebook fb_54e6c18b6c514f9ab822354611ab3316; coordinator và seed nằm trong sampling_manifest.json local.',
-    'Bổ sung đề xuất: docs/guidelines/SENTIMENT_GUIDELINE_V3_1_PROPOSED.md. Cần đối chiếu V3 trước khi bắt đầu gán.',
+    approved?`Guideline chính thức: ${manifest.guideline_file}; SHA256 ${manifest.guideline_sha256}`:`Guideline chưa duyệt: ${manifest.guideline_file}. Cần xác minh bản chính thức trước khi giao gán.`,
     'Câu dài: xem thêm tab Đọc dài nếu có, gán nhãn một lần ở Gán nhãn. Giữ nguyên toàn bộ text.',
   ];
   guide.showGridLines=false;guide.getRange('A:A').format.columnWidth=145;

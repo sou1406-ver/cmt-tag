@@ -38,6 +38,31 @@ def workbook(path, rows, formula=False):
 
 
 class SentimentPilotTests(unittest.TestCase):
+    def test_official_and_proposal_are_distinct_no_automatic_promotion(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            official=Path(tmp)/'SENTIMENT_GUIDELINE_V3_1.md'
+            proposal=Path(tmp)/'SENTIMENT_GUIDELINE_V3_1_PROPOSED.md'
+            proposal.write_text('Synthetic proposed guideline',encoding='utf8')
+            with patch.object(p,'OFFICIAL',official),patch.object(p,'PROPOSAL',proposal):
+                contract=p.guideline_contract()
+                self.assertEqual(contract['status'],'DRAFT_GUIDELINE_SOURCE_MISSING')
+                self.assertEqual(contract['guideline_status'],'PROPOSAL_NOT_APPROVED')
+                official.write_bytes(b'Synthetic official guideline supplied by user\r\n')
+                before=official.read_bytes()
+                self.assertEqual(p.guideline_contract()['guideline_status'],'OFFICIAL_PENDING_VERIFICATION')
+                with patch.object(p,'APPROVED_GUIDELINE_SHA256',sha(official)):
+                    contract=p.guideline_contract()
+                    self.assertEqual(contract['status'],'READY')
+                    self.assertEqual(contract['guideline_status'],'APPROVED_FOR_PILOT')
+                    self.assertEqual(contract['guideline_sha256'],sha(official))
+                    official.write_bytes(before+b'changed')
+                    with self.assertRaises(ValueError):p.guideline_contract()
+                    official.write_bytes(before)
+                self.assertEqual(official.read_bytes(),before)
+                self.assertEqual(proposal.read_text(encoding='utf8'),'Synthetic proposed guideline')
+                official.write_bytes(b'')
+                with self.assertRaises(FileNotFoundError):p.guideline_contract()
+
     def test_determinism_cohorts_and_no_labels(self):
         rows=fixture(); original=copy.deepcopy(rows)
         a,strata=p.select(rows); b,_=p.select(rows[::-1])

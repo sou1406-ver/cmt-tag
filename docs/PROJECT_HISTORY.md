@@ -64,7 +64,7 @@ Các file lịch sử còn ở working tree có lý do cụ thể:
 | `requirements/locks/classical-windows-py312.txt` | Lock Windows/Python 3.12 cho kết quả CV cũ; không sửa pin |
 | `requirements/transformer.txt`, `requirements/torch-cpu.txt` | Recipe dependency của checkpoint H được giữ: tag `before-cleanup-20261112:docs/archive/PHASE_H_REPORT.md` dòng 93–101 yêu cầu các root include trỏ tới hai file này; package pins/CPU index giữ nguyên, không dùng cho workflow hiện tại |
 | `docs/figures/phase_e2/*.png` | Sáu figure ROC/PR/scores của kết quả E.2 đã khóa, không phải hướng dẫn chạy hiện tại |
-| `docs/annotation_reviews/multifilm_20261110/*` | Audit/decision evidence của bộ nhãn người; `outputs/development/reviewed/manifest.json` pin `audit_report.json` |
+| `docs/annotation_reviews/multifilm_20261110/*` (local, không track Git) | Audit/decision evidence có text thật; giữ nguyên local vì `outputs/development/reviewed/manifest.json` pin `audit_report.json`. Không đưa trở lại public Git. |
 | `data/**` và `outputs/README.md` | Snapshot data/task/provenance và chỉ mục đã tồn tại, giữ nguyên byte; hướng dẫn cũ ở đó chỉ thuộc snapshot, dùng tag để tái lập |
 | `configs/phase_i.json` | `src/data/quality.py` đọc `exact_ui_strings`; filter đọc lineage/test reservation config đã pin |
 | `configs/canonical_dataset.json` | Recipe canonical nguồn của bản lọc; manifest nguồn và raw SHA giữ nguyên |

@@ -1,5 +1,14 @@
 # Dữ liệu local sau dọn
 
+## V2 đang kiểm tra
+
+- **Hai batch crawl mới nhất đã gộp:** [Excel](crawl_merged_20261115/review.xlsx) · [CSV đủ metadata](crawl_merged_20261115/comments.csv) · [nguồn và checksum](crawl_merged_20261115/README.md). Có 7.202 câu từ 49 bài: 6.863 KEEP, 70 REVIEW, 269 EXCLUDE; không trùng ID.
+- Bản gộp này không gồm batch 2.521 câu ngày 14/11; tổng ba batch V2 là 9.723 câu. CSV export gốc và raw/journal của từng run vẫn ở `../data/`, không xóa hay thay canonical.
+- [Bộ A/B để gửi người gán](sentiment_pilot_v3_1/BO_GAN_NHAN_200_AB.zip): guideline vẫn chờ xác nhận bản cuối, chưa READY. Không tự dùng nhãn V1 cho V2.
+- Lần dọn 15/11 loại cache Chrome cũ, fixture thử nghiệm và file authoring/log/preview trùng; giữ Chrome cache mới nhất, driver, nhãn người, Gold, checkpoint và backup lịch sử. Biên bản local: `local_cleanup_20261113_v2/cleanup_20261115.json`.
+
+## V1 và lịch sử giữ để tham chiếu
+
 | Cần xem | Đường dẫn | Ý nghĩa |
 |---|---|---|
 | Một dataset tham chiếu | [comments.csv](canonical/versions/filtered_20261112_final/comments.csv) | 25.810 dòng, Facebook/legacy phân biệt bằng source; raw và minimal riêng |

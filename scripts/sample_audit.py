@@ -9,6 +9,9 @@ from pathlib import Path
 import random
 import re
 import shutil
+import posixpath
+import zipfile
+import xml.etree.ElementTree as ET
 
 SEED = 20261114
 LABELS = ('RELEVANT', 'IRRELEVANT', 'UNCERTAIN')
@@ -193,11 +196,76 @@ def validate_audit(rows, manifest):
                 raise ValueError('Reason required for IRRELEVANT/UNCERTAIN: ' + r['comment_id'])
 
 
-def write_report(directory):
+def xlsx_rows(path, sheet_name, required):
+    """Read literal cells only; no optional Excel dependency or formula labels."""
+    ns = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+    with zipfile.ZipFile(path) as z:
+        wb = ET.fromstring(z.read('xl/workbook.xml'))
+        sheet = next((s for s in wb.findall('s:sheets/s:sheet', ns) if s.get('name') == sheet_name), None)
+        if sheet is None: raise ValueError('Missing worksheet: ' + sheet_name)
+        rid = sheet.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id')
+        rel = next(r for r in ET.fromstring(z.read('xl/_rels/workbook.xml.rels')) if r.get('Id') == rid)
+        target = rel.get('Target', '')
+        target = target.lstrip('/') if target.startswith('/') else posixpath.normpath('xl/' + target)
+        if rel.get('TargetMode') == 'External' or not target.startswith('xl/worksheets/'):
+            raise ValueError('Invalid worksheet relationship')
+        strings = [''.join(t.text or '' for t in x.iter('{' + ns['s'] + '}t'))
+                   for x in ET.fromstring(z.read('xl/sharedStrings.xml'))] if 'xl/sharedStrings.xml' in z.namelist() else []
+        header = None; output = []
+        for row in ET.fromstring(z.read(target)).findall('s:sheetData/s:row', ns):
+            cells = {}
+            for cell in row.findall('s:c', ns):
+                if cell.find('s:f', ns) is not None: raise ValueError('Formulas are not human annotation values')
+                col = 0
+                for c in re.sub(r'\d', '', cell.get('r')): col = col * 26 + ord(c) - 64
+                value = cell.findtext('s:v', '', ns)
+                if cell.get('t') == 's': value = strings[int(value)]
+                elif cell.get('t') == 'inlineStr': value = ''.join(t.text or '' for t in cell.findall('.//s:t', ns))
+                cells[col] = value[1:] if value.startswith("'=") else value
+            if not header:
+                if set(required) <= set(cells.values()):
+                    header = {col: name for col, name in cells.items() if name}
+                    if len(set(header.values())) != len(header): raise ValueError('Duplicate workbook header')
+            else:
+                item = {name: cells.get(col, '') for col, name in header.items()}
+                if item.get('comment_id'): output.append(item)
+        if header is None: raise ValueError('Missing workbook columns: ' + sheet_name)
+    return output
+
+
+def read_audit(directory, manifest, workbook=None):
+    directory = Path(directory); original = read_csv(directory / 'audit_sample.csv')
+    validate_audit(original, manifest)
+    explicit_workbook = workbook is not None
+    workbook = Path(workbook) if workbook else directory / 'audit_sample.xlsx'
+    if not workbook.exists():
+        if explicit_workbook:
+            raise FileNotFoundError(workbook)
+        return original
+    reference = xlsx_rows(workbook, 'Đối chiếu', IMMUTABLE)
+    check = [{**r, **{key: '' for key in EDITABLE}} for r in reference]
+    validate_audit(check, manifest)
+    review = xlsx_rows(workbook, 'Gán nhãn', ('comment_id', 'text_clean', *EDITABLE))
+    expected = {r['comment_id']: r for r in original}
+    if len(review) != len(expected) or len({r['comment_id'] for r in review}) != len(expected) or {r['comment_id'] for r in review} != set(expected):
+        raise ValueError('Workbook IDs missing, repeated or unexpected')
+    output = []
+    for item in review:
+        base = expected[item['comment_id']]
+        if item['text_clean'] != base['text_clean']: raise ValueError('Workbook text edited: ' + item['comment_id'])
+        for key in EDITABLE:
+            if base[key].strip() and base[key].strip() != item[key].strip():
+                raise ValueError('Workbook conflicts with an existing CSV decision: ' + item['comment_id'])
+        output.append({**base, **{key: item[key] for key in EDITABLE}})
+    validate_audit(output, manifest)
+    return output
+
+
+def write_report(directory, workbook=None):
     directory = Path(directory); manifest = json.loads((directory / 'sampling_manifest.json').read_text(encoding='utf8'))
     if sha(manifest['source_file']) != manifest['source_sha256']: raise ValueError('Source checksum changed')
     if sha(manifest['guideline_file']) != manifest['guideline_sha256']: raise ValueError('Guideline checksum changed')
-    rows = read_csv(directory / 'audit_sample.csv'); validate_audit(rows, manifest)
+    rows = read_audit(directory, manifest, workbook)
     labelled = [r for r in rows if r['semantic_relevance'].strip()]
     lines = ['# Audit semantic relevance — chưa phải Gold/sentiment', '',
         'Audit phụ trợ về mức liên quan phim; không thay mục tiêu cảm xúc chung của V2, không tự lọc dữ liệu.',
@@ -340,9 +408,10 @@ def main():
     p = commands.add_parser('sample'); p.add_argument('--source', type=Path, default=DEFAULT_SOURCE)
     p.add_argument('--output', type=Path, default=DEFAULT_OUTPUT); p.add_argument('--guideline', type=Path, default=DEFAULT_GUIDELINE)
     p = commands.add_parser('summarize'); p.add_argument('--directory', type=Path, default=DEFAULT_OUTPUT)
+    p.add_argument('--workbook', type=Path, help='Filled Excel; otherwise prefer DIRECTORY/audit_sample.xlsx when present')
     args = parser.parse_args()
     try:
-        result = sample(args.source, args.output, args.guideline) if args.cmd == 'sample' else write_report(args.directory)
+        result = sample(args.source, args.output, args.guideline) if args.cmd == 'sample' else write_report(args.directory, args.workbook)
         print(json.dumps(result))
     except (ValueError, OSError) as error: parser.exit(2, str(error) + '\n')
 

@@ -5,8 +5,10 @@ from pathlib import Path
 import random
 import tempfile
 import unittest
+import zipfile
+from xml.sax.saxutils import escape
 
-from scripts.sample_audit import (FIELDS, estimate, load_source, read_csv, row_hash,
+from scripts.sample_audit import (FIELDS, EDITABLE, IMMUTABLE, estimate, load_source, read_csv, read_audit, row_hash,
                                  select_sample, sha, validate_audit, write_report)
 
 
@@ -24,6 +26,48 @@ def frame():
 
 
 class SemanticAuditTests(unittest.TestCase):
+    def test_excel_import_preserves_source_and_rejects_edits(self):
+        rows, _ = select_sample(frame())
+        manifest = {'selected': [dict(comment_id=r['comment_id'], immutable_sha256=row_hash(r)) for r in rows]}
+        def write_book(path, items, reference, formula=False):
+            ns = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
+            def sheet(headers, data):
+                xml = []
+                for idx, values in enumerate([headers, *[[r[k] for k in headers] for r in data]], 1):
+                    cells = []
+                    for col, value in enumerate(values, 1):
+                        name = ''; n = col
+                        while n: n, rem = divmod(n-1, 26); name = chr(65+rem) + name
+                        extra = '<f>1+1</f>' if formula and idx == 2 and col == 1 else ''
+                        cells.append(f'<c r="{name}{idx}" t="inlineStr">{extra}<is><t>{escape(str(value))}</t></is></c>')
+                    xml.append(f'<row r="{idx}">{"".join(cells)}</row>')
+                return f'<worksheet xmlns="{ns}"><sheetData>{"".join(xml)}</sheetData></worksheet>'
+            with zipfile.ZipFile(path, 'w') as z:
+                z.writestr('xl/workbook.xml', f'<workbook xmlns="{ns}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Gán nhãn" sheetId="1" r:id="r1"/><sheet name="Đối chiếu" sheetId="2" r:id="r2"/></sheets></workbook>')
+                z.writestr('xl/_rels/workbook.xml.rels', '<Relationships><Relationship Id="r1" Target="worksheets/sheet1.xml"/><Relationship Id="r2" Target="worksheets/sheet2.xml"/></Relationships>')
+                z.writestr('xl/worksheets/sheet1.xml', sheet(['comment_id', 'text_clean', *EDITABLE], items))
+                z.writestr('xl/worksheets/sheet2.xml', sheet(list(IMMUTABLE), reference))
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp); csv_path = directory / 'audit_sample.csv'
+            with csv_path.open('w', encoding='utf8', newline='') as f:
+                w = csv.DictWriter(f, fieldnames=FIELDS); w.writeheader(); w.writerows(rows)
+            original_bytes = csv_path.read_bytes()
+            book = directory / 'audit_sample.xlsx'; annotated = copy.deepcopy(rows)
+            annotated[0].update(semantic_relevance='RELEVANT', needs_context='NO', confidence='HIGH')
+            write_book(book, annotated, rows)
+            actual = read_audit(directory, manifest)
+            self.assertEqual(actual[0]['semantic_relevance'], 'RELEVANT')
+            self.assertEqual(csv_path.read_bytes(), original_bytes)
+            for kind in ('text', 'id', 'label', 'reference', 'formula'):
+                changed = copy.deepcopy(annotated); ref = copy.deepcopy(rows)
+                if kind == 'text': changed[0]['text_clean'] += ' edited'
+                if kind == 'id': changed[0]['comment_id'] = changed[1]['comment_id']
+                if kind == 'label': changed[0]['semantic_relevance'] = 'POS'
+                if kind == 'reference': ref[0]['text_raw'] += ' edited'
+                write_book(book, changed, ref, formula=kind == 'formula')
+                with self.subTest(kind=kind), self.assertRaises(ValueError): read_audit(directory, manifest)
+            with self.assertRaises(FileNotFoundError): read_audit(directory, manifest, directory / 'missing.xlsx')
+
     def test_reproducible_unique_stratified_and_immutable(self):
         original = frame(); before = copy.deepcopy(original)
         rows, strata = select_sample(original)

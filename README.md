@@ -145,7 +145,9 @@ bài đăng. Chưa công bố kết quả V2; không dùng điểm V1 thay cho �
 Audit relevance phụ trợ cho batch mới (không đổi mục tiêu cảm xúc chung V2):
 `python scripts/sample_audit.py sample` xuất 240 random + 60 hard KEEP vào
 `outputs/semantic_audit_20261114/`. Người gán điền bốn cột theo hướng dẫn;
-`python scripts/sample_audit.py summarize` kiểm ID/text hash và tổng hợp.
+Excel `audit_sample.xlsx` có tab **Gán nhãn**, điền bốn cột vàng C–F;
+`python scripts/sample_audit.py summarize` ưu tiên đọc Excel nếu có, kiểm ID/text
+và metadata trước khi tổng hợp. CSV gốc được giữ nguyên.
 Chỉ random có trọng số dùng ước lượng; chưa có nhãn người thì chưa có tỷ lệ relevance.
 
 Chỉ commit code, tài liệu, config và fixture tổng hợp. `.gitignore` chặn dữ liệu,

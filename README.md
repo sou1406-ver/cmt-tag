@@ -142,6 +142,12 @@ bài đăng. Chưa công bố kết quả V2; không dùng điểm V1 thay cho �
 
 ## Git và tài liệu
 
+Audit relevance phụ trợ cho batch mới (không đổi mục tiêu cảm xúc chung V2):
+`python scripts/sample_audit.py sample` xuất 240 random + 60 hard KEEP vào
+`outputs/semantic_audit_20261114/`. Người gán điền bốn cột theo hướng dẫn;
+`python scripts/sample_audit.py summarize` kiểm ID/text hash và tổng hợp.
+Chỉ random có trọng số dùng ước lượng; chưa có nhãn người thì chưa có tỷ lệ relevance.
+
 Chỉ commit code, tài liệu, config và fixture tổng hợp. `.gitignore` chặn dữ liệu,
 outputs, venv, profile, secrets và model. Không dùng `git add -f` để đẩy các file này.
 Ngừng track không xóa bản cũ trong Git history; không rewrite history.

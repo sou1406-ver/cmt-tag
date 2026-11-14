@@ -6,7 +6,7 @@ from unittest.mock import patch
 from urllib.parse import quote
 
 from src.crawler.parser import post_id, comment_identity, observations
-from src.crawler.browser import EXTRACT, collect, dom, access_barrier
+from src.crawler.browser import EXTRACT, collect, dom, access_barrier, run_posts
 from src.crawler.login import open_login
 from src.crawler.store import Store
 from tests import test_crawler as crawler_tests
@@ -105,6 +105,30 @@ class FacebookLayoutTests(unittest.TestCase):
         buttons=dom(self.driver,GROUP,'buttons')
         self.assertTrue(any('5 câu trả lời' in b.text for b in buttons))
 
+    def test_exact_displayed_reactions_and_created_time_only(self):
+        self.load(self.fixture().replace('post permalink</a>','post permalink</a><button>1.234 bình luận</button>')
+                  .replace('Phim hay 😍!<br>ko dở.</div>',
+                    'Phim hay 😍!<br>ko dở.</div><span aria-label="0 reactions">0</span>'
+                    '<time datetime="2026-11-14T10:00:00+07:00">today</time>'))
+        self.assertEqual(dom(self.driver,GROUP,'inspect')['displayed_count'],1234)
+        rows,errors=observations(dom(self.driver,GROUP),GROUP);self.assertEqual(errors,0)
+        first=next(r for r in rows if r['comment_id']=='101')
+        self.assertEqual(first['reaction_count'],0);self.assertEqual(first['comment_created_at'],'2026-11-14T10:00:00+07:00')
+        self.assertIsNone(next(r for r in rows if r['comment_id']=='102')['reaction_count'])
+        self.assertNotIn('today',first['text_raw'])
+        self.driver.execute_script("document.querySelector('button').textContent='1,2K bình luận';document.querySelector('[aria-label=\"0 reactions\"]').setAttribute('aria-label','1.2K reactions')")
+        self.assertIsNone(dom(self.driver,GROUP,'inspect')['displayed_count'])
+        self.assertIsNone(observations(dom(self.driver,GROUP),GROUP)[0][0]['reaction_count'])
+
+    def test_conflicting_display_counts_and_reactions_are_unknown(self):
+        self.load(self.fixture().replace('post permalink</a>',
+            'post permalink</a><button>100 comments</button><button>120 comments</button>')
+            .replace('Phim hay 😍!<br>ko dở.</div>',
+                'Phim hay 😍!<br>ko dở.</div><span aria-label="12 reactions">12</span><span aria-label="13 reactions">13</span>'))
+        self.assertIsNone(dom(self.driver,GROUP,'inspect')['displayed_count'])
+        rows,errors=observations(dom(self.driver,GROUP),GROUP);self.assertEqual(errors,0)
+        self.assertIsNone(next(r for r in rows if r['comment_id']=='101')['reaction_count'])
+
     def test_sort_requires_real_confirmation(self):
         self.load(self.fixture())
         step=dom(self.driver,GROUP,'sort'); self.assertEqual(step['status'],'opening'); step['element'].click()
@@ -124,6 +148,24 @@ class FacebookLayoutTests(unittest.TestCase):
             self.assertEqual(len(store.rows),3)
             self.assertTrue(all(r['extraction_status']=='complete' for r in store.rows))
             self.assertIn('SORT_CONFIRMED',trace)
+
+    def test_v2_per_post_cap_and_round_timeout_states(self):
+        original=self.driver.get
+        html='data:text/html;charset=utf-8,'+quote('<meta charset="utf-8"><base href="https://www.facebook.com/">'+self.fixture())
+        with tempfile.TemporaryDirectory() as tmp:
+            post={'post_url':GROUP,'movie_id':'film','max_comments':2}
+            s=Store(tmp,dict(CONFIG,campaign_v2=True,posts=[post]))
+            with patch.object(self.driver,'get',side_effect=lambda url:original(html)):
+                report=run_posts(s,self.driver)
+            self.assertEqual(len(s.rows),2)
+            self.assertEqual((report['posts'][0]['status'],report['posts'][0]['reason']),('success','comment_limit'))
+            self.assertFalse(report['coverage_verified'])
+        with tempfile.TemporaryDirectory() as tmp:
+            post={'post_url':GROUP,'movie_id':'film'}
+            s=Store(tmp,dict(CONFIG,posts=[post],post_timeout=1e-9))
+            with patch.object(self.driver,'get',side_effect=lambda url:original(html)):
+                status,reason,_=collect(self.driver,s,post)
+            self.assertEqual((status,reason),('partial','time_limit'))
 
     def test_wrong_post_never_falls_back_to_whole_page(self):
         self.load(self.fixture())

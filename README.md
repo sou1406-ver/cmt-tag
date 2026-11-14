@@ -59,6 +59,21 @@ Với danh sách bài đã chọn sẵn, tạo CSV local có `movie_id,post_url`
 Giới hạn 100 là cấu hình thu thập, không phải số mẫu ngẫu nhiên hay cam kết lấy đủ.
 Không dùng các post test/reserved để phát triển crawler hoặc mô hình.
 
+Chiến dịch V2 dùng lại batch CLI, chưa tự thu thập 10–15k câu:
+
+```powershell
+.\.venv\Scripts\python.exe -m src.crawler crawl-batch --campaign-v2 --input data/posts_v2.csv --channel brave --profile data/browser_profile_brave_manual --max-comments 300 --post-delay 5
+.\.venv\Scripts\python.exe -m src.crawler crawl-batch --resume RUN_ID --channel brave --profile data/browser_profile_brave_manual
+.\.venv\Scripts\python.exe -m src.crawler export --run RUN_ID --format xlsx
+```
+
+CSV có thể thêm `source_name,source_type,max_comments`; V2 tối đa 500/bài,
+chống trùng ID với journal cũ trong cùng data-root và cập nhật thống kê sau mỗi bài.
+Reaction/thời gian/tổng comment thiếu bằng chứng DOM để null. Excel duy nhất ở
+`data/imports/RUN_ID/review.xlsx`, lọc được theo bài/phim/trạng thái; không phải
+dữ liệu train hay nhãn đã duyệt. Kế hoạch 40–80 bài/15–20 phim và các giới hạn:
+[hướng dẫn chiến dịch V2](docs/CRAWLER.md#chiến-dịch-v2--chuẩn-bị-công-cụ-chưa-chạy-thu-thập-lớn).
+
 ### Text được xuất như thế nào?
 
 | Trường | Ý nghĩa |

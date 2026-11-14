@@ -36,7 +36,7 @@ def collect(page, store, post):
     deadline = time.monotonic() + cfg['post_timeout']
     session = uuid4().hex
     start_count = store.post_counts[post['post_url']]
-    cap=cfg['max_comments']
+    cap=post.get('max_comments',cfg['max_comments'])
     if cap is not None and start_count >= cap:
         return 'partial', 'comment_limit', []
     trace, pending, idle = ['NAVIGATE'], {}, 0
@@ -65,6 +65,8 @@ def collect(page, store, post):
             status, reason = 'blocked', 'access_barrier'
             break
         scope=dom(page,post['post_url'],'inspect')
+        if scope.get('displayed_count') is not None:
+            store.displayed_counts[post['post_url']]=scope['displayed_count']
         if scope.get('status')!='ready':
             reason=scope.get('status','missing_scope'); break
         trace.append('SORT')
@@ -118,6 +120,8 @@ def collect(page, store, post):
             else:
                 pending.pop(row['comment_id'] or row['dom_observation_id'],None)
                 added += store.add(row,post,session)
+        if cap is not None and store.post_counts[post['post_url']]>=cap:
+            reason='comment_limit'
         if reason == 'comment_limit':
             break
         trace.append('SCROLL')
@@ -150,29 +154,40 @@ def collect(page, store, post):
     return status, reason, trace + ['FINISH']
 
 
-def run_posts(store, page, collector=collect, posts=None, finalize=True):
+def run_posts(store, page, collector=collect, posts=None, finalize=True, sleeper=time.sleep):
     done = {p['post_url'] for p in store.posts if p['status']=='success'}
     try:
         for post in (store.config['posts'] if posts is None else posts)[:store.config['max_posts']]:
             if post['post_url'] in done:
                 continue
+            if store.posts and store.config.get('post_delay',0):sleeper(store.config['post_delay'])
             for attempt in range(store.config['retries']+1):
+                if attempt and store.config.get('post_delay',0):sleeper(store.config['post_delay'])
                 started=time.monotonic();before=store.post_counts[post['post_url']]
                 try:
                     status, reason, trace = collector(page,store,post)
+                    cap=post.get('max_comments',store.config['max_comments'])
+                    if (store.config.get('campaign_v2') and reason=='comment_limit' and cap is not None
+                            and store.post_counts[post['post_url']]>=cap):
+                        status='success' # requested cap fulfilled; total coverage still unknown
                     store.finish_post(post,status,reason,state_trace=trace,attempt=attempt+1,
                         elapsed_seconds=time.monotonic()-started,new_records=store.post_counts[post['post_url']]-before,
                         total_records_for_post=store.post_counts[post['post_url']],coverage_verified=False)
                     break
                 except KeyboardInterrupt:
+                    store.finish_post(post,'partial','interrupted',attempt=attempt+1,
+                        elapsed_seconds=time.monotonic()-started,
+                        total_records_for_post=store.post_counts[post['post_url']],coverage_verified=False)
                     raise
                 except Exception as exc:
                     # Exception strings can contain URL query secrets or page text.
+                    timeout=isinstance(exc,TimeoutError) or type(exc).__name__=='TimeoutException'
                     store.append('errors.jsonl', {'code':'browser_error','error_type':type(exc).__name__,
                                  'post_url':post['post_url'],'attempt':attempt+1})
                     if attempt == store.config['retries']:
-                        store.finish_post(post,'failed','retry_exhausted',attempt=attempt+1,
+                        store.finish_post(post,'partial' if timeout else 'failed','navigation_timeout' if timeout else 'retry_exhausted',attempt=attempt+1,
                             elapsed_seconds=time.monotonic()-started,total_records_for_post=store.post_counts[post['post_url']],coverage_verified=False)
+            if store.posts and store.posts[-1]['status']=='blocked':break
         return store.finish() if finalize else None
     except BaseException:
         store.checkpoint('interrupted')

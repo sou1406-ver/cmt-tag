@@ -13,16 +13,16 @@ Chỉ bỏ anchor có nhãn URL hoặc cấu trúc media-card của link chia s�
 đích ngoài Facebook/redirect/post không tự chứng minh chữ trong anchor là preview.
 Anchor ngôn ngữ chưa rõ giữ chữ và gắn `REVIEW`; URL hiện trong chữ vẫn bỏ.
 Chữ ngoài anchor và hashtag giữ nguyên.
-`clean_status` là đề xuất kỹ thuật: `KEEP`, `EXCLUDE` khi chỉ còn trắng/tag/URL,
-`REVIEW` khi link mơ hồ. Có media không tự gây REVIEW: text/emoji/emoticon còn
-dùng được sẽ KEEP; media-only không có chữ/emoji hữu ích sẽ EXCLUDE khỏi tập text.
+`clean_status` là đề xuất kỹ thuật: có chữ Unicode → KEEP; rỗng hoặc chỉ dấu câu
+→ EXCLUDE; chỉ emoji/emoticon/điểm số → REVIEW. Link mơ hồ vẫn giữ REVIEW.
+Có media không tự gây REVIEW khi còn chữ; media-only không text → EXCLUDE.
 `non_text_media_count` vẫn giữ; không OCR hoặc đọc caption tự sinh. KEEP là trạng
 thái kỹ thuật, không khẳng định câu độc lập với ảnh hoặc có sentiment rõ ràng.
 Người gán chọn REVIEW nếu cần ảnh mới hiểu. Metadata cũng nhận lý do tường minh
 `media_context_required` khi có media; crawler không tự suy diễn bằng từ khóa.
 Journal cũ dùng lý do `non_text_media` vẫn được đọc nguyên trạng.
 `url_count` và `clean_review_reasons` ghi số lượng/lý do, không tự gán sentiment.
-Chỉ còn dấu câu (ví dụ `?`) cũng là `REVIEW`; không áp dụng cho emoji/emoticon.
+Chỉ dấu câu như `?`, `...`, `!!!` → EXCLUDE; `😂`, `:))`, `10/10` → REVIEW.
 `clean_evidence` lưu loại/rule và `raw_start`/`raw_end` của từng đoạn bị bỏ,
 theo đơn vị UTF-16 của JavaScript, không lưu href hay danh tính tài khoản mới.
 URL text được nhận diện trên chuỗi hiển thị nối từ các node, kể cả nhiều span;
@@ -95,6 +95,58 @@ python scripts/build_master_dataset.py --config data/imports/RUN_ID/import_confi
 ```
 
 Không tự thêm dữ liệu crawl vào filtered candidate/test reservations đã khóa.
+
+## Chiến dịch V2 — chuẩn bị công cụ, chưa chạy thu thập lớn
+
+CSV local `data/posts_v2.csv`: hai cột bắt buộc `movie_id,post_url`; nên bổ sung
+`source_name,source_type,max_comments` như `configs/post_urls.example.csv`.
+File example chỉ có URL giả, phải thay bằng danh sách nguồn đã được chọn.
+`source_type` nhận `page/group`; group suy ra được từ URL, còn page phải khai báo.
+Tên nguồn lấy từ CSV, không lấy tên tác giả hoặc đoán từ nội dung comment.
+
+```powershell
+python -m src.crawler crawl-batch --campaign-v2 --input data/posts_v2.csv --channel brave --profile data/browser_profile_brave_manual --max-comments 300 --post-delay 5
+python -m src.crawler crawl-batch --resume RUN_ID --channel brave --profile data/browser_profile_brave_manual
+python -m src.crawler validate --run RUN_ID
+python -m src.crawler export --run RUN_ID
+python -m src.crawler export --run RUN_ID --format xlsx
+```
+
+Mặc định run mới là 300 comment/bài; cột `max_comments` ghi đè theo bài.
+V2 chỉ chấp nhận 1–500, không nhận `all`; run cũ giữ cấu hình đã lưu và không
+đổi sang V2 qua resume. Mặc định nghỉ 5 giây giữa bài/retry. Bị chặn truy cập
+thì dừng batch; không tự tìm cách vượt bảo vệ. Ctrl+C ghi reason `interrupted`.
+`comment_limit` trong V2 là hoàn tất mục tiêu giới hạn, `visible_dom_exhausted`
+là hết phần DOM tải được. Timeout/round limit/truncated vẫn được báo riêng.
+Mọi trạng thái đều `coverage_verified=false`.
+
+Raw fsync sau mỗi dòng; checkpoint và `crawl_report.json` cập nhật sau mỗi bài.
+`per_post_quality` có số comment/reply, clean_status, thiếu metadata/tỷ lệ thiếu,
+trùng ID/bản ghi bỏ qua, lỗi DOM/raw và truncated. Chỉ dùng journal/checkpoint cũ.
+V2 đọc ID từ toàn bộ journal cùng `data-root` để chống trùng giữa run; không
+xóa/sửa journal trước. `.campaign-v2.lock` dùng lại OS lock để ngăn hai chiến dịch
+V2 chạy cùng lúc. Không chạy một crawler legacy song song với V2 trên cùng root.
+Không có ID thì giữ `possible_duplicate`, không đoán ID hoặc xóa chỉ vì text giống.
+
+`comment_created_at` chỉ có khi DOM cho ISO datetime có timezone. `reaction_count`
+chỉ nhận nhãn số tuyệt đối rõ ràng của đúng comment; số viết tắt/không nhất quán
+để null. `displayed_count` ở journal bài/report và Excel chỉ nhận tổng dạng số
+rõ ràng ngoài vùng comment. Không lấy reaction làm tổng comment. Không bảo đảm DOM
+Facebook luôn cung cấp các trường này. `crawl_run_id` hiện có là run_id của JSONL/CSV;
+Excel hiển thị alias `run_id`. Nguồn/thời gian/reaction không đọc được là null.
+
+CSV export vẫn gồm các quan sát complete để import; Excel là **một file**
+`data/imports/RUN_ID/review.xlsx`, chứa cả truncated để kiểm tra, freeze header,
+wrap text và AutoFilter theo phim/bài/trạng thái. Không tự tính lại status cho raw
+cũ. Excel không phải nguồn nhãn/train; text quá giới hạn ô Excel sẽ báo lỗi,
+không cắt nội dung hoặc sửa raw. Không thêm dependency để export Excel.
+
+Kế hoạch đề xuất: 60 bài × 200–250 câu ≈ 12–15k tối đa theo cấu hình, ít nhất
+20 phim/chủ đề, khoảng 3 bài/phim từ nhiều page/group và loại thảo luận/thời điểm.
+Phương án 40 bài × 300 hoặc 80 bài × 150 đều có ngân sách 12k. Đây là ngân sách,
+không cam kết thu đủ KEEP. Xem chất lượng nguồn qua mẫu trước; không bù số lượng
+bằng nguồn kém, không để bài viral chi phối. Chọn danh sách trước khi chạy;
+giữ riêng các bài dành cho test, không dùng chúng để phát triển preprocessing.
 
 ## Khi bị kẹt
 

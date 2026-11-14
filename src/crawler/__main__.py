@@ -7,7 +7,7 @@ from contextlib import contextmanager, ExitStack
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from .parser import facebook_url
+from .parser import facebook_url,post_id
 from .store import Store, export_run, validate
 from .locking import RunLock, RunBusyError, LegacyRunLockError
 
@@ -157,6 +157,8 @@ def main():
             p.add_argument('--input',type=Path,help='UTF-8 CSV with movie_id,post_url; required for a new run')
         else:
             p.add_argument('--movie-id',help='Initial movie code; prompted once if omitted')
+        p.add_argument('--campaign-v2',action='store_true',help='V2: cap 1..500/post, deduplicate against prior raw journals')
+        p.add_argument('--post-delay',type=positive,default=5,help='Seconds of rest between posts/retries (default 5)')
         p.add_argument('--resume',help='Resume an interrupted run; saved inputs/settings are authoritative')
         p.add_argument('--data-root',type=Path,default=Path('data'),help='Local data directory')
         p.add_argument('--source-dataset',help='Batch provenance identifier; defaults to run ID')
@@ -166,7 +168,7 @@ def main():
         p.add_argument('--cdp-url',type=cdp_endpoint,help='Attach to a manually opened local browser, e.g. http://127.0.0.1:9222; do not close it on exit')
         p.add_argument('--driver-path',type=Path,help='Optional matching chromedriver.exe; otherwise use Selenium Manager')
         for flag,default,help_text in [
-            ('max-posts',100,'Maximum posts in this run'),('max-comments',5000,'Maximum stored observations per post'),
+            ('max-posts',100,'Maximum posts in this run'),('max-comments',300,'Maximum stored observations per post'),
             ('post-timeout',300,'Seconds per post attempt'),('max-rounds',100,'Expansion/scroll rounds per post'),
             ('max-actions',20,'Button clicks per round'),('wait-ms',10000,'Navigation/action timeout in milliseconds'),
             ('settle-ms',1500,'DOM polling timeout per scroll'),('idle-rounds',3,'Idle rounds before stopping')]:
@@ -178,9 +180,9 @@ def main():
     p.add_argument('--data-root',type=Path,default=Path('data'))
     p = sub.add_parser('export',help='Create immutable CSV + Phase B import config; truncated raw stays out of import')
     p.add_argument('--run',required=True)
-    p.add_argument('--format',choices=['csv'],default='csv')
+    p.add_argument('--format',choices=['csv','xlsx'],default='csv')
     p.add_argument('--data-root',type=Path,default=Path('data'))
-    p.add_argument('--output',type=Path,help='New directory; default data/imports/<run_id>')
+    p.add_argument('--output',type=Path,help='CSV: new directory; XLSX: new file (default data/imports/<run_id>/review.xlsx)')
     p.add_argument('--allow-partial',action='store_true',help='Export validated complete rows despite skipped DOM observations; record coverage warnings')
     args = ap.parse_args()
     try:
@@ -200,7 +202,10 @@ def main():
                 report=validate(path)
                 print(json.dumps(report,ensure_ascii=False,indent=2))
                 return 2 if report['parse_errors'] or report['duplicate_source_ids_in_raw'] else 0
-            output=export_run(path,args.output or args.data_root/'imports'/args.run,allow_partial=args.allow_partial)
+            if args.format=='xlsx':
+                from .store import export_review
+                output=export_review(path,args.output or args.data_root/'imports'/args.run/'review.xlsx',allow_partial=args.allow_partial)
+            else:output=export_run(path,args.output or args.data_root/'imports'/args.run,allow_partial=args.allow_partial)
             print(json.dumps({'export':str(output)},ensure_ascii=False))
             return 0
         config = None
@@ -213,13 +218,21 @@ def main():
                 if not args.input:
                     raise ValueError('--input is required for a new batch')
                 with args.input.open(encoding='utf-8-sig',newline='') as f:
-                    posts=[{'post_url':facebook_url(r['post_url']),'movie_id':r['movie_id']} for r in csv.DictReader(f)]
+                    posts=[]
+                    for r in csv.DictReader(f):
+                        post={'post_url':facebook_url(r['post_url']),'movie_id':r['movie_id'].strip()}
+                        for key in ('source_name','source_type'):
+                            if r.get(key,'').strip():post[key]=r[key].strip()
+                        if r.get('max_comments','').strip():post['max_comments']=positive(r['max_comments'])
+                        posts.append(post)
             if args.command!='interactive' and (not posts or any(not p['movie_id'].strip() for p in posts)):
                 raise ValueError('Every post needs a movie_id')
             if len({p['post_url'] for p in posts}) != len(posts):
                 raise ValueError('Duplicate post URLs; provide each post once')
+            identities=[post_id(p['post_url']) or p['post_url'] for p in posts]
+            if len(set(identities))!=len(identities):raise ValueError('Duplicate post IDs; provide each post once')
             config={k:getattr(args,k) for k in ('max_posts','max_comments','post_timeout','max_rounds','max_actions','wait_ms','settle_ms','idle_rounds','retries')}
-            config.update(posts=posts,source_dataset=args.source_dataset)
+            config.update(posts=posts,source_dataset=args.source_dataset,campaign_v2=args.campaign_v2,post_delay=args.post_delay)
             if args.command=='interactive': config['interactive']=True
         from .browser import run_posts
         if args.cdp_url and (args.profile or args.browser_path):
@@ -231,6 +244,13 @@ def main():
             raise ValueError('Invalid run ID')
         lock = args.data_root/'crawl_runs'/args.resume/'.browser.lock' if args.resume else None
         with ExitStack() as locks:
+            v2=config.get('campaign_v2') if config is not None else json.loads(
+                (args.data_root/'crawl_runs'/args.resume/'config.json').read_text(encoding='utf-8')).get('campaign_v2')
+            if args.resume and args.campaign_v2 and not v2:
+                raise ValueError('V2 max_comments/mode cannot replace a saved legacy run; start a new run')
+            if v2:
+                (args.data_root/'crawl_runs').mkdir(parents=True,exist_ok=True)
+                locks.enter_context(RunLock(args.data_root/'crawl_runs'/'.campaign-v2.lock'))
             if lock: locks.enter_context(RunLock(lock))
             store=Store(args.data_root/'crawl_runs',config,resume=args.resume,interactive=args.command=='interactive')
             if args.command=='interactive' and not store.config.get('interactive'):
@@ -263,7 +283,8 @@ def main():
         # Safe local validation errors have no browser/page contents.
         print(json.dumps({'error_type':type(exc).__name__,
                          'hint':str(exc) if str(exc).startswith(('Brave not found','Browser executable not found',
-                             'Unparsed DOM observations','Validation failed','No complete records')) else
+                             'Unparsed DOM observations','Validation failed','No complete records',
+                             'V2 max_comments','Excel cannot represent','Duplicate post')) else
                          'Invalid input or run path, completed run, existing export, or active/stale .browser.lock. See docs/CRAWLER.md.'}))
         return 2
     except Exception as exc:

@@ -1,2 +1,2 @@
-movie_id,post_url
-example_movie,https://www.facebook.com/example/posts/123456789
+movie_id,post_url,source_name,source_type,max_comments
+example_movie,https://www.facebook.com/example/posts/123456789,Example page,page,200

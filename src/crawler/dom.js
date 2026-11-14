@@ -64,7 +64,20 @@
       if (commentSet.has(p)) return true;
     return false;
   };
-  if (action === 'inspect') return {status:'ready',comment_containers:comments.length};
+  const exactCount = value => {
+    value=String(value).trim();
+    if (!/^(?:\d+|\d{1,3}(?:[., \u00a0]\d{3})+)$/.test(value)) return null;
+    const n=Number(value.replace(/[., \u00a0]/g,''));
+    return Number.isSafeInteger(n)?n:null;
+  };
+  const countLabels = (nodes,pattern) => {
+    const values=nodes.filter(visible).map(node=>pattern.exec(clean(node.getAttribute('aria-label')||node.innerText)))
+      .filter(Boolean).map(match=>exactCount(match[1]||match[2])).filter(n=>n!==null);
+    const distinct=[...new Set(values)];return distinct.length===1?distinct[0]:null;
+  };
+  if (action === 'inspect') return {status:'ready',comment_containers:comments.length,
+    displayed_count:countLabels([...root.querySelectorAll('button,[role="button"],span[aria-label]')]
+      .filter(node=>!insideComment(node)),/^([\d., \u00a0]+) (?:comments|bình luận)$/i)};
   const all = /^(?:Tất cả (?:các )?bình luận|All comments)$/i;
   const filtered = /^(?:Phù hợp nhất|Liên quan nhất|Mới nhất|Most relevant|Newest|Top comments)$/i;
   const label = el => clean(el.innerText || el.getAttribute('aria-label'));
@@ -294,11 +307,14 @@
     if (!window.__cmtSeen.has(el)) window.__cmtSeen.set(el,String(++window.__cmtSeq));
     const parent = el.parentElement?.closest(boundary);
     const parentLink = commentSet.has(parent) ? own(parent,'a[href]').find(a => /[?&]comment_id=\d+/.test(a.href)) : null;
+    const reactions=countLabels(own(el,'[aria-label]').filter(node=>!bodies[0].contains(node)),
+      /^(?:([\d., \u00a0]+) (?:reactions?|lượt cảm xúc|cảm xúc)|(?:reactions?|lượt cảm xúc|cảm xúc):? ([\d., \u00a0]+))$/i);
     return [{text_raw:original.text,text_without_mentions:withoutMentions.text,
       mention_count:withoutMentions.mentions,non_text_media_count:original.media,text_extraction_version:'dom_text_v3',
       text_clean:cleaned.text,url_count:cleaned.urls,clean_review_reasons:cleaned.reasons,
       clean_evidence:cleaned.events,
       clean_status:cleaned.status,
+      reaction_count:reactions,
       permalink:link?.href || null,observation_id:window.__cmtSeen.get(el),
       is_reply:commentSet.has(parent) || /^(reply|phản hồi)/i.test(el.getAttribute('aria-label') || ''),
       parent_permalink:parentLink?.href || null,

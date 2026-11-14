@@ -5,6 +5,27 @@ from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 TEXT_FIELDS=('text_without_mentions','mention_count','non_text_media_count','text_extraction_version')
 CLEAN_FIELDS=('text_clean','clean_status','url_count','clean_review_reasons')
 EVIDENCE_FIELDS=('clean_evidence',)
+METADATA_FIELDS=('source_name','source_type','reaction_count')
+
+
+def source_metadata(post):
+    """Source labels come from the input, never from a comment author's name."""
+    name=post.get('source_name')
+    kind=post.get('source_type')
+    if name=='':name=None
+    if kind=='':kind=None
+    if name is not None and (not isinstance(name,str) or not name.strip()):raise ValueError('Invalid source_name')
+    if kind not in (None,'page','group'):raise ValueError('source_type must be page or group')
+    if re.match(r'^/groups/[^/]+/',urlsplit(post['post_url']).path):
+        if kind=='page':raise ValueError('Group URL contradicts source_type=page')
+        kind='group'
+    return {'source_name':name.strip() if name else None,'source_type':kind}
+
+
+def valid_extra_metadata(row):
+    return (row.get('source_type') in (None,'page','group') and
+            (row.get('source_name') is None or isinstance(row['source_name'],str) and bool(row['source_name'].strip())) and
+            (row.get('reaction_count') is None or type(row['reaction_count']) is int and row['reaction_count']>=0))
 
 
 def valid_text_metadata(row):
@@ -93,7 +114,7 @@ def observations(candidates, source_url):
     """Candidates contain only a specific comment body, never whole article text."""
     rows, errors = [], 0
     for item in candidates:
-        if not isinstance(item.get('text_raw'), str) or not valid_text_metadata(item):
+        if not isinstance(item.get('text_raw'), str) or not valid_text_metadata(item) or not valid_extra_metadata(item):
             errors += 1
             continue
         cid, parent, permalink = comment_identity(item.get('permalink', ''), source_url)
@@ -111,6 +132,7 @@ def observations(candidates, source_url):
             'record_type': 'reply' if parent or item.get('is_reply') else 'comment',
             'extraction_status': 'truncated' if item.get('truncated') else 'complete',
             'dom_observation_id': item['observation_id'],
+            'reaction_count':item.get('reaction_count'),
         }
         row.update({key:item[key] for key in TEXT_FIELDS+CLEAN_FIELDS+EVIDENCE_FIELDS if key in item})
         rows.append(row)

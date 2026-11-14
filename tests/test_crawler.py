@@ -42,6 +42,19 @@ class ParserTests(unittest.TestCase):
         self.assertIsNone(rows[0]['comment_created_at'])
         self.assertEqual(observations([{'text_raw':None}],POST['post_url'])[1],1)
 
+    def test_optional_source_reaction_and_time_metadata(self):
+        from src.crawler.parser import source_metadata
+        self.assertEqual(source_metadata({'post_url':'https://www.facebook.com/groups/film/posts/123'}),
+                         {'source_name':None,'source_type':'group'})
+        self.assertEqual(source_metadata(POST),{'source_name':None,'source_type':None})
+        with self.assertRaises(ValueError):source_metadata({**POST,'source_type':'profile'})
+        with self.assertRaises(ValueError):source_metadata({**POST,'source_name':False})
+        base={'text_raw':'Không dở','observation_id':'x','reaction_count':0,'created_at':'2026-11-14T10:00:00+07:00'}
+        rows,errors=observations([base],POST['post_url']);self.assertEqual(errors,0)
+        self.assertEqual(rows[0]['reaction_count'],0);self.assertIsNotNone(rows[0]['comment_created_at'])
+        for value in (-1,True,'1.2K'):
+            self.assertEqual(observations([{**base,'reaction_count':value}],POST['post_url'])[1],1)
+
     def test_incomplete_or_invalid_mention_metadata_rejected(self):
         base={'text_raw':'Phim hay!','observation_id':'x','text_without_mentions':'Phim hay!'}
         self.assertEqual(observations([base],POST['post_url'])[1],1)
@@ -158,7 +171,8 @@ class StoreTests(unittest.TestCase):
             return 'blocked','access_barrier',[]
         run_posts(self.store,None,collector=fake)
         self.assertEqual(len(attempts),3)
-        self.assertEqual([p['status'] for p in self.store.posts],['failed','blocked'])
+        self.assertEqual([p['status'] for p in self.store.posts],['partial','blocked'])
+        self.assertEqual(self.store.posts[0]['reason'],'navigation_timeout')
         self.assertNotIn('secret',(self.store.path/'errors.jsonl').read_text())
 
     def test_keyboard_interrupt_then_resume(self):
@@ -294,6 +308,124 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(json.loads(rows[1]['clean_review_reasons']),[])
         self.assertEqual(json.loads(rows[1]['clean_evidence']),resumed.rows[-1]['clean_evidence'])
         self.assertEqual((s.path/'raw_comments.jsonl').read_bytes(),raw)
+
+    def test_v2_caps_validate_before_creating_run(self):
+        for cap in (None,0,501,True):
+            with self.subTest(cap=cap),self.assertRaises(ValueError):
+                Store(self.root/'invalid',dict(CONFIG,campaign_v2=True,max_comments=cap))
+        self.assertFalse((self.root/'invalid').exists())
+        for cap in (300,500):
+            s=Store(self.root/str(cap),dict(CONFIG,campaign_v2=True,max_comments=cap))
+            self.assertEqual(s.config['max_comments'],cap)
+        with self.assertRaises(ValueError):
+            Store(self.root/'override',dict(CONFIG,campaign_v2=True,posts=[{**POST,'max_comments':501}]))
+        from unittest.mock import patch
+        from io import StringIO
+        from src.crawler.__main__ import main
+        for value in ('501','all'):
+            args=['crawler','crawl-post','--url',POST['post_url'],'--movie-id','film',
+                  '--campaign-v2','--max-comments',value,'--data-root',str(self.root/'cli_invalid')]
+            with patch('sys.argv',args),patch('sys.stdout',new=StringIO()),\
+                 patch('src.crawler.__main__.browser_page') as launch:
+                self.assertEqual(main(),2);launch.assert_not_called()
+
+    def test_v2_cross_run_identity_dedup_and_unknown_ids_retained(self):
+        old=self.store;old.add(observation('1'),POST,'old');before=(old.path/'raw_comments.jsonl').read_bytes()
+        current=Store(self.root/'crawl_runs',dict(CONFIG,campaign_v2=True))
+        self.assertFalse(current.add(observation('1'),POST,'new'))
+        self.assertTrue(current.add(observation('2'),POST,'new'))
+        self.assertTrue(current.add(observation('3',comment_id=None,comment_permalink=None),POST,'new'))
+        self.assertEqual((old.path/'raw_comments.jsonl').read_bytes(),before)
+        current.checkpoint('interrupted')
+        resumed=Store(self.root/'crawl_runs',resume=current.run_id)
+        self.assertFalse(resumed.add(observation('1'),POST,'resume'))
+        self.assertFalse(resumed.add(observation('2'),POST,'resume'))
+        self.assertEqual(len(resumed.rows),2)
+
+    def test_post_report_updates_immediately_and_zero_reaction_not_missing(self):
+        post={**POST,'source_name':'Fixture page','source_type':'page'}
+        s=Store(self.root/'reported',dict(CONFIG,posts=[post]))
+        s.add(observation('1',reaction_count=0),post,'fixture')
+        s.displayed_counts[POST['post_url']]=1234
+        s.finish_post(post,'success','visible_dom_exhausted')
+        report=json.loads((s.path/'crawl_report.json').read_text(encoding='utf-8'))
+        q=report['per_post_quality'][POST['post_url']]
+        self.assertEqual(q['records'],1);self.assertEqual(q['displayed_count'],1234)
+        self.assertEqual(q['missing_metadata']['reaction_count'],0)
+        self.assertEqual(q['missing_metadata']['comment_created_at'],1)
+        self.assertEqual(q['missing_metadata']['parent_comment_id'],0)
+        self.assertIsNone(q['missing_metadata_rate']['parent_comment_id'])
+        self.assertEqual(report['metadata_completeness_rate']['reaction_count'],1)
+
+    def test_v2_pause_resume_cap_and_blocking_stop(self):
+        from unittest.mock import Mock
+        second={**POST,'post_url':POST['post_url'].replace('123','456')}
+        third={**POST,'post_url':POST['post_url'].replace('123','789')}
+        s=Store(self.root/'v2_batch',dict(CONFIG,campaign_v2=True,max_comments=1,post_delay=5,posts=[POST,second,third]))
+        calls=[];sleeper=Mock()
+        def fake(page,store,post):
+            calls.append(post['post_url'])
+            if post==POST:store.add(observation('1'),post,'fixture')
+            return ('partial','comment_limit',[]) if post==POST else ('blocked','access_barrier',[])
+        report=run_posts(s,None,fake,sleeper=sleeper)
+        self.assertEqual(len(calls),2);self.assertEqual(sleeper.call_count,1)
+        self.assertEqual(s.posts[0]['status'],'success')
+        self.assertFalse(report['coverage_verified'])
+        resumed=Store(self.root/'v2_batch',resume=s.run_id)
+        def interrupted(page,store,post):raise KeyboardInterrupt()
+        with self.assertRaises(KeyboardInterrupt):run_posts(resumed,None,interrupted,sleeper=sleeper)
+        self.assertEqual(resumed.posts[-1]['post_url'],second['post_url'])
+        self.assertEqual(resumed.posts[-1]['reason'],'interrupted')
+
+    def test_review_xlsx_filters_metadata_literal_text_and_immutability(self):
+        import zipfile,xml.etree.ElementTree as ET
+        from src.crawler.store import export_review
+        from src.dataset.common import read_sheet
+        self.store.add(observation('1','=not a formula',reaction_count=0),POST,'fixture')
+        self.store.add(observation('2','Bị cắt',extraction_status='truncated'),POST,'fixture')
+        before=(self.store.path/'raw_comments.jsonl').read_bytes()
+        out=export_review(self.store.path,self.root/'review.xlsx')
+        fields,rows,_=read_sheet(out,'Comments')
+        self.assertEqual(len(rows),2);self.assertEqual(rows[0]['text_raw'],'=not a formula')
+        self.assertEqual(rows[0]['reaction_count'],'0');self.assertEqual(rows[1]['reaction_count'],'')
+        self.assertEqual(rows[0]['run_id'],self.store.run_id)
+        self.assertEqual(rows[1]['extraction_status'],'truncated')
+        self.assertTrue({'movie_id','post_id','post_url','source_name','source_type','clean_status'}<=set(fields))
+        with zipfile.ZipFile(out) as z:
+            tree=ET.fromstring(z.read('xl/worksheets/sheet1.xml'));ns={'s':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+            self.assertEqual(tree.find('s:autoFilter',ns).get('ref'),'A1:T3')
+            self.assertIsNotNone(tree.find('s:sheetViews/s:sheetView/s:pane',ns))
+            self.assertIsNone(tree.find('.//s:f',ns))
+        with self.assertRaises(FileExistsError):export_review(self.store.path,out)
+        together=self.root/'combined_export'
+        review=export_review(self.store.path,together/'review.xlsx');review_bytes=review.read_bytes()
+        export_run(self.store.path,together)
+        self.assertEqual(review.read_bytes(),review_bytes)
+        with self.assertRaises(FileExistsError):export_run(self.store.path,together)
+        self.assertEqual((self.store.path/'raw_comments.jsonl').read_bytes(),before)
+        truncated=Store(self.root/'only_truncated',CONFIG)
+        truncated.add(observation('9','Chưa đủ…',extraction_status='truncated'),POST,'fixture')
+        only=export_review(truncated.path,self.root/'truncated_review.xlsx')
+        self.assertEqual(read_sheet(only,'Comments')[1][0]['extraction_status'],'truncated')
+        with self.assertRaisesRegex(ValueError,'No complete records'):export_run(truncated.path,self.root/'no_import')
+
+    def test_batch_cli_preserves_source_columns_and_v2_defaults(self):
+        from unittest.mock import patch
+        from contextlib import nullcontext
+        from io import StringIO
+        from src.crawler.__main__ import main
+        source=self.root/'posts.csv'
+        source.write_text('movie_id,post_url,source_name,source_type,max_comments\n'
+                          'film_a,'+POST['post_url']+',Fixture page,page,200\n',encoding='utf8')
+        args=['crawler','crawl-batch','--input',str(source),'--campaign-v2','--data-root',str(self.root/'cli')]
+        with patch('sys.argv',args),patch('builtins.input',return_value=''),patch('sys.stdout',new=StringIO()),\
+             patch('src.crawler.__main__.browser_page',return_value=nullcontext(None)),\
+             patch('src.crawler.browser.run_posts',return_value={}) as runner:
+            self.assertEqual(main(),0)
+        config=runner.call_args.args[0].config
+        self.assertEqual(config['max_comments'],300);self.assertEqual(config['post_delay'],5)
+        self.assertEqual(config['posts'][0]['source_type'],'page')
+        self.assertEqual(config['posts'][0]['max_comments'],200)
 
 
 @unittest.skipUnless(importlib.util.find_spec('selenium'),'Install requirements/crawler.txt and a Chrome/Brave browser for DOM tests')

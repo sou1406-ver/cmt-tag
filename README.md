@@ -160,15 +160,21 @@ không đăng corpus hoặc workbook.
 ### Pilot sentiment text-only (200 câu, hai người)
 
 Chỉ đọc `text_clean`, cảm xúc chung có thể hướng tới bất kỳ đối tượng nào.
-**Chưa tìm được V3 gốc**: hiện chỉ có [bổ sung đề xuất V3.1](docs/guidelines/SENTIMENT_GUIDELINE_V3_1_PROPOSED.md),
-chưa phải guideline chính thức. Cần đối chiếu V3 trước khi giao gán. Không thay V2.1 lịch sử.
+**Guideline chưa được chốt**: đã nhận bản V3.1 ở local, nhưng người dùng giữ trạng
+thái rà soát và đang yêu cầu đối chiếu SHA với bản gốc. Không chuyển READY hoặc
+đổi guideline/manifest pilot lúc này. [Bổ sung PROPOSED cũ](docs/guidelines/SENTIMENT_GUIDELINE_V3_1_PROPOSED.md)
+chỉ giữ để tham chiếu lịch sử; không tự coi là bản chính thức. Không thay V2.1 lịch sử.
 
 ```powershell
 python -m src.annotation sentiment-pilot prepare --directory outputs/sentiment_pilot_v3_1
 # Xuất Excel: Node bundled + @oai/artifact-tool, không cần API.
 node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot_v3_1
 # Sau khi hai người điền xong (không chạy trên file trống):
-python -m src.annotation sentiment-pilot compare --directory outputs/sentiment_pilot_v3_1
+python -m src.annotation sentiment-pilot compare --directory outputs/sentiment_pilot_v3_1 --agreement-audit-count 20
+# Excel đối soát cho người dùng, sau khi compare thành công:
+node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot_v3_1/comparison --adjudication
+# Sau khi người kiểm duyệt điền final_label / adjudication_note:
+python -m src.annotation sentiment-pilot adjudicate --directory outputs/sentiment_pilot_v3_1 --decisions outputs/sentiment_pilot_v3_1/comparison/adjudication.xlsx --adjudicator user
 ```
 
 Lệnh export dùng runtime `@oai/artifact-tool` bundled của Codex, không phải npm deps
@@ -187,6 +193,20 @@ exact/near duplicate dùng guard hiện có; không đổi Gold hoặc split cũ
 Compare giữ nhãn A/B riêng, xuất Kappa chính 5 nhãn và Kappa phụ trên các cặp
 POS/NEG/NEU kèm n/tỷ lệ giữ lại, ma trận 5×5, câu lệch và adjudication chưa điền.
 Kappa suy biến trả null kèm lý do, không thay bằng 0/1. Chưa có nhãn thật thì chưa có kết quả.
+
+**A/B là đúng hai annotator độc lập; người dùng là adjudicator**, được xem cả
+nhãn/ghi chú A/B sau khi hai người gán xong, không phải người gán độc lập thứ ba.
+Kappa luôn tính trên nhãn A/B gốc trước đối soát, không từ `final_label`.
+`adjudication.local.csv` / Excel có đúng các cột `comment_id, text_clean, label_A,
+label_B, note_A, note_B, final_label, adjudication_note`. Toàn bộ bất đồng được
+đưa lên đầu và tô cam trong Excel; thêm mặc định tối đa 20 câu đồng thuận chọn
+ngẫu nhiên bằng seed cố định để kiểm tra chất lượng (tô xanh). Có thể chỉnh số
+câu đồng thuận qua `--agreement-audit-count`, không đổi mẫu pilot 200 câu.
+`final_label` để trống ở cả hai nhóm. Chỉ nhập hai cột cuối; REVIEW cần note.
+Importer từ chối sửa ID/text/nhãn hoặc note gốc A/B, thiếu/trùng dòng, nhãn cuối
+trống/sai. Kết quả lưu riêng tại `comparison/adjudicated/`, có receipt/hash và
+giữ nguyên A/B cùng Kappa. Các câu đồng thuận chưa được kiểm tra không tự được
+điền nhãn cuối; không tự tạo Gold hoặc ghi canonical. Workbook chứa comment chỉ local.
 
 Chỉ commit code, tài liệu, config và fixture tổng hợp. `.gitignore` chặn dữ liệu,
 outputs, venv, profile, secrets và model. Không dùng `git add -f` để đẩy các file này.

@@ -23,27 +23,45 @@ def empty_guard():
     return dict(ids=set(), posts=set(), comments=set(), text_hashes=set(), shingles=reference_index([]), checksums={})
 
 
-def workbook(path, rows, formula=False):
+def workbook(path, rows, formula=False, fields=None, sheet_name='Gán nhãn'):
+    fields=fields or p.FIELDS
     ns='http://schemas.openxmlformats.org/spreadsheetml/2006/main'; xml=[]
-    for i,values in enumerate([p.FIELDS,*[[r[k] for k in p.FIELDS] for r in rows]],1):
+    for i,values in enumerate([fields,*[[r[k] for k in fields] for r in rows]],1):
         cells=[]
         for j,value in enumerate(values):
             f='<f>1+1</f>' if formula and i==2 and j==2 else ''
             cells.append(f'<c r="{chr(65+j)}{i}" t="inlineStr">{f}<is><t xml:space="preserve">{escape(value)}</t></is></c>')
         xml.append(f'<row r="{i}">{"".join(cells)}</row>')
     with zipfile.ZipFile(path,'w') as z:
-        z.writestr('xl/workbook.xml',f'<workbook xmlns="{ns}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Gán nhãn" sheetId="1" r:id="r1"/></sheets></workbook>')
+        z.writestr('xl/workbook.xml',f'<workbook xmlns="{ns}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="{sheet_name}" sheetId="1" r:id="r1"/></sheets></workbook>')
         z.writestr('xl/_rels/workbook.xml.rels','<Relationships><Relationship Id="r1" Target="worksheets/sheet1.xml"/></Relationships>')
         z.writestr('xl/worksheets/sheet1.xml',f'<worksheet xmlns="{ns}"><sheetData>{"".join(xml)}</sheetData></worksheet>')
 
 
 class SentimentPilotTests(unittest.TestCase):
+    def test_adjudication_keeps_all_disagreements_and_random_agreement_audit(self):
+        a=[dict(comment_id=str(i),text_clean=f'Synthetic {i}',sentiment_label='POS',note='') for i in range(100)]
+        b=copy.deepcopy(a)
+        for i in range(7):b[i]['sentiment_label']='NEG'
+        before=copy.deepcopy((a,b));r=p.adjudication_selection(a,b)
+        self.assertEqual(r['disagreements'],7);self.assertEqual(r['agreement_audit_selected'],20)
+        self.assertEqual(len(r['rows']),27);self.assertEqual((a,b),before)
+        self.assertTrue(all(not row['data']['final_label'] and not row['data']['adjudication_note'] for row in r['rows']))
+        self.assertEqual({row['data']['comment_id'] for row in r['rows'] if row['review_type']=='DISAGREEMENT'},set(map(str,range(7))))
+        reversed_rows=p.adjudication_selection(a[::-1],b[::-1])
+        self.assertEqual({x['data']['comment_id'] for x in r['rows']},{x['data']['comment_id'] for x in reversed_rows['rows']})
+        self.assertEqual(p.adjudication_selection(a,b),r)
+        self.assertEqual(p.adjudication_selection(a[:3],a[:3])['agreement_audit_selected'],3)
+        self.assertEqual(p.adjudication_selection(a,a,0)['rows'],[])
+        self.assertEqual(p.adjudication_selection(a,b,0)['disagreements'],7)
+        with self.assertRaises(ValueError):p.adjudication_selection(a,b,-1)
+
     def test_official_and_proposal_are_distinct_no_automatic_promotion(self):
         with tempfile.TemporaryDirectory() as tmp:
             official=Path(tmp)/'SENTIMENT_GUIDELINE_V3_1.md'
             proposal=Path(tmp)/'SENTIMENT_GUIDELINE_V3_1_PROPOSED.md'
             proposal.write_text('Synthetic proposed guideline',encoding='utf8')
-            with patch.object(p,'OFFICIAL',official),patch.object(p,'PROPOSAL',proposal):
+            with patch.object(p,'OFFICIAL',official),patch.object(p,'PROPOSAL',proposal),patch.object(p,'APPROVED_GUIDELINE_SHA256',None):
                 contract=p.guideline_contract()
                 self.assertEqual(contract['status'],'DRAFT_GUIDELINE_SOURCE_MISSING')
                 self.assertEqual(contract['guideline_status'],'PROPOSAL_NOT_APPROVED')
@@ -153,7 +171,41 @@ class SentimentPilotTests(unittest.TestCase):
             self.assertTrue((directory/'comparison/annotator_A.local.jsonl').is_file())
             with (directory/'comparison/adjudication.local.csv').open(encoding='utf-8-sig') as f:
                 adjudication=list(csv.DictReader(f))
-            self.assertEqual(len(adjudication),1);self.assertEqual(adjudication[0]['label_final'],'')
+            self.assertEqual(len(adjudication),21)
+            self.assertEqual(list(adjudication[0]),p.ADJUDICATION_FIELDS)
+            self.assertTrue(all(not r['final_label'] for r in adjudication))
+            self.assertEqual(adjudication[0]['label_A'],'POS');self.assertEqual(adjudication[0]['label_B'],'NEG')
+            frozen={str(file):sha(file) for file in [directory/'pilot_sentiment_annotator_A.xlsx',directory/'pilot_sentiment_annotator_B.xlsx',directory/'comparison/agreement.json']}
+            for row in adjudication:
+                row['final_label']=row['label_A'];row['adjudication_note']='fixture adjudicator decision'
+            adjudication[0]['final_label']='NEU'
+            decisions=directory/'filled.csv'
+            def decisions_csv(rows):
+                with decisions.open('w',encoding='utf-8-sig',newline='') as f:
+                    w=csv.DictWriter(f,fieldnames=p.ADJUDICATION_FIELDS);w.writeheader();w.writerows(rows)
+            decisions_csv(adjudication)
+            imported=p.import_adjudication(directory,directory/'comparison',decisions)
+            self.assertEqual(imported['reviewed'],21);self.assertEqual(imported['unreviewed'],179)
+            self.assertEqual(imported['status'],'REVIEWED_PILOT_SUBSET_NOT_GOLD')
+            self.assertEqual({str(file):sha(file) for file in map(Path,frozen)},frozen)
+            self.assertEqual(json.loads((directory/'comparison/agreement.json').read_text())['kappa'],out['kappa'])
+            for issue in ('text','label_A','note_B','id','missing','duplicate','blank_final','invalid_final','review_note'):
+                changed=copy.deepcopy(adjudication)
+                if issue=='text':changed[0]['text_clean']+=' edit'
+                if issue=='label_A':changed[0]['label_A']='EXCLUDE'
+                if issue=='note_B':changed[0]['note_B']='changed original note'
+                if issue=='id':changed[0]['comment_id']='wrong'
+                if issue=='missing':changed.pop()
+                if issue=='duplicate':changed.append(changed[0])
+                if issue=='blank_final':changed[0]['final_label']=''
+                if issue=='invalid_final':changed[0]['final_label']='MIXED'
+                if issue=='review_note':changed[0].update(final_label='REVIEW',adjudication_note='')
+                decisions_csv(changed)
+                with self.subTest(issue=issue),self.assertRaises(ValueError):p.import_adjudication(directory,directory/'comparison',decisions,root/'invalid')
+                self.assertFalse((root/'invalid').exists())
+            review_xlsx=directory/'filled.xlsx'
+            workbook(review_xlsx,adjudication,fields=p.ADJUDICATION_FIELDS,sheet_name='Đối soát')
+            self.assertEqual(p.import_adjudication(directory,directory/'comparison',review_xlsx,root/'xlsx_review')['reviewed'],21)
             self.assertEqual((directory/'sampling_manifest.json').read_bytes(),original_manifest)
             with self.assertRaises(FileExistsError):p.compare(directory)
             (directory/'sampling_manifest.json').write_text('{}',encoding='utf8')

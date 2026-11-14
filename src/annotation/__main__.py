@@ -45,10 +45,16 @@ def main():
             q.add_argument('--workbook',type=Path);q.add_argument('--output',type=Path)
     human=s.add_parser('sentiment-pilot',help='Text-only two-human development pilot; no canonical or Gold writes')
     hs=human.add_subparsers(dest='sentiment_command',required=True)
-    for command in ('prepare','compare'):
+    for command in ('prepare','compare','adjudicate'):
         q=hs.add_parser(command); q.add_argument('--directory',type=Path,default=Path('outputs/sentiment_pilot_v3_1'))
         if command=='prepare': q.add_argument('--source',type=Path,default=Path('data/imports/fb_54e6c18b6c514f9ab822354611ab3316/comments.csv'))
-        else: q.add_argument('--output',type=Path)
+        else:
+            q.add_argument('--output',type=Path)
+            if command=='compare':q.add_argument('--agreement-audit-count',type=int,default=20)
+            else:
+                q.add_argument('--comparison',type=Path,help='Defaults to DIRECTORY/comparison')
+                q.add_argument('--decisions',type=Path,required=True,help='Filled adjudication CSV or XLSX')
+                q.add_argument('--adjudicator',default='user')
     g=s.add_parser('gold',help='One-annotator new-Facebook gold: sample, recheck, agreement, evaluate')
     gs=g.add_subparsers(dest='gold_command',required=True)
     for command in ('sample','recheck','agreement','evaluate'):
@@ -65,7 +71,9 @@ def main():
     try:
         if args.cmd=='sentiment-pilot':
             from . import sentiment_pilot
-            result=sentiment_pilot.prepare(args.source,args.directory) if args.sentiment_command=='prepare' else sentiment_pilot.compare(args.directory,args.output)
+            if args.sentiment_command=='prepare':result=sentiment_pilot.prepare(args.source,args.directory)
+            elif args.sentiment_command=='compare':result=sentiment_pilot.compare(args.directory,args.output,args.agreement_audit_count)
+            else:result=sentiment_pilot.import_adjudication(args.directory,args.comparison or args.directory/'comparison',args.decisions,args.output,args.adjudicator)
         elif args.cmd=='pilot':
             from . import pilot
             from . import web_labels

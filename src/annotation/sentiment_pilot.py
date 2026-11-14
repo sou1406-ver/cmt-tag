@@ -16,6 +16,8 @@ from .pilot import fingerprints, near_any, protection, guard_reason
 SEED = 20261115
 LABELS = ['POS', 'NEG', 'NEU', 'REVIEW', 'EXCLUDE']
 FIELDS = ['comment_id', 'text_clean', 'sentiment_label', 'note', 'annotator_id', 'cleaning_issue']
+ADJUDICATION_FIELDS = ['comment_id', 'text_clean', 'label_A', 'label_B', 'note_A', 'note_B', 'final_label', 'adjudication_note']
+ADJUDICATION_SOURCE_FIELDS = ADJUDICATION_FIELDS[:6]
 DEFAULT = ROOT/'outputs/sentiment_pilot_v3_1'
 SOURCE = ROOT/'data/imports/fb_54e6c18b6c514f9ab822354611ab3316/comments.csv'
 PROPOSAL = ROOT/'docs/guidelines/SENTIMENT_GUIDELINE_V3_1_PROPOSED.md'
@@ -160,6 +162,7 @@ Tái lập: python -m src.annotation sentiment-pilot prepare --directory outputs
 Xuất Excel bằng scripts/export_sentiment_pilot.mjs với Node/@oai/artifact-tool bundled; builder không ghi đè workbook đã có.
 Sau khi gán độc lập: python -m src.annotation sentiment-pilot compare --directory outputs/sentiment_pilot_v3_1
 Compare kiểm toàn bộ hai file trước khi xuất thư mục comparison riêng; lưu nhãn A/B, Kappa chính 5 nhãn, Kappa phụ 3 nhãn, disagreement và adjudication trống. Không ghi canonical/Gold. Không chạy compare trên workbook chưa điền.
+Người dùng là adjudicator, không phải annotator thứ ba. Bảng adjudication có toàn bộ câu bất đồng và tối đa 20 câu đồng thuận ngẫu nhiên (seed cố định); hai cột final_label/adjudication_note trống để người dùng chốt. Xuất Excel tô cam/xanh: node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot_v3_1/comparison --adjudication. Nhập kết quả riêng: python -m src.annotation sentiment-pilot adjudicate --directory outputs/sentiment_pilot_v3_1 --decisions outputs/sentiment_pilot_v3_1/comparison/adjudication.xlsx. Không sửa A/B hoặc tính lại Kappa từ nhãn chốt.
 sampling_manifest.json khóa seed, nguồn, text SHA, cohort và exposure. Pilot/cùng post phải loại khỏi independent test tương lai; dùng manifest này khi kiểm exposure. Không sửa frozen split hoặc reservation cũ.
 ''', encoding='utf8')
         (work/'REPORT.md').write_text('# Kết quả pilot sentiment\n\nChưa có nhãn sentiment thật; Kappa, agreement và confusion matrix: CHƯA CÓ.\n'+guideline_note+'\n', encoding='utf8')
@@ -232,25 +235,98 @@ def metrics(left, right):
     return result
 
 
-def compare(directory=DEFAULT, output=None):
+def adjudication_selection(left, right, agreement_audit_count=20):
+    """All disagreements plus a separate SRS of agreements, no final labels."""
+    if type(agreement_audit_count) is not int or agreement_audit_count < 0:
+        raise ValueError('Agreement audit count must be a nonnegative integer')
+    if len(left)!=len(right) or any(a['comment_id']!=b['comment_id'] or a['text_clean']!=b['text_clean'] for a,b in zip(left,right)):
+        raise ValueError('Adjudication inputs must be aligned by ID and text')
+    agreements = sorted((a['comment_id'] for a,b in zip(left,right) if a['sentiment_label']==b['sentiment_label']))
+    audited = set(random.Random(SEED).sample(agreements, min(agreement_audit_count,len(agreements))))
+    rows = []
+    for a,b in zip(left,right):
+        different = a['sentiment_label']!=b['sentiment_label']
+        if not different and a['comment_id'] not in audited: continue
+        data = dict(comment_id=a['comment_id'],text_clean=a['text_clean'],label_A=a['sentiment_label'],label_B=b['sentiment_label'],
+                    note_A=a['note'],note_B=b['note'],final_label='',adjudication_note='')
+        frozen = {k:data[k] for k in ADJUDICATION_SOURCE_FIELDS}
+        rows.append(dict(data=data, review_type='DISAGREEMENT' if different else 'AGREEMENT_AUDIT',
+                         immutable_sha256=digest(json.dumps(frozen,ensure_ascii=False,sort_keys=True))))
+    # Put every disagreement first and retain original A order within each cohort.
+    rows.sort(key=lambda r:r['review_type']!='DISAGREEMENT')
+    return dict(seed=SEED,agreement_audit_requested=agreement_audit_count,agreement_available=len(agreements),
+                agreement_audit_selected=len(audited),disagreements=len(left)-len(agreements),rows=rows,
+                purpose='User adjudicator reviews A/B; not a third independent annotator; no automatic final labels or Gold')
+
+
+def compare(directory=DEFAULT, output=None, agreement_audit_count=20):
     directory = Path(directory).resolve(); m = verify_manifest(directory)
     left_path=directory/'pilot_sentiment_annotator_A.xlsx'; right_path=directory/'pilot_sentiment_annotator_B.xlsx'
     hashes = {str(p):sha(p) for p in (left_path,right_path)}
     left = read_labels(left_path,m,'A'); right = read_labels(right_path,m,'B')
     lookup = {r['comment_id']:r for r in right}; right = [lookup[r['comment_id']] for r in left]
     result = metrics([r['sentiment_label'] for r in left], [r['sentiment_label'] for r in right])
-    disagreements = [dict(comment_id=a['comment_id'], text_clean=a['text_clean'], label_A=a['sentiment_label'],
-        note_A=a['note'], label_B=b['sentiment_label'], note_B=b['note'], label_final='', note_final='')
-        for a,b in zip(left,right) if a['sentiment_label'] != b['sentiment_label']]
+    adjudication = adjudication_selection(left,right,agreement_audit_count)
+    disagreements = [r['data'] for r in adjudication['rows'] if r['review_type']=='DISAGREEMENT']
     with staged(output or directory/'comparison') as work:
         write_jsonl(work/'annotator_A.local.jsonl',left); write_jsonl(work/'annotator_B.local.jsonl',right)
         save(work/'agreement.json',result)
         write_csv(work/'confusion_matrix.csv', [dict(label_A=cat, **dict(zip(LABELS,row))) for cat,row in zip(LABELS,result['confusion_matrix'])], ['label_A',*LABELS])
-        fields=['comment_id','text_clean','label_A','note_A','label_B','note_B','label_final','note_final']
-        write_csv(work/'disagreements.local.csv',disagreements,fields[:-2])
-        write_csv(work/'adjudication.local.csv',disagreements,fields)
+        write_csv(work/'disagreements.local.csv',disagreements,ADJUDICATION_SOURCE_FIELDS)
+        write_csv(work/'adjudication.local.csv',[r['data'] for r in adjudication['rows']],ADJUDICATION_FIELDS)
+        save(work/'adjudication_manifest.local.json',adjudication)
         save(work/'receipt.json',dict(manifest_sha256=sha(directory/'sampling_manifest.json'), workbook_sha256=hashes,
             created_at=datetime.now(timezone.utc).isoformat(), provenance='two independent human annotators; no automatic final label',
+            agreement_sha256=sha(work/'agreement.json'),adjudication_manifest_sha256=sha(work/'adjudication_manifest.local.json'),
             guideline_status=m['guideline_status']))
         if any(sha(p)!=h for p,h in hashes.items()): raise ValueError('Workbook changed during comparison')
     return result
+
+
+def import_adjudication(directory, comparison, decisions, output=None, adjudicator='user'):
+    """Store only the adjudicator's reviewed decisions, never mutate A/B or Gold."""
+    directory=Path(directory).resolve();comparison=Path(comparison).resolve();decisions=Path(decisions).resolve()
+    if not adjudicator.strip():raise ValueError('Adjudicator ID is required')
+    m=verify_manifest(directory);receipt=load(comparison/'receipt.json')
+    if sha(directory/'sampling_manifest.json')!=receipt['manifest_sha256']:raise ValueError('Pilot manifest changed')
+    if sha(comparison/'agreement.json')!=receipt['agreement_sha256']:raise ValueError('Original A/B metrics changed')
+    if sha(comparison/'adjudication_manifest.local.json')!=receipt['adjudication_manifest_sha256']:raise ValueError('Adjudication coordinator changed')
+    for file,h in receipt['workbook_sha256'].items():
+        if sha(file)!=h:raise ValueError('Original A/B workbook changed')
+    coordinator=load(comparison/'adjudication_manifest.local.json')
+    input_sha=sha(decisions)
+    if decisions.suffix.lower()=='.xlsx':
+        headers,rows,tree=read_sheet(decisions,'Đối soát')
+        ns={'s':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+        for node in tree.findall('s:sheetData/s:row',ns)[1:]:
+            cells=node.findall('s:c',ns)
+            if any(''.join(c.itertext()).strip() for c in cells) and not any(re.fullmatch(r'A\d+',c.get('r','')) and ''.join(c.itertext()).strip() for c in cells):
+                raise ValueError('Adjudication row has no ID')
+        rows=[{k:literal_text(v) for k,v in r.items()} for r in rows]
+    else:
+        with decisions.open(encoding='utf-8-sig',newline='') as f:
+            reader=csv.DictReader(f);headers=reader.fieldnames;rows=list(reader)
+    if headers!=ADJUDICATION_FIELDS:raise ValueError('Unexpected adjudication columns')
+    expected={r['data']['comment_id']:r for r in coordinator['rows']}
+    if len(rows)!=len(expected) or len({r['comment_id'] for r in rows})!=len(rows) or {r['comment_id'] for r in rows}!=set(expected):
+        raise ValueError('Adjudication IDs missing, duplicated or changed')
+    records=[]
+    for row in rows:
+        original=expected[row['comment_id']]
+        frozen={k:row[k] for k in ADJUDICATION_SOURCE_FIELDS}
+        if digest(json.dumps(frozen,ensure_ascii=False,sort_keys=True))!=original['immutable_sha256']:
+            raise ValueError('Adjudication text or original A/B decision edited')
+        label=(row['final_label'] or '').strip().upper()
+        if label not in LABELS:raise ValueError('Every reviewed row needs an explicit valid final_label')
+        if label=='REVIEW' and not (row['adjudication_note'] or '').strip():raise ValueError('Final REVIEW requires a note')
+        records.append({**row,'final_label':label,'review_type':original['review_type'],'adjudicator_id':adjudicator})
+    if sha(decisions)!=input_sha:raise ValueError('Adjudication input changed while reading')
+    with staged(output or comparison/'adjudicated') as work:
+        write_jsonl(work/'reviewed_decisions.local.jsonl',records)
+        write_csv(work/'reviewed_decisions.local.csv',records,[*ADJUDICATION_FIELDS,'review_type','adjudicator_id'])
+        save(work/'receipt.json',dict(adjudicator=adjudicator,created_at=datetime.now(timezone.utc).isoformat(),
+            comparison_receipt_sha256=sha(comparison/'receipt.json'),adjudication_input_sha256=input_sha,
+            pilot_manifest_sha256=receipt['manifest_sha256'],guideline_sha256=m['guideline_sha256'],
+            reviewed=len(records),unreviewed=m['selected']-len(records),status='REVIEWED_PILOT_SUBSET_NOT_GOLD',
+            note='A/B original decisions and pre-adjudication metrics are unchanged; no labels auto-filled for unreviewed agreements'))
+    return dict(reviewed=len(records),unreviewed=m['selected']-len(records),status='REVIEWED_PILOT_SUBSET_NOT_GOLD')

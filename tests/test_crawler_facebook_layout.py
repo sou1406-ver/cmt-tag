@@ -360,17 +360,17 @@ class FacebookLayoutTests(unittest.TestCase):
             ('Chẳng tệ <a href="https://example.org/review">https://example.org/review</a> đâu!', 'Chẳng tệ đâu!',0,1,'KEEP'),
             ('<span>giữ chữ <a href="/other/posts/777"><img alt="Preview image">bài chia sẻ</a> không tệ</span>', 'giữ chữ không tệ',0,1,'KEEP'),
             ('<a href="https://l.facebook.com/l.php?u=https%3A%2F%2Fexample.org"><img alt="Preview image">Preview</a>', '',0,1,'EXCLUDE'),
-            ('😂 😭 ❤️', '😂 😭 ❤️',0,0,'KEEP'),
-            ('<img alt="😂"><img alt="❤️">', '😂❤️',0,0,'KEEP'),
+            ('😂 😭 ❤️', '😂 😭 ❤️',0,0,'REVIEW'),
+            ('<img alt="😂"><img alt="❤️">', '😂❤️',0,0,'REVIEW'),
             ('ko đc cx mn :)) =)) :v :( :):) :-) -_- - hayyy!!!', 'ko đc cx mn :)) =)) :v :( :):) :-) -_- - hayyy!!!',0,0,'KEEP'),
             ('Trấn Thành và nhân vật Sen diễn hay', 'Trấn Thành và nhân vật Sen diễn hay',0,0,'KEEP'),
             ('<a role="link">An Bình</a> phim hay', 'An Bình phim hay',0,0,'REVIEW'),
             ('<a href="/groups/x/user/not-id/">An Bình</a> phim hay', 'An Bình phim hay',0,0,'REVIEW'),
             ('<a href="/hashtag/phim">#phim</a> không dở', '#phim không dở',0,0,'KEEP'),
             ('<a href="/fixture.a">An</a> :):) -_- - không dở', ':):) -_- - không dở',1,0,'KEEP'),
-            ('<a href="/fixture.a">An</a> :-)', ':-)',1,0,'KEEP'),
-            ('https://example.org/:))', ':))',0,1,'KEEP'),
-            ('www.example.org=))', '=))',0,1,'KEEP'),
+            ('<a href="/fixture.a">An</a> :-)', ':-)',1,0,'REVIEW'),
+            ('https://example.org/:))', ':))',0,1,'REVIEW'),
+            ('www.example.org=))', '=))',0,1,'REVIEW'),
             ('<img alt="A photo of someone">', '',0,0,'EXCLUDE'),
             ('<a href="/fixture.a">An</a> https://example.org', '',1,1,'EXCLUDE'),
         ]
@@ -400,10 +400,14 @@ class FacebookLayoutTests(unittest.TestCase):
         self.assertNotIn('AUTHOR',reply['text_raw'])
         self.assertNotIn('3 giờ',reply['text_raw'])
 
-    def test_punctuation_review_but_emoji_emoticons_kept(self):
-        for fragment,status in [('<a href="/fixture.a">Chee</a> ?','REVIEW'),
-                                ('?! ...','REVIEW'),(':))','KEEP'),(':):)','KEEP'),
-                                ('-_-','KEEP'),('❤️','KEEP'),('😂','KEEP')]:
+    def test_clean_status_unicode_words_punctuation_emoji_and_scores(self):
+        for fragment,status in [('<a href="/fixture.a">Chee</a> ?','EXCLUDE'),
+                                ('','EXCLUDE'),('   ','EXCLUDE'),('?','EXCLUDE'),
+                                ('...','EXCLUDE'),('!!!','EXCLUDE'),('?! ...','EXCLUDE'),
+                                (':))','REVIEW'),('=))','REVIEW'),(':):)','REVIEW'),
+                                (':v','REVIEW'),(':D','REVIEW'),('-_-','REVIEW'),
+                                ('❤️','REVIEW'),('😂','REVIEW'),('10/10','REVIEW'),
+                                ('Đỉnh','KEEP'),('Ấn tượng','KEEP'),('không dở :))','KEEP')]:
             with self.subTest(fragment=fragment):
                 self.load(self.fixture().replace('Phim hay 😍!<br>ko dở.',
                     '<span data-comment-body>'+fragment+'</span>'))
@@ -411,7 +415,8 @@ class FacebookLayoutTests(unittest.TestCase):
                 self.assertEqual(errors,0)
                 row=next(r for r in rows if r['comment_id']=='101')
                 self.assertEqual(row['clean_status'],status)
-                if status=='REVIEW':self.assertIn('punctuation_only',row['clean_review_reasons'])
+                if status=='REVIEW':self.assertIn('non_lexical_text',row['clean_review_reasons'])
+                if fragment in ('?','...','!!!'):self.assertEqual(row['text_raw'],fragment)
 
     def test_clean_evidence_utf16_spans_without_account_ids(self):
         fragment='😂 <a href="/groups/example/user/42/">Chee</a> hay '
@@ -434,9 +439,11 @@ class FacebookLayoutTests(unittest.TestCase):
                ('<img alt="A photo">','','EXCLUDE',1),
                ('<video><span>Generated caption</span></video>','','EXCLUDE',1),
                ('Không dở <img alt="GIF animation">','Không dở','KEEP',1),
-               ('😂<img alt="A photo">','😂','KEEP',1),
-               (':))<img alt="A photo">',':))','KEEP',1),
-               ('<img alt="😂">','😂','KEEP',0)]
+               ('😂<img alt="A photo">','😂','REVIEW',1),
+               (':))<img alt="A photo">',':))','REVIEW',1),
+               ('<img alt="😂">','😂','REVIEW',0),
+               ('???<img alt="A photo">','???','EXCLUDE',1),
+               ('10/10<img alt="Sticker">','10/10','REVIEW',1)]
         for fragment,expected,status,media_count in cases:
             with self.subTest(fragment=fragment):
                 self.load(self.fixture().replace('Phim hay 😍!<br>ko dở.',
@@ -462,7 +469,7 @@ class FacebookLayoutTests(unittest.TestCase):
                ('https://example.com phim dở thật','phim dở thật',1,'KEEP'),
                ('Xem ở www.example.com nhé','Xem ở nhé',1,'KEEP'),
                ('https://example.com http://example.net www.example.org','',3,'EXCLUDE'),
-               ('<a href="/fixture.a">Minh</a> https://example.com 😂','😂',1,'KEEP'),
+               ('<a href="/fixture.a">Minh</a> https://example.com 😂','😂',1,'REVIEW'),
                ('Diễn xuất của Trấn Thành hay','Diễn xuất của Trấn Thành hay',0,'KEEP'),
                ('https://exa<span>mple.com</span> phim hay','phim hay',1,'KEEP'),
                ('<a href="https://example.com">Trấn Thành diễn hay</a> 😂','Trấn Thành diễn hay 😂',0,'REVIEW'),

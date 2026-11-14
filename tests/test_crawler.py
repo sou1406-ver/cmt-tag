@@ -68,6 +68,13 @@ class ParserTests(unittest.TestCase):
                   'non_text_media_count':1}
         self.assertEqual(observations([reviewed],POST['post_url'])[1],0)
         self.assertEqual(observations([{**reviewed,'non_text_media_count':0}],POST['post_url'])[1],1)
+        # Historical punctuation REVIEW remains readable; only new extraction
+        # changes the policy, never stored journals or human labels.
+        punctuation={**row,'text_clean':'???','clean_review_reasons':['punctuation_only']}
+        for status in ('EXCLUDE','REVIEW'):
+            self.assertEqual(observations([{**punctuation,'clean_status':status}],POST['post_url'])[1],0)
+        self.assertEqual(observations([{**row,'text_clean':'10/10','clean_status':'REVIEW',
+                                       'clean_review_reasons':['non_lexical_text']}],POST['post_url'])[1],0)
         evidence=[{'kind':'mention','rule':'identity_link','raw_start':0,'raw_end':2},
                   {'kind':'url','rule':'explicit_url_text','raw_start':12,'raw_end':30}]
         self.assertEqual(observations([{**row,'clean_evidence':evidence}],POST['post_url'])[1],0)

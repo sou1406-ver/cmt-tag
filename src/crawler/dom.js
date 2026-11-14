@@ -275,12 +275,20 @@
         // text is technically usable, not that it is independent of the image.
         // An annotator can explicitly flag media_context_required for review.
         if (/(?:https?:\/\/|\bwww\.)/i.test(text)) reasons.add('fragmented_url');
-        // Punctuation-only needs human review, while emoji and emoticons stay usable.
-        if (text.trim() && !/[\p{L}\p{N}\p{Extended_Pictographic}\p{Emoji_Presentation}]/u.test(text) &&
-            !/(?::[-^']?[)(]+|=[)(]+|:v|[;:][-^']?[dDpP]|-_-)/i.test(text)) reasons.add('punctuation_only');
       }
       if (mode==='clean' || mentions) text=text.replace(/[ \t]{2,}/g,' ').trim();
-      return {text,mentions,media,urls,reasons:[...reasons],events:events.sort((a,b)=>a.raw_start-b.raw_start)};
+      let status=reasons.size?'REVIEW':text?'KEEP':'EXCLUDE';
+      if (mode==='clean') {
+        const expressions=/(?::[-^']?[)(]+|=[)(]+|:v|[;:][-^']?[dDpP]|-_-|<3)/gi;
+        const words=text.replace(expressions,'');
+        if (!/\p{L}/u.test(words)) {
+          const nonLexical=/[\p{N}\p{Extended_Pictographic}\p{Emoji_Presentation}]/u.test(text) || words!==text;
+          reasons.clear();
+          if (nonLexical) { reasons.add('non_lexical_text');status='REVIEW'; }
+          else { if (text) reasons.add('punctuation_only');status='EXCLUDE'; }
+        }
+      }
+      return {text,mentions,media,urls,status,reasons:[...reasons],events:events.sort((a,b)=>a.raw_start-b.raw_start)};
     };
     const original=renderText('raw'),withoutMentions=renderText('mentions'),cleaned=renderText('clean');
     if (!window.__cmtSeen.has(el)) window.__cmtSeen.set(el,String(++window.__cmtSeq));
@@ -290,7 +298,7 @@
       mention_count:withoutMentions.mentions,non_text_media_count:original.media,text_extraction_version:'dom_text_v3',
       text_clean:cleaned.text,url_count:cleaned.urls,clean_review_reasons:cleaned.reasons,
       clean_evidence:cleaned.events,
-      clean_status:cleaned.reasons.length?'REVIEW':cleaned.text.trim()?'KEEP':'EXCLUDE',
+      clean_status:cleaned.status,
       permalink:link?.href || null,observation_id:window.__cmtSeen.get(el),
       is_reply:commentSet.has(parent) || /^(reply|phản hồi)/i.test(el.getAttribute('aria-label') || ''),
       parent_permalink:parentLink?.href || null,

@@ -13,7 +13,7 @@ Quy tắc gán nhãn V2 cần chốt trước khi gán lại và huấn luyện.
 
 - Nhãn người, nhãn AI, model và Gold V1 giữ làm lịch sử, **không tự chuyển thành nhãn V2**.
 - Gold V1 đã được đánh giá một lần; không dùng lại để chọn preprocessing hoặc tune model.
-- Dự kiến gán lại với ba người; chưa coi đây là quy trình đã triển khai hay gold hoàn chỉnh.
+- Pilot đang chuẩn bị cho hai người gán độc lập; chưa có sentiment Gold V2.
 - Nhãn AI chỉ là đề xuất; kiểm tra chất lượng bằng mẫu ngẫu nhiên trước khi quyết định sử dụng.
 - Không có API gán nhãn tự động trong workflow đang chạy. Không cần cài Transformer để crawl.
 
@@ -28,7 +28,7 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements/crawler.txt
 ```
 
-Repo **private**, tài khoản Git cần có quyền truy cập. Nếu đã có `.venv`, dùng lại.
+Repo đã được người dùng chuyển public. Nếu đã có `.venv`, dùng lại.
 Trong VS Code chọn `.venv/Scripts/python.exe`, hoặc mở `cmt-tag.code-workspace`.
 Các lệnh dưới gọi trực tiếp Python của venv, không cần activate.
 
@@ -118,7 +118,7 @@ src/crawler/        Selenium, DOM extraction, journal, resume, export
 src/preprocessing/  Tiền xử lý tối thiểu và các view tùy chọn
 src/data/           Import, schema, quality và grouped split
 src/dataset/        Canonical/filter, provenance và bảo vệ test
-src/annotation/     Công cụ annotation và workflow V1 giữ để đối chiếu
+src/annotation/     Pilot text-only V2; workflow V1 giữ để đối chiếu
 src/models/         Baseline/evaluation và demo V1, chưa phải model V2
 scripts/            Entry point build/filter hiện có
 configs/            Cấu hình và fixture
@@ -149,6 +149,41 @@ Excel `audit_sample.xlsx` có tab **Gán nhãn**, điền bốn cột vàng C–
 `python scripts/sample_audit.py summarize` ưu tiên đọc Excel nếu có, kiểm ID/text
 và metadata trước khi tổng hợp. CSV gốc được giữ nguyên.
 Chỉ random có trọng số dùng ước lượng; chưa có nhãn người thì chưa có tỷ lệ relevance.
+
+Audit relevance đã dừng ở **107/300** theo trao đổi với người dùng, không gán nốt
+193 câu. [Tóm tắt để review](docs/SEMANTIC_AUDIT_SUMMARY.md) chỉ có thống kê,
+không đăng corpus hoặc workbook.
+
+### Pilot sentiment text-only (200 câu, hai người)
+
+Chỉ đọc `text_clean`, cảm xúc chung có thể hướng tới bất kỳ đối tượng nào.
+**Chưa tìm được V3 gốc**: hiện chỉ có [bổ sung đề xuất V3.1](docs/guidelines/SENTIMENT_GUIDELINE_V3_1_PROPOSED.md),
+chưa phải guideline chính thức. Cần đối chiếu V3 trước khi giao gán. Không thay V2.1 lịch sử.
+
+```powershell
+python -m src.annotation sentiment-pilot prepare --directory outputs/sentiment_pilot_v3_1
+# Xuất Excel: Node bundled + @oai/artifact-tool, không cần API.
+node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot_v3_1
+# Sau khi hai người điền xong (không chạy trên file trống):
+python -m src.annotation sentiment-pilot compare --directory outputs/sentiment_pilot_v3_1
+```
+
+Lệnh export dùng runtime `@oai/artifact-tool` bundled của Codex, không phải npm deps
+của crawler. Nếu chưa có module resolution, tạo junction tạm `scripts/node_modules`
+tới `node_modules` do `load_workspace_dependencies` trả về rồi gỡ riêng link sau khi xuất;
+không cài thêm thư viện vào venv và không xóa runtime đích. Python prepare/compare không cần Node.
+Prepare từ chối ghi đè thư mục; export từ chối ghi đè Excel; compare xuất thư mục
+`comparison/` mới. Có thể chỉ định `compare --output outputs/PILOT_COMPARISON_NEW` khi cần chạy lại.
+
+Hai file `pilot_sentiment_annotator_A.xlsx` / `pilot_sentiment_annotator_B.xlsx`
+ở output local: cùng 200 ID/thứ tự, **160 random + 40 hard (20%)**, không có nhãn
+điền sẵn hoặc confidence bắt buộc. REVIEW cần note ngắn; báo lỗi ở `cleaning_issue`,
+không sửa text. Manifest khóa nguồn/text SHA và đánh dấu post/ID đã exposure cho
+development, không được dùng làm independent test tương lai. Bộ lọc reservation,
+exact/near duplicate dùng guard hiện có; không đổi Gold hoặc split cũ.
+Compare giữ nhãn A/B riêng, xuất Kappa chính 5 nhãn và Kappa phụ trên các cặp
+POS/NEG/NEU kèm n/tỷ lệ giữ lại, ma trận 5×5, câu lệch và adjudication chưa điền.
+Kappa suy biến trả null kèm lý do, không thay bằng 0/1. Chưa có nhãn thật thì chưa có kết quả.
 
 Chỉ commit code, tài liệu, config và fixture tổng hợp. `.gitignore` chặn dữ liệu,
 outputs, venv, profile, secrets và model. Không dùng `git add -f` để đẩy các file này.

@@ -43,6 +43,12 @@ def main():
             q.add_argument('--annotator',required=True)
             q.add_argument('--origin',choices=['human','human_reviewed_ai','ai'],required=True)
             q.add_argument('--workbook',type=Path);q.add_argument('--output',type=Path)
+    human=s.add_parser('sentiment-pilot',help='Text-only two-human development pilot; no canonical or Gold writes')
+    hs=human.add_subparsers(dest='sentiment_command',required=True)
+    for command in ('prepare','compare'):
+        q=hs.add_parser(command); q.add_argument('--directory',type=Path,default=Path('outputs/sentiment_pilot_v3_1'))
+        if command=='prepare': q.add_argument('--source',type=Path,default=Path('data/imports/fb_54e6c18b6c514f9ab822354611ab3316/comments.csv'))
+        else: q.add_argument('--output',type=Path)
     g=s.add_parser('gold',help='One-annotator new-Facebook gold: sample, recheck, agreement, evaluate')
     gs=g.add_subparsers(dest='gold_command',required=True)
     for command in ('sample','recheck','agreement','evaluate'):
@@ -57,7 +63,10 @@ def main():
         elif command=='agreement':q.add_argument('--final',action='store_true',help='Import filled label_final from gold_disagreements.xlsx and lock')
     args=p.parse_args()
     try:
-        if args.cmd=='pilot':
+        if args.cmd=='sentiment-pilot':
+            from . import sentiment_pilot
+            result=sentiment_pilot.prepare(args.source,args.directory) if args.sentiment_command=='prepare' else sentiment_pilot.compare(args.directory,args.output)
+        elif args.cmd=='pilot':
             from . import pilot
             from . import web_labels
             if args.pilot_command=='prepare':result=pilot.prepare(args.directory,args.source)

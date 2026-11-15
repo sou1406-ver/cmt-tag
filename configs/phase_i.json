@@ -9,7 +9,7 @@
   "human_lineage_config": "configs/unified_dataset.json",
   "legacy_import_manifest": "outputs/phase_g2/human_import_01/manifest.json",
   "legacy_source_name": "../data_module1.csv",
-  "guideline": "docs/guidelines/MOVIE_SENTIMENT_V2_1.md",
+  "guideline": "docs/guidelines/history/MOVIE_SENTIMENT_V2_1.md",
   "test_reservation": "outputs/phase_g/blind_test/reservation.json",
   "test_source_candidates": "outputs/phase_g/blind_test/availability.json",
   "test_quarantine_root": "outputs",

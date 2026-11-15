@@ -8,7 +8,7 @@ from unittest import TestCase,main
 from unittest.mock import patch
 
 from src.annotation import pilot,web_labels
-from src.annotation.guidelines import GUIDELINE
+from src.annotation.guidelines import HISTORICAL_GUIDELINE as GUIDELINE
 from src.dataset.common import save,seal,sha,digest,write_jsonl,read_jsonl,read_sheet,load
 
 

@@ -17,7 +17,7 @@ from src.dataset.master import post_url
 from src.crawler.parser import post_id
 from src.crawler.store import run_config, validate as validate_run, export_run
 from src.preprocessing import preprocess
-from .guidelines import GUIDELINE, GUIDELINE_VERSION, validate_guideline
+from .guidelines import HISTORICAL_GUIDELINE as GUIDELINE, GUIDELINE_VERSION, validate_guideline
 
 CATEGORIES=['POS','NEG','NEU','REVIEW','EXCLUDE']
 FIELDS=['id','text','label','note']

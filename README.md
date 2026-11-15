@@ -13,12 +13,12 @@ group hoặc sự việc khác. Không suy sentiment từ comment cha/bài viế
 câu chỉ vì ngoài lề phim. POS / NEG / NEU là ba lớp mô hình; REVIEW / EXCLUDE là
 trạng thái xử lý, không phải hai lớp sentiment bổ sung.
 
-- [Guideline V3.2](docs/guidelines/SENTIMENT_GUIDELINE_V3_2.md) là bản mới người dùng cung cấp sau pilot. **V2 là hướng dự án; V3.2 là phiên bản guideline**, không phải phiên bản cleaning.
+- Chỉ dùng [guideline chính thức](docs/guidelines/SENTIMENT_GUIDELINE.md) và [changelog](docs/guidelines/GUIDELINE_CHANGELOG.md). Mỗi lượt prepare ghi SHA256 của bản được giao; không đổi luật giữa lượt gán.
 - V1 xét thái độ đối với phim theo guideline V2.0/V2.1. Nhãn người, AI, model và Gold V1 chỉ giữ làm lịch sử, **không gộp hoặc đổi tên thành nhãn cảm xúc chung V2**. Muốn dùng lại phải gán lại theo định nghĩa mới và kiểm tra leakage.
 - Gold V1 đã đánh giá một lần; không dùng để chọn preprocessing hoặc tune model V2. Chưa có independent Gold V2.
-- Pilot V3.1 đã đối soát 200 quyết định: 31 POS, 92 NEG, 55 NEU, 16 REVIEW, 6 EXCLUDE. Đây là nhãn development theo lượt V3.1, **chưa được rà lại theo V3.2**; không tự đổi nhãn hoặc dùng Kappa cũ làm kết quả guideline V3.2.
+- Pilot lịch sử đã đối soát 200 quyết định, có 178 nhãn sentiment. Nhãn thuộc về SHA đã giao, chưa tự chuyển sang quy tắc mới; xem phần lịch sử bên dưới.
 - Thiết kế là hai annotator A/B và người dùng adjudicator. Nguồn gán/AI hỗ trợ của hai workbook đã nhận chưa được xác minh; không khẳng định độ độc lập của lượt đó.
-- Không gọi API gán nhãn tự động trong workflow đang chạy. V3.2 yêu cầu người gán không dùng AI quyết định nhãn hoặc viết note. Không cần cài Transformer để crawl.
+- Không gọi API gán nhãn tự động trong workflow đang chạy. Guideline yêu cầu người gán không dùng AI quyết định nhãn hoặc viết note. Không cần cài Transformer để crawl.
 
 ## Cài đặt
 
@@ -99,7 +99,7 @@ người gán vẫn quyết định theo guideline. Link không đủ bằng ch�
 **Không nhầm hai cột:** `clean_status=REVIEW` là cờ kiểm tra kỹ thuật của crawler;
 `sentiment_label=REVIEW` là quyết định không đủ căn cứ gán sentiment theo guideline.
 Không sao chép hoặc suy nhãn sentiment từ `clean_status`. Ví dụ, `😍` có thể mang
-`clean_status=REVIEW` nhưng được gán POS theo V3.2; `:))` đứng riêng có thể mang
+`clean_status=REVIEW` nhưng được gán POS theo guideline; `:))` đứng riêng có thể mang
 cùng trạng thái kỹ thuật nhưng được gán NEU. Người gán chỉ đọc `text_clean` và áp
 dụng guideline, không dùng cờ kỹ thuật làm gợi ý cực tính hay lý do loại câu.
 Journal cũ không có clean/evidence sẽ không được điền suy đoán.
@@ -116,8 +116,8 @@ Journal cũ không có clean/evidence sẽ không được điền suy đoán.
 | Output lịch sử đã gom ZIP | `data/archive/history_before_v2_20261113.zip` |
 
 Dataset tham chiếu V1 có **25.810 dòng**: 7.146 Facebook và 18.664 legacy,
-còn **425 nhãn sentiment người theo tiêu chí V1**. Bộ này không phải nhãn V3.1/V3.2.
-Pilot V3.1 mới nằm riêng tại `outputs/sentiment_pilot_v3_1/comparison_received_20261115/adjudicated/`; không nhập vào canonical V1.
+còn **425 nhãn sentiment người theo tiêu chí V1**. Bộ này khác định nghĩa cảm xúc chung.
+Nhãn pilot hiện được lưu riêng; không nhập vào canonical V1.
 Bộ legacy thiếu xác minh nguồn/quyền sử dụng và cách tạo nhãn `overall`;
 **không dùng `overall` làm ground truth**.
 
@@ -171,25 +171,22 @@ không đăng corpus hoặc workbook.
 
 ### Pilot sentiment text-only (200 câu, hai người)
 
-Chỉ đọc `text_clean`, cảm xúc chung có thể hướng tới bất kỳ đối tượng nào.
-Pilot 200 câu vừa hoàn tất theo lượt **V3.1**; xem [kết quả và giới hạn](docs/SENTIMENT_PILOT_RESULTS.md).
-V3.1 và SHA/manifest cũ giữ nguyên; việc đối soát không tự phê duyệt byte guideline.
-Bản [V3.2](docs/guidelines/SENTIMENT_GUIDELINE_V3_2.md) làm rõ EXCLUDE, công kích,
-tranh luận và mỉa mai sau pilot. Không sửa quy tắc giữa một lượt gán đang chạy;
-lượt mới cần pin đúng guideline trước khi giao. Các lệnh hiện có bên dưới vẫn phục vụ
-workflow V3.1 đã triển khai, **chưa tự chuyển sang V3.2**. Không chạy prepare vào
-thư mục pilot đã có dữ liệu.
+Chỉ đọc `text_clean` theo [guideline chính thức](docs/guidelines/SENTIMENT_GUIDELINE.md).
+Đường dẫn được khai báo một lần tại `src/annotation/guidelines.py:GUIDELINE`.
+Prepare ghi SHA256 tại thời điểm giao; compare/import kiểm SHA đã pin, không tự
+thay bằng bản mới. Chỉ đổi guideline giữa các lượt và cập nhật changelog.
+Không chạy prepare vào thư mục có dữ liệu. Tên output mới không chứa phiên bản guideline.
 
 ```powershell
-python -m src.annotation sentiment-pilot prepare --directory outputs/sentiment_pilot_v3_1
+python -m src.annotation sentiment-pilot prepare --directory outputs/sentiment_pilot
 # Xuất Excel: Node bundled + @oai/artifact-tool, không cần API.
-node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot_v3_1
+node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot
 # Sau khi hai người điền xong (không chạy trên file trống):
-python -m src.annotation sentiment-pilot compare --directory outputs/sentiment_pilot_v3_1 --agreement-audit-count 20
+python -m src.annotation sentiment-pilot compare --directory outputs/sentiment_pilot --agreement-audit-count 20
 # Excel đối soát cho người dùng, sau khi compare thành công:
-node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot_v3_1/comparison --adjudication
+node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot/comparison --adjudication
 # Sau khi người kiểm duyệt điền final_label / adjudication_note:
-python -m src.annotation sentiment-pilot adjudicate --directory outputs/sentiment_pilot_v3_1 --decisions outputs/sentiment_pilot_v3_1/comparison/adjudication.xlsx --adjudicator user
+python -m src.annotation sentiment-pilot adjudicate --directory outputs/sentiment_pilot --decisions outputs/sentiment_pilot/comparison/adjudication.xlsx --adjudicator user
 ```
 
 Lệnh export dùng runtime `@oai/artifact-tool` bundled của Codex, không phải npm deps
@@ -249,11 +246,16 @@ git push origin main
 - [Chỉ mục dữ liệu và kết quả local](outputs/README.md)
 - [Lịch sử dự án](docs/PROJECT_HISTORY.md)
 - [Báo cáo lọc dataset V1](docs/DATASET_FILTER_REPORT.md)
-- [Guideline V2.1 lịch sử của bài toán V1](docs/guidelines/MOVIE_SENTIMENT_V2_1.md) — không phải guideline cảm xúc chung mới.
+- [Guideline V2.1 lịch sử của bài toán V1](docs/guidelines/history/MOVIE_SENTIMENT_V2_1.md) — không phải guideline cảm xúc chung mới.
 
 ## Audit sơ bộ dữ liệu crawl V2
 
 [Báo cáo 12.795 bình luận](docs/V2_CRAWL_PRELIMINARY_AUDIT.md): thống kê kỹ thuật, nguồn, metadata và duplicate; chưa phải đánh giá sentiment.
 Chạy lại bằng `python scripts/sample_audit.py inventory --output outputs/v2_audit_verify` trên bốn export gốc được ghi SHA trong báo cáo. Output chi tiết chứa ID chỉ lưu local; chọn thư mục output mới mỗi lần chạy.
 
-- [V3.1 pilot: A/B agreement and user adjudication](docs/SENTIMENT_PILOT_RESULTS.md) — aggregate results only; 200 decisions, 178 sentiment labels, no training or Gold activation.
+## Lịch sử guideline và nhãn
+
+- [Changelog](docs/guidelines/GUIDELINE_CHANGELOG.md) ghi các mốc V2.0/V2.1, V3.1/V3.2 và bản chính thức mới. Các byte cũ giữ tại `docs/guidelines/history/`.
+- [Pilot V3.1](docs/SENTIMENT_PILOT_RESULTS.md): 200 quyết định, 178 nhãn sentiment; Kappa là kết quả trước đối soát, không phải kết quả của quy tắc mới.
+- Kết quả local đã chốt giữ nguyên ở `outputs/sentiment_pilot_v3_1/comparison_received_20261115/adjudicated/`. Tên và manifest cũ không đổi.
+- Manifest có đường dẫn guideline cũ được tra sang `history/` rồi kiểm đúng SHA; không tự thay bằng guideline chính thức mới. Luồng V1 giữ tham chiếu lịch sử riêng để tái lập, không dùng làm mặc định cho lượt cảm xúc chung mới.

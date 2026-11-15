@@ -5,7 +5,7 @@
 - **Hai batch crawl mới nhất đã gộp:** [Excel](crawl_merged_20261115/review.xlsx) · [CSV đủ metadata](crawl_merged_20261115/comments.csv) · [nguồn và checksum](crawl_merged_20261115/README.md). Có 7.202 câu từ 49 bài: 6.863 KEEP, 70 REVIEW, 269 EXCLUDE; không trùng ID.
 - Bản gộp 7.202 câu không gồm batch 2.521 câu ngày 14/11 hoặc batch mới bên dưới. CSV export gốc và raw/journal của từng run vẫn ở `../data/`, không xóa hay thay canonical.
 - **Batch mới tiếp theo (3.072 câu/12 bài):** [Excel](../data/imports/fb_a767303a5ad8426d8fad5accb8a313cb/review.xlsx) · [CSV](../data/imports/fb_a767303a5ad8426d8fad5accb8a313cb/comments.csv). 2.819 KEEP, 53 REVIEW, 200 EXCLUDE. Tổng bốn batch V2 là **12.795 câu**, 12.066 KEEP, 148 REVIEW, 581 EXCLUDE; 89 bài, 67 movie_id. KEEP là trạng thái kỹ thuật, chưa phải nhãn sentiment.
-- [Bộ A/B để gửi người gán](sentiment_pilot_v3_1/BO_GAN_NHAN_200_AB.zip): guideline vẫn chờ xác nhận bản cuối, chưa READY. Không tự dùng nhãn V1 cho V2.
+- [Pilot đã đối soát](sentiment_pilot_v3_1/comparison_received_20261115/adjudicated/pilot_final_decisions.local.csv): giữ đúng guideline/SHA lịch sử. Lượt mới dùng [guideline chính thức](../docs/guidelines/SENTIMENT_GUIDELINE.md), không dùng lại bộ giao cũ hoặc tự chuyển nhãn V1.
 - Lần dọn 15/11 loại cache Chrome cũ, fixture thử nghiệm và file authoring/log/preview trùng; giữ Chrome cache mới nhất, driver, nhãn người, Gold, checkpoint và backup lịch sử. Biên bản local: `local_cleanup_20261113_v2/cleanup_20261115.json`.
 
 ## V1 và lịch sử giữ để tham chiếu

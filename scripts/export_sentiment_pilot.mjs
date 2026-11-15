@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {Workbook,SpreadsheetFile} from '@oai/artifact-tool';
-const directory = path.resolve(process.argv[2] || 'outputs/sentiment_pilot_v3_1');
+const directory = path.resolve(process.argv[2] || 'outputs/sentiment_pilot');
 if(process.argv.includes('--adjudication')) {
   await exportAdjudication(directory);
 } else {
@@ -11,7 +11,14 @@ const rows=JSON.parse(await fs.readFile(path.join(directory,'workbook_input.loca
 const manifest=JSON.parse(await fs.readFile(path.join(directory,'sampling_manifest.json'),'utf8'));
 const hash=text=>createHash('sha256').update(text).digest('hex');
 if(hash(await fs.readFile(path.join(directory,'sampling_manifest.json')))!==(await fs.readFile(path.join(directory,'sampling_manifest.sha256'),'utf8')).trim())throw Error('Manifest checksum changed');
-if(hash(await fs.readFile(manifest.guideline_file))!==manifest.guideline_sha256)throw Error('Guideline checksum changed');
+let guidelinePath=manifest.guideline_file;
+try {await fs.access(guidelinePath);} catch(error) {
+  if(error.code!=='ENOENT')throw error;
+  const expectedDirectory=path.resolve('docs/guidelines');
+  if(path.dirname(path.resolve(guidelinePath))!==expectedDirectory || path.basename(guidelinePath)==='SENTIMENT_GUIDELINE.md')throw error;
+  guidelinePath=path.join(expectedDirectory,'history',path.basename(guidelinePath));
+}
+if(hash(await fs.readFile(guidelinePath))!==manifest.guideline_sha256)throw Error('Guideline checksum changed');
 const approved=manifest.status==='READY' && manifest.guideline_status==='APPROVED_FOR_PILOT';
 if(rows.length!==200 || new Set(rows.map(r=>r.comment_id)).size!==200 || rows.some((r,i)=>r.comment_id!==manifest.selected_rows[i].comment_id || hash(r.text_clean)!==manifest.selected_rows[i].text_sha256)) throw Error('Invalid workbook input ID/text hash');
 const names=['A','B'].map(a=>path.join(directory,`pilot_sentiment_annotator_${a}.xlsx`));
@@ -110,7 +117,7 @@ async function exportAdjudication(directory) {
   const notes=[
     'NGƯỜI DÙNG LÀ ADJUDICATOR — A/B VẪN LÀ HAI NGƯỜI GÁN ĐỘC LẬP',
     `Cam = toàn bộ ${manifest.disagreements} câu bất đồng; xanh = ${manifest.agreement_audit_selected}/${manifest.agreement_available} câu đồng thuận được chọn ngẫu nhiên, seed ${manifest.seed}.`,
-    'Chỉ điền G/H màu vàng. final_label để trống ở mọi dòng; m tự quyết theo guideline V3.1. REVIEW cần note ngắn.',
+    'Chỉ điền G/H màu vàng. final_label để trống ở mọi dòng; m tự quyết theo guideline đã pin. REVIEW cần note ngắn.',
     'Được xem label_A, label_B và note_A/note_B. Chỉ dùng text_clean, không tra parent/post để suy cảm xúc.',
     'Không sửa ID, text hoặc nhãn/ghi chú gốc của A/B. Cần đọc câu dài thì xem thêm Đọc dài nếu có.',
     'Kappa nằm ở agreement.json, đã tính trên toàn bộ nhãn gốc A/B TRƯỚC đối soát. Không tính lại từ final_label.',

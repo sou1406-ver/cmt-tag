@@ -26,13 +26,16 @@ FIELDS = ('comment_id', 'post_id', 'post_url', 'source', 'source_type', 'movie_i
 IMMUTABLE = tuple(f for f in FIELDS if f not in EDITABLE)
 DEFAULT_SOURCE = Path('data/imports/fb_54e6c18b6c514f9ab822354611ab3316/comments.csv')
 DEFAULT_OUTPUT = Path('outputs/semantic_audit_20261114')
-DEFAULT_GUIDELINE = Path('docs/guidelines/MOVIE_SENTIMENT_V2_1.md')
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from src.annotation.guidelines import GUIDELINE, resolve_guideline
+DEFAULT_GUIDELINE = GUIDELINE
 V2_RUNS = ('fb_54e6c18b6c514f9ab822354611ab3316', 'fb_541bedc5adb54db295e456ed1a5dc62c',
            'fb_cc583df7d16947a2aef7949550fa276d', 'fb_a767303a5ad8426d8fad5accb8a313cb')
 
 
 def sha(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    return hashlib.sha256(resolve_guideline(path).read_bytes()).hexdigest()
 
 
 def row_hash(row):
@@ -360,7 +363,7 @@ def sample(source=DEFAULT_SOURCE, output=DEFAULT_OUTPUT, guideline=DEFAULT_GUIDE
     (output / 'audit_guideline.md').write_text('''# Hướng dẫn audit relevance (không gán sentiment)
 
 Đọc text_clean; text_raw chỉ để đối chiếu. Không sửa text, ID, metadata hoặc cột sampling.
-Tham chiếu MOVIE_SENTIMENT_V2_1.md (mới hơn V2_0), giữ nguyên bản chính thức và hash.
+Tham chiếu guideline chính thức đã ghi SHA tại thời điểm chọn mẫu.
 Đây là audit phụ trợ về phim; không tự thay mục tiêu cảm xúc chung của V2 hoặc lọc dataset.
 
 - RELEVANT: nhận xét/thái độ/thông tin/câu hỏi trực tiếp về phim, kịch bản, diễn xuất trong phim,

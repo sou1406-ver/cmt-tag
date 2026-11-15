@@ -60,7 +60,7 @@ Các file lịch sử còn ở working tree có lý do cụ thể:
 
 | File/nhóm | Bằng chứng phải giữ |
 | --- | --- |
-| `docs/guidelines/MOVIE_SENTIMENT_V2_0.md` | `src/annotation/guidelines.py:validate_guideline` kiểm task cũ bằng SHA `b094bcffc28f5099b6aa0278f95eaf4ee35cba1ee4f3965afa7009d26bd43844`; V2.1 giữ nguyên SHA `7d0a308a6c64f36308cd980b4e05b4b7fb7eb76b3d80d5f172b96f7c2619ee9a` |
+| `docs/guidelines/history/MOVIE_SENTIMENT_V2_0.md` | `src/annotation/guidelines.py:validate_guideline` kiểm task cũ bằng SHA `b094bcffc28f5099b6aa0278f95eaf4ee35cba1ee4f3965afa7009d26bd43844`; V2.1 giữ nguyên SHA `7d0a308a6c64f36308cd980b4e05b4b7fb7eb76b3d80d5f172b96f7c2619ee9a` |
 | `requirements/locks/classical-windows-py312.txt` | Lock Windows/Python 3.12 cho kết quả CV cũ; không sửa pin |
 | `requirements/transformer.txt`, `requirements/torch-cpu.txt` | Recipe dependency của checkpoint H được giữ: tag `before-cleanup-20261112:docs/archive/PHASE_H_REPORT.md` dòng 93–101 yêu cầu các root include trỏ tới hai file này; package pins/CPU index giữ nguyên, không dùng cho workflow hiện tại |
 | `docs/figures/phase_e2/*.png` | Sáu figure ROC/PR/scores của kết quả E.2 đã khóa, không phải hướng dẫn chạy hiện tại |
@@ -113,6 +113,6 @@ V1 phân loại thái độ đối với phim; V2 phân loại cảm xúc chung 
 chỉ từ `text_clean`, hướng tới bất kỳ đối tượng nào. Không dùng lại nhãn V1
 như cùng định nghĩa. Guideline V3.1 đã có lượt pilot 200 câu và đối soát riêng;
 [Kappa và kết quả](SENTIMENT_PILOT_RESULTS.md) chưa xác minh nguồn gán A/B.
-[V3.2](guidelines/SENTIMENT_GUIDELINE_V3_2.md) được cung cấp sau pilot, làm rõ
+[V3.2](guidelines/history/SENTIMENT_GUIDELINE_V3_2.md) được cung cấp sau pilot, làm rõ
 EXCLUDE/NEU, công kích và tranh luận. Không áp hồi tố lên nhãn, SHA hoặc kết quả V3.1;
 chưa có train hay independent Gold V2.

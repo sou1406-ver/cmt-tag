@@ -11,7 +11,7 @@ from src.data.schema import append_decision, gold_label, validate_decision
 from src.data.quality import mark_exact_duplicates
 from src.data.split import validate_manifest
 from src.data.validation import read_jsonl, verify_prepared
-from .guidelines import GUIDELINE, GUIDELINE_VERSION, validate_guideline
+from .guidelines import HISTORICAL_GUIDELINE as GUIDELINE, GUIDELINE_VERSION, validate_guideline
 
 
 def now():

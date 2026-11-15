@@ -8,7 +8,7 @@ from tests.test_ai_pilot import fixture,response
 from src.annotation import pilot,web_labels
 from src.annotation.audit import analyze_errors,import_friend,label_error
 from src.annotation.gold import workbook
-from src.annotation.guidelines import GUIDELINE
+from src.annotation.guidelines import HISTORICAL_GUIDELINE as GUIDELINE
 from src.dataset.common import load,save,sha,digest,read_jsonl,write_jsonl
 from src.models.human_expansion import additional_fold_rows,consensus_rows,cv_estimator,run_silver_cv
 

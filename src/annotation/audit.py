@@ -5,7 +5,7 @@ import re
 
 from src.dataset.common import ROOT,load,read_jsonl,save,seal,sha,digest,write_jsonl,write_csv,staged,verify
 from .gold import _labels
-from .guidelines import GUIDELINE
+from .guidelines import HISTORICAL_GUIDELINE as GUIDELINE
 from .pilot import task,CATEGORIES,SENTIMENT
 from .web_labels import successes
 from .core import now

@@ -10,6 +10,7 @@ import re
 from src.dataset.common import (ROOT, digest, load, normal, read_sheet, literal_text,
     save, sha, staged, write_csv, write_jsonl)
 from src.dataset.blind import assert_allowed
+from . import guidelines
 from .core import pair_metrics
 from .pilot import fingerprints, near_any, protection, guard_reason
 
@@ -18,27 +19,17 @@ LABELS = ['POS', 'NEG', 'NEU', 'REVIEW', 'EXCLUDE']
 FIELDS = ['comment_id', 'text_clean', 'sentiment_label', 'note', 'annotator_id', 'cleaning_issue']
 ADJUDICATION_FIELDS = ['comment_id', 'text_clean', 'label_A', 'label_B', 'note_A', 'note_B', 'final_label', 'adjudication_note']
 ADJUDICATION_SOURCE_FIELDS = ADJUDICATION_FIELDS[:6]
-DEFAULT = ROOT/'outputs/sentiment_pilot_v3_1'
+DEFAULT = ROOT/'outputs/sentiment_pilot'
 SOURCE = ROOT/'data/imports/fb_54e6c18b6c514f9ab822354611ab3316/comments.csv'
-PROPOSAL = ROOT/'docs/guidelines/SENTIMENT_GUIDELINE_V3_1_PROPOSED.md'
-OFFICIAL = ROOT/'docs/guidelines/SENTIMENT_GUIDELINE_V3_1.md'
-# Pin only after the actual user-supplied official bytes have been verified.
-APPROVED_GUIDELINE_SHA256 = None
 
 
 def guideline_contract():
-    """Never relabel PROPOSED as approved. Use the separately supplied official file."""
-    supplied = OFFICIAL.is_file()
-    path = OFFICIAL if supplied else PROPOSAL
+    """Snapshot the official file at prepare time; old runs retain their SHA."""
+    path = guidelines.GUIDELINE
     if not path.is_file() or not path.read_bytes().strip():
-        raise FileNotFoundError('Official guideline or explicit proposal required')
-    checksum = sha(path)
-    if supplied and APPROVED_GUIDELINE_SHA256 and checksum != APPROVED_GUIDELINE_SHA256:
-        raise ValueError('Official guideline differs from verified approved SHA256')
-    approved = supplied and checksum == APPROVED_GUIDELINE_SHA256
-    return dict(guideline_file=str(path), guideline_sha256=checksum,
-                status='READY' if approved else 'DRAFT_GUIDELINE_SOURCE_UNVERIFIED' if supplied else 'DRAFT_GUIDELINE_SOURCE_MISSING',
-                guideline_status='APPROVED_FOR_PILOT' if approved else 'OFFICIAL_PENDING_VERIFICATION' if supplied else 'PROPOSAL_NOT_APPROVED')
+        raise FileNotFoundError('Official guideline is missing or empty')
+    return dict(guideline_file=str(path), guideline_sha256=sha(path),
+                status='READY', guideline_status='APPROVED_FOR_PILOT')
 
 
 def eligible(source, guard):
@@ -129,6 +120,8 @@ def prepare(source=SOURCE, directory=DEFAULT):
     assert_allowed([{**r, 'platform':'facebook', 'text_view':r['text_clean']} for r in allowed], 'active_learning')
     selected, strata = select(allowed)
     assert_allowed([{**r, 'platform':'facebook', 'text_view':r['text_clean']} for r in selected], 'active_learning')
+    if sha(contract['guideline_file']) != contract['guideline_sha256']:
+        raise ValueError('Official guideline changed during prepare')
     if sha(source) != before or any(sha(p) != h for p,h in guard['checksums'].items()):
         raise ValueError('Protected/source input changed during prepare')
     manifest = dict(**contract, source_file=str(source), source_sha256=before,
@@ -151,18 +144,15 @@ def prepare(source=SOURCE, directory=DEFAULT):
         (work/'sampling_manifest.sha256').write_text(sha(work/'sampling_manifest.json')+'\n', encoding='ascii')
         save(work/'workbook_input.local.json', [dict(comment_id=r['comment_id'], text_clean=r['text_clean']) for r in selected])
         write_csv(work/'exclusions.local.csv', rejected, ['comment_id','reason'])
-        guideline_note = ('Guideline chính thức do người dùng cung cấp: '+contract['guideline_file']+'. SHA256: '+contract['guideline_sha256']+'. READY / APPROVED_FOR_PILOT.'
-                          if contract['status']=='READY' else
-                          'File chính thức cần được xác minh và pin SHA256 trước khi giao gán.' if contract['guideline_status']=='OFFICIAL_PENDING_VERIFICATION' else
-                          'Chưa tìm được V3.1 chính thức. Bản bổ sung PROPOSED không phải bản được duyệt. Đối chiếu file chính thức trước khi giao gán.')
+        guideline_note = 'Guideline chính thức: '+contract['guideline_file']+'. SHA256 tại prepare: '+contract['guideline_sha256']+'.'
         (work/'README.md').write_text('# Pilot sentiment text-only\n\n'+guideline_note+'\n'+'''
 
 Hai workbook có cùng 200 ID/thứ tự, gồm 160 random + 40 hard, trộn mù; không có nhãn điền sẵn. Chỉ đọc text_clean, không parent/post; không dùng nhãn relevance cũ. Cột vàng sentiment_label/note để người gán điền; REVIEW phải có note ngắn, không có confidence bắt buộc. cleaning_issue dành cho lỗi text, không sửa text.
 Tái lập: python -m src.annotation sentiment-pilot prepare --directory outputs/sentiment_pilot_NEW
 Xuất Excel bằng scripts/export_sentiment_pilot.mjs với Node/@oai/artifact-tool bundled; builder không ghi đè workbook đã có.
-Sau khi gán độc lập: python -m src.annotation sentiment-pilot compare --directory outputs/sentiment_pilot_v3_1
+Sau khi gán độc lập: python -m src.annotation sentiment-pilot compare --directory outputs/sentiment_pilot
 Compare kiểm toàn bộ hai file trước khi xuất thư mục comparison riêng; lưu nhãn A/B, Kappa chính 5 nhãn, Kappa phụ 3 nhãn, disagreement và adjudication trống. Không ghi canonical/Gold. Không chạy compare trên workbook chưa điền.
-Người dùng là adjudicator, không phải annotator thứ ba. Bảng adjudication có toàn bộ câu bất đồng và tối đa 20 câu đồng thuận ngẫu nhiên (seed cố định); hai cột final_label/adjudication_note trống để người dùng chốt. Xuất Excel tô cam/xanh: node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot_v3_1/comparison --adjudication. Nhập kết quả riêng: python -m src.annotation sentiment-pilot adjudicate --directory outputs/sentiment_pilot_v3_1 --decisions outputs/sentiment_pilot_v3_1/comparison/adjudication.xlsx. Không sửa A/B hoặc tính lại Kappa từ nhãn chốt.
+Người dùng là adjudicator, không phải annotator thứ ba. Bảng adjudication có toàn bộ câu bất đồng và tối đa 20 câu đồng thuận ngẫu nhiên (seed cố định); hai cột final_label/adjudication_note trống để người dùng chốt. Xuất Excel tô cam/xanh: node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot/comparison --adjudication. Nhập kết quả riêng: python -m src.annotation sentiment-pilot adjudicate --directory outputs/sentiment_pilot --decisions outputs/sentiment_pilot/comparison/adjudication.xlsx. Không sửa A/B hoặc tính lại Kappa từ nhãn chốt.
 sampling_manifest.json khóa seed, nguồn, text SHA, cohort và exposure. Pilot/cùng post phải loại khỏi independent test tương lai; dùng manifest này khi kiểm exposure. Không sửa frozen split hoặc reservation cũ.
 ''', encoding='utf8')
         (work/'REPORT.md').write_text('# Kết quả pilot sentiment\n\nChưa có nhãn sentiment thật; Kappa, agreement và confusion matrix: CHƯA CÓ.\n'+guideline_note+'\n', encoding='utf8')

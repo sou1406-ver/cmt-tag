@@ -9,7 +9,7 @@ from src.dataset.common import ROOT, digest, load, normal, read_jsonl, save, sea
 from src.dataset.blind import assert_allowed, ReservedDataError
 from src.preprocessing import preprocess
 from src.preprocessing.quality import strip_urls, SEPARATORS
-from .guidelines import GUIDELINE, GUIDELINE_VERSION, validate_guideline
+from .guidelines import HISTORICAL_GUIDELINE as GUIDELINE, GUIDELINE_VERSION, validate_guideline
 from .gold import workbook, _labels
 from .core import now
 

@@ -114,30 +114,39 @@ class SentimentPilotTests(unittest.TestCase):
         self.assertEqual(p.adjudication_selection(a,b,0)['disagreements'],7)
         with self.assertRaises(ValueError):p.adjudication_selection(a,b,-1)
 
-    def test_official_and_proposal_are_distinct_no_automatic_promotion(self):
+    def test_official_contract_pins_current_bytes_without_versioned_filename(self):
         with tempfile.TemporaryDirectory() as tmp:
-            official=Path(tmp)/'SENTIMENT_GUIDELINE_V3_1.md'
-            proposal=Path(tmp)/'SENTIMENT_GUIDELINE_V3_1_PROPOSED.md'
-            proposal.write_text('Synthetic proposed guideline',encoding='utf8')
-            with patch.object(p,'OFFICIAL',official),patch.object(p,'PROPOSAL',proposal),patch.object(p,'APPROVED_GUIDELINE_SHA256',None):
-                contract=p.guideline_contract()
-                self.assertEqual(contract['status'],'DRAFT_GUIDELINE_SOURCE_MISSING')
-                self.assertEqual(contract['guideline_status'],'PROPOSAL_NOT_APPROVED')
-                official.write_bytes(b'Synthetic official guideline supplied by user\r\n')
-                before=official.read_bytes()
-                self.assertEqual(p.guideline_contract()['guideline_status'],'OFFICIAL_PENDING_VERIFICATION')
-                with patch.object(p,'APPROVED_GUIDELINE_SHA256',sha(official)):
-                    contract=p.guideline_contract()
-                    self.assertEqual(contract['status'],'READY')
-                    self.assertEqual(contract['guideline_status'],'APPROVED_FOR_PILOT')
-                    self.assertEqual(contract['guideline_sha256'],sha(official))
-                    official.write_bytes(before+b'changed')
-                    with self.assertRaises(ValueError):p.guideline_contract()
-                    official.write_bytes(before)
-                self.assertEqual(official.read_bytes(),before)
-                self.assertEqual(proposal.read_text(encoding='utf8'),'Synthetic proposed guideline')
+            official=Path(tmp)/'SENTIMENT_GUIDELINE.md'
+            with patch.object(p.guidelines,'GUIDELINE',official):
+                with self.assertRaises(FileNotFoundError):p.guideline_contract()
+                official.write_bytes(b'Synthetic official guideline\r\n')
+                first=p.guideline_contract()
+                self.assertEqual(first['status'],'READY')
+                self.assertEqual(first['guideline_sha256'],sha(official))
+                official.write_bytes(b'Next user-approved round rules\n')
+                second=p.guideline_contract()
+                self.assertNotEqual(first['guideline_sha256'],second['guideline_sha256'])
+                self.assertEqual(first['guideline_file'],second['guideline_file'])
+                self.assertEqual(first['guideline_sha256'],digest(b'Synthetic official guideline\r\n'))
                 official.write_bytes(b'')
                 with self.assertRaises(FileNotFoundError):p.guideline_contract()
+
+    def test_archived_guideline_resolution_preserves_pinned_hash_and_scope(self):
+        from src.annotation import guidelines as g
+        with tempfile.TemporaryDirectory() as tmp:
+            directory=Path(tmp)/'guidelines';history=directory/'history';history.mkdir(parents=True)
+            old=directory/'old.md';archived=history/'old.md';archived.write_bytes(b'locked old guideline')
+            official=directory/'SENTIMENT_GUIDELINE.md'
+            with patch.object(g,'DIRECTORY',directory),patch.object(g,'HISTORY',history),patch.object(g,'GUIDELINE',official):
+                self.assertEqual(g.resolve_guideline(old),archived)
+                self.assertEqual(sha(old),digest(b'locked old guideline'))
+                archived.write_bytes(b'changed')
+                self.assertNotEqual(sha(old),digest(b'locked old guideline'))
+                (history/'SENTIMENT_GUIDELINE.md').write_bytes(b'must not fall back')
+                with self.assertRaises(FileNotFoundError):sha(official)
+                outside=Path(tmp)/'old.md'
+                self.assertEqual(g.resolve_guideline(outside),outside)
+                with self.assertRaises(FileNotFoundError):sha(outside)
 
     def test_determinism_cohorts_and_no_labels(self):
         rows=fixture(); original=copy.deepcopy(rows)
@@ -219,6 +228,9 @@ class SentimentPilotTests(unittest.TestCase):
                 result=p.prepare(source,directory)
             self.assertEqual(result['selected'],200);self.assertEqual(source.read_bytes(),before)
             m=p.verify_manifest(directory);original_manifest=(directory/'sampling_manifest.json').read_bytes()
+            self.assertEqual(m['guideline_file'],str(p.guidelines.GUIDELINE))
+            self.assertEqual(m['guideline_sha256'],sha(p.guidelines.GUIDELINE))
+            self.assertNotIn('guideline_version',m)
             input_rows=json.loads((directory/'workbook_input.local.json').read_text(encoding='utf8'))
             for person in ('A','B'):
                 annotated=[dict(**r,sentiment_label=p.LABELS[i%5],note='context' if i%5==3 else '',annotator_id=person,cleaning_issue='') for i,r in enumerate(input_rows)]

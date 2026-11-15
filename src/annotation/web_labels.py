@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from src.dataset.common import load,save,sha,digest,read_jsonl,staged,seal,verify
-from .guidelines import GUIDELINE
+from .guidelines import HISTORICAL_GUIDELINE as GUIDELINE
 from .core import now
 
 SLOTS=('GPT','Claude','Gemini')

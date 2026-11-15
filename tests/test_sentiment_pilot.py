@@ -196,6 +196,54 @@ class SentimentPilotTests(unittest.TestCase):
             original_sha=m['guideline_sha256'];official.write_bytes(b'Changed next round rules')
             self.assertEqual(p.verify_manifest(root/'round/batch_01')['guideline_sha256'],original_sha)
             self.assertFalse(list((root/'round').glob('batch_02*')))
+            with patch.object(p.guidelines,'GUIDELINE',official),patch.object(p,'assert_allowed'):
+                split=p.prepare_tu(root/'round',root/'split')
+            self.assertEqual(split['counts']['T']['records']+split['counts']['U']['records'],1000)
+            self.assertEqual(split['overlap'],dict(comment_ids=0,post_ids=0,exact=0,near=0))
+            self.assertEqual(split['EC_status'],'WAITING_USER_EXAMPLE_IDS')
+            original_sha=split['guideline_sha256'];official.unlink()
+            blind=p.prepare_blind_review(root/'split',root/'blind')
+            self.assertEqual(blind['selected'],50);self.assertEqual(blind['guideline_sha256'],original_sha)
+            inputs=json.loads((root/'blind/workbook_input.local.json').read_text(encoding='utf8'))
+            self.assertEqual(set(inputs[0]),{'comment_id','text_clean'})
+            self.assertEqual(len({r['comment_id'] for r in inputs}),50)
+            trows=[json.loads(line) for line in (root/'split/T/records.local.jsonl').read_text(encoding='utf8').splitlines()]
+            self.assertTrue({r['comment_id'] for r in inputs}<={r['comment_id'] for r in trows})
+            again=p.prepare_blind_review(root/'split',root/'blind_again')
+            self.assertEqual(blind['selected_rows'],again['selected_rows'])
+            with self.assertRaises(FileExistsError):p.prepare_blind_review(root/'split',root/'blind')
+            (root/'split/T/guideline_snapshot.md').write_bytes(b'tamper')
+            with self.assertRaises(ValueError):p.prepare_blind_review(root/'split',root/'invalid_blind')
+            self.assertFalse((root/'invalid_blind').exists())
+
+
+    def test_tu_whole_posts_all_sources_seed_and_metadata_only(self):
+        rows=[dict(comment_id=str(i),post_id=str(i//10),source_name='small' if i<10 else 'large',movie_id='m',
+                   text_clean='No sentiment selection',text_raw='No sentiment selection') for i in range(100)]
+        original=copy.deepcopy(rows)
+        t,u=p.split_posts(rows,target=30)
+        t2,u2=p.split_posts(rows[::-1],target=30)
+        self.assertEqual((t,u),(t2,u2));self.assertEqual(rows,original)
+        self.assertEqual(len(t),30);self.assertEqual(len(u),70)
+        self.assertFalse({r['post_id'] for r in t}&{r['post_id'] for r in u})
+        self.assertEqual({r['source_name'] for r in t},{'small','large'})
+        self.assertNotIn('small',{r['source_name'] for r in u})
+        changed=copy.deepcopy(rows)
+        for r in changed:r['text_clean']='Arbitrary changed text';r['text_raw']='Other text'
+        a,b=p.split_posts(changed,target=30)
+        self.assertEqual([r['comment_id'] for r in a],[r['comment_id'] for r in t])
+        self.assertEqual([r['comment_id'] for r in b],[r['comment_id'] for r in u])
+        with self.assertRaises(ValueError):p.split_posts(rows+[rows[0]],target=30)
+        changed=copy.deepcopy(rows);changed[0]['source_name']='conflicting'
+        with self.assertRaises(ValueError):p.split_posts(changed,target=30)
+
+    def test_cross_split_duplicate_guard_exact_and_near(self):
+        a=' '.join('word'+str(i) for i in range(100));b=a.replace('word99','different')
+        t=[dict(text_raw='short independent',text_clean=a)]
+        u=[dict(text_raw='other independent',text_clean=b)]
+        self.assertEqual(p.cross_split_duplicates(t,u),dict(exact=0,near=1))
+        u[0]['text_clean']=a.upper()
+        self.assertEqual(p.cross_split_duplicates(t,u)['exact'],1)
 
     def test_determinism_cohorts_and_no_labels(self):
         rows=fixture(); original=copy.deepcopy(rows)

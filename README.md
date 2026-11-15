@@ -18,7 +18,7 @@ trạng thái xử lý, không phải hai lớp sentiment bổ sung.
 - Gold V1 đã đánh giá một lần; không dùng để chọn preprocessing hoặc tune model V2. Chưa có independent Gold V2.
 - Pilot lịch sử đã đối soát 200 quyết định, có 178 nhãn sentiment. Nhãn thuộc về SHA đã giao, chưa tự chuyển sang quy tắc mới; xem phần lịch sử bên dưới.
 - Quy trình đang áp dụng: [AI gán trên web + người dùng duyệt](docs/annotation/QUY_TRINH_GAN_NHAN.md). Kế hoạch năm batch người gán đã thay thế; không giao thêm cho A/B.
-- ChatGPT, Claude và Gemini chỉ chạy trên web do người dùng thao tác; không gọi API. Chưa thực hiện bước nào của quy trình mới; không cần cài Transformer để crawl.
+- ChatGPT, Claude và Gemini chỉ chạy trên web do người dùng thao tác; không gọi API. Đã chia T/U và xuất 50 câu T gán mù; E/C chờ ID từ người dùng, chưa làm bước 3 trở đi. Không cần cài Transformer để crawl.
 
 ## Cài đặt
 
@@ -175,15 +175,16 @@ Chỉ dùng [QUY_TRINH_GAN_NHAN.md](docs/annotation/QUY_TRINH_GAN_NHAN.md),
 [guideline chính thức](docs/guidelines/SENTIMENT_GUIDELINE.md) và
 [changelog](docs/guidelines/GUIDELINE_CHANGELOG.md). Không tự thêm bước hoặc đổi thứ tự.
 Quy trình mới dùng lại **selection 1.000 ID** trong `outputs/annotation_round_01/`;
-chưa chia E/C/T/U, chưa xuất workbook/chunk mới, chưa gán AI hoặc train.
+đã chia T/U theo nguyên post và xuất workbook 50 câu T gán mù. E/C chờ danh sách
+ID từ người dùng; chưa có nhãn mù được import, chưa xuất chunk cho AI hoặc train.
 Prompt `docs/annotation/AI_LABEL_PROMPT.md` chưa được người dùng cung cấp;
 không tạo prompt thay người dùng, chưa pin SHA prompt.
 
 **Kế hoạch năm batch A/B đã thay thế. Batch 1 đã prepare, không giao**; workbook
 cũ không dùng tiếp và không giao thêm batch cho annotator A/B. Selection, manifest,
 snapshot và nhãn pilot lịch sử giữ nguyên. Các CLI `sentiment-pilot` hiện có phục vụ
-tái lập và kiểm tra luồng cũ, chưa phải implementation đầy đủ của quy trình mới;
-không chạy prepare/compare/import chỉ vì thấy các lệnh đó còn trong code.
+tái lập luồng cũ và hai thao tác mới `split-tu`, `blind-review`. Chưa có implementation
+đầy đủ cho bước 3 trở đi; không chạy prepare/compare/import cũ để thay các bước đó.
 
 Mỗi tập sẽ giữ snapshot nguyên byte của guideline và ghi SHA vào manifest.
 Compare/import kiểm snapshot, không đọc lại file chính thức. Một lượt cũ không tự
@@ -248,4 +249,20 @@ Kế hoạch năm batch người gán và bước dự phòng bổ sung nguồn 
 **đã thay thế**, không còn là bước tiếp theo. Batch 1 đã prepare, không giao;
 không lấy mẫu bổ sung hoặc sửa selection 1.000 ID. Thực hiện về sau chỉ theo
 [quy trình AI gán + người dùng duyệt](docs/annotation/QUY_TRINH_GAN_NHAN.md),
-chưa thực hiện bất kỳ bước nào trong lần cập nhật tài liệu này.
+việc chốt tài liệu trước đó không chạy workflow. Theo yêu cầu tiếp theo, đã làm
+riêng chia T/U và xuất 50 câu mù; chưa làm bước 3 trở đi.
+
+### Trạng thái bước 1–2 (15/11/2026)
+
+- T: **200 câu / 10 post / 10 movie_id**; U: **800 câu / 51 post / 42 movie_id**.
+- Seed `20261115`; phân tầng nguồn, xáo post rồi giữ nguyên từng post. T ưu tiên có đủ năm nguồn. Ba nguồn nhỏ chỉ có một post/nguồn nên nằm trọn ở T, U không có chúng; tỷ lệ nguồn T không phản ánh phân phối tự nhiên.
+- Không giao nhau theo ID/post; exact/near theo guard hiện có cũng bằng 0. Ba movie_id xuất hiện ở cả T/U; đây là chia theo post, không phải holdout theo phim.
+- Workbook mù: `outputs/annotation_blind_50_01/T_blind_50.xlsx`, 50 ID ngẫu nhiên thuộc T, chỉ bốn cột `comment_id,text_clean,label,note`, chưa có nhãn. Dùng `guideline_snapshot.md` bên cạnh; khi gán không xem AI hoặc metadata T/U.
+- Báo phân bố local: `outputs/annotation_tu_01/REPORT.md`. Chưa import/khóa nhãn người dùng; E/C đang chờ ID, chưa làm bước 3 trở đi.
+
+```powershell
+# Chỉ tái lập khi cần, với thư mục output mới; không ghi đè kết quả đã giao.
+python -m src.annotation sentiment-pilot split-tu --round outputs/annotation_round_01 --directory outputs/NEW_TU
+python -m src.annotation sentiment-pilot blind-review --split outputs/NEW_TU --directory outputs/NEW_BLIND_50
+node scripts/export_sentiment_pilot.mjs outputs/NEW_BLIND_50 --blind-review
+```

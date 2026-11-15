@@ -4,7 +4,9 @@
 
 Quy trình hiện hành: [AI gán trên web + người dùng duyệt](../docs/annotation/QUY_TRINH_GAN_NHAN.md).
 Kế hoạch năm batch A/B và bổ sung nguồn nhỏ đã thay thế; batch 1 cũ không giao.
-Giữ nguyên selection 1.000 ID tại `annotation_round_01/`; chưa thực hiện bước nào của quy trình mới.
+Giữ nguyên selection 1.000 ID tại `annotation_round_01/`. Đã chia T/U theo post và xuất workbook 50 câu mù; E/C chờ ID, chưa làm bước 3 trở đi.
+- [Workbook 50 câu T để gán mù](annotation_blind_50_01/T_blind_50.xlsx) · [Guideline snapshot](annotation_blind_50_01/guideline_snapshot.md).
+- [Phân bố T/U nguồn/post/movie](annotation_tu_01/REPORT.md): T 200 câu/10 post, U 800 câu/51 post.
 
 
 - **Hai batch crawl mới nhất đã gộp:** [Excel](crawl_merged_20261115/review.xlsx) · [CSV đủ metadata](crawl_merged_20261115/comments.csv) · [nguồn và checksum](crawl_merged_20261115/README.md). Có 7.202 câu từ 49 bài: 6.863 KEEP, 70 REVIEW, 269 EXCLUDE; không trùng ID.

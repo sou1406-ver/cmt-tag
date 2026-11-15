@@ -4,7 +4,9 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {Workbook,SpreadsheetFile} from '@oai/artifact-tool';
 const directory = path.resolve(process.argv[2] || 'outputs/sentiment_pilot');
-if(process.argv.includes('--adjudication')) {
+if(process.argv.includes('--blind-review')) {
+  await exportBlindReview(directory);
+} else if(process.argv.includes('--adjudication')) {
   await exportAdjudication(directory);
 } else {
 const rows=JSON.parse(await fs.readFile(path.join(directory,'workbook_input.local.json'),'utf8'));
@@ -130,4 +132,49 @@ async function exportAdjudication(directory) {
   const blob=await wb.render({sheetName:s.name,range:`A1:H${Math.min(end,5)}`,scale:1,format:'png'});
   await fs.writeFile(path.join(directory,'adjudication_preview.png'),new Uint8Array(await blob.arrayBuffer()));
   console.log(JSON.stringify({rows:entries.length,disagreements:manifest.disagreements,agreementAudit:manifest.agreement_audit_selected,finalLabelsFilled:0}));
+}
+
+
+async function exportBlindReview(directory) {
+  const hash=v=>createHash('sha256').update(v).digest('hex');
+  const m=JSON.parse(await fs.readFile(path.join(directory,'manifest.json'),'utf8'));
+  if(m.kind!=='T_BLIND_50' || m.selected!==50 || m.guideline_snapshot!=='guideline_snapshot.md')throw Error('Expected sealed blind-50 export');
+  for(const [relative,h] of Object.entries(m.output_sha256)) {
+    const file=path.resolve(directory,relative);
+    if(!file.startsWith(directory+path.sep) || hash(await fs.readFile(file))!==h)throw Error('Sealed blind input changed');
+  }
+  if(hash(await fs.readFile(path.join(m.source_split,'manifest.json')))!==m.source_manifest_sha256)throw Error('Split manifest changed');
+  if(hash(await fs.readFile(path.join(directory,m.guideline_snapshot)))!==m.guideline_sha256)throw Error('Guideline snapshot changed');
+  const rows=JSON.parse(await fs.readFile(path.join(directory,'workbook_input.local.json'),'utf8'));
+  if(rows.length!==50 || new Set(rows.map(r=>r.comment_id)).size!==50 || rows.some((r,i)=>r.comment_id!==m.selected_rows[i].comment_id || hash(r.text_clean)!==m.selected_rows[i].text_sha256))throw Error('Blind ID/text mismatch');
+  const file=path.join(directory,'T_blind_50.xlsx');
+  try{await fs.access(file);throw Error('Refusing to overwrite blind workbook');}catch(e){if(e.code!=='ENOENT')throw e;}
+  const wb=Workbook.create();const s=wb.worksheets.add('Gán nhãn');s.showGridLines=false;
+  const literal=v=>v.startsWith('=')?"'"+v:v;
+  s.getRange('A:A').format.numberFormat='@';
+  s.getRange('A1:D51').values=[['comment_id','text_clean','label','note'],...rows.map(r=>[r.comment_id,literal(r.text_clean),'',''])];
+  s.getRange('A1:D51').format={font:{name:'Arial',size:11},wrapText:true,verticalAlignment:'top'};
+  for(const [col,width] of [['A',27],['B',110],['C',16],['D',35]])s.getRange(`${col}:${col}`).format.columnWidth=width;
+  s.getRange('A1:D1').format={fill:'#17324D',font:{name:'Arial',size:11,bold:true,color:'#FFFFFF'},rowHeight:34};
+  s.getRange('C2:D51').format.fill='#FFF2CC';
+  s.getRange('C2:C51').dataValidation={rule:{type:'list',values:['POS','NEG','NEU','REVIEW','EXCLUDE']}};
+  const long=[];
+  rows.forEach((r,i)=>{
+    const lines=r.text_clean.split('\n').reduce((n,t)=>n+Math.max(1,Math.ceil([...t].length/95)),0);
+    s.getRange(`A${i+2}:D${i+2}`).format.rowHeight=Math.min(390,Math.max(65,lines*18+20));
+    s.getRange(`A${i+2}:B${i+2}`).format.fill=i%2?'#EDF3F8':'#FFFFFF';
+    if(lines>20){let chars=[...r.text_clean];for(let start=0;start<chars.length;start+=450)long.push([r.comment_id,literal(chars.slice(start,start+450).join(''))]);}
+  });
+  s.freezePanes.freezeRows(1);s.freezePanes.freezeColumns(2);s.tables.add('A1:D51',true,'BlindInput');
+  if(long.length){
+    const l=wb.worksheets.add('Đọc dài');l.showGridLines=false;
+    l.getRange(`A1:B${long.length+1}`).values=[['comment_id','text_clean — tiếp nối theo thứ tự, chỉ đọc'],...long];
+    l.getRange('A:A').format.columnWidth=27;l.getRange('A:A').format.numberFormat='@';l.getRange('B:B').format.columnWidth=110;
+    l.getRange(`A1:B${long.length+1}`).format={font:{name:'Arial',size:11},wrapText:true,verticalAlignment:'top',rowHeight:155};
+    l.getRange('A1:B1').format={fill:'#17324D',font:{color:'#FFFFFF',bold:true},rowHeight:34};l.freezePanes.freezeRows(1);
+  }
+  wb.recalculate();await(await SpreadsheetFile.exportXlsx(wb)).save(file);
+  const blob=await wb.render({sheetName:s.name,range:'A1:D5',scale:1,format:'png'});
+  await fs.writeFile(path.join(directory,'preview.png'),new Uint8Array(await blob.arrayBuffer()));
+  console.log(JSON.stringify({workbooks:1,rows:50,labelsFilled:0,sourceMetadataExposed:false}));
 }

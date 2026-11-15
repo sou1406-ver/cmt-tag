@@ -58,6 +58,12 @@ def main():
                 q.add_argument('--comparison',type=Path,help='Defaults to DIRECTORY/comparison')
                 q.add_argument('--decisions',type=Path,required=True,help='Filled adjudication CSV or XLSX')
                 q.add_argument('--adjudicator',default='user')
+    q=hs.add_parser('split-tu',help='Step 1 only: split sealed 1000 IDs by whole post/source')
+    q.add_argument('--round',dest='round_directory',type=Path,required=True)
+    q.add_argument('--directory',type=Path,required=True)
+    q=hs.add_parser('blind-review',help='Step 2 only: prepare 50 blank blind T records')
+    q.add_argument('--split',dest='split_directory',type=Path,required=True)
+    q.add_argument('--directory',type=Path,required=True)
     g=s.add_parser('gold',help='One-annotator new-Facebook gold: sample, recheck, agreement, evaluate')
     gs=g.add_subparsers(dest='gold_command',required=True)
     for command in ('sample','recheck','agreement','evaluate'):
@@ -79,6 +85,8 @@ def main():
                     if not args.exclude_pilot:raise ValueError('--exclude-pilot required with --sources')
                     result=sentiment_pilot.prepare_round(args.sources,args.directory,args.exclude_pilot)
                 else:result=sentiment_pilot.prepare(args.source,args.directory)
+            elif args.sentiment_command=='split-tu':result=sentiment_pilot.prepare_tu(args.round_directory,args.directory)
+            elif args.sentiment_command=='blind-review':result=sentiment_pilot.prepare_blind_review(args.split_directory,args.directory)
             elif args.sentiment_command=='compare':result=sentiment_pilot.compare(args.directory,args.output,args.agreement_audit_count)
             else:result=sentiment_pilot.import_adjudication(args.directory,args.comparison or args.directory/'comparison',args.decisions,args.output,args.adjudicator)
         elif args.cmd=='pilot':

@@ -8,7 +8,7 @@ import random
 import re
 
 from src.dataset.common import (ROOT, digest, load, normal, read_sheet, literal_text,
-    save, sha, staged, write_csv, write_jsonl)
+    save, sha, staged, write_csv, write_jsonl, seal, verify, read_jsonl)
 from src.dataset.blind import assert_allowed
 from . import guidelines
 from .core import pair_metrics
@@ -293,6 +293,114 @@ def prepare_round(sources, directory, exclude_pilot):
         save(batch/'workbook_input.local.json',[dict(comment_id=r['comment_id'],text_clean=r['text_clean']) for r in selected])
         (work/'README.md').write_text('# Official annotation round\n\nOnly batch_01 prepared. Selection: 1000 in five disjoint sets of 200. No sentiment labels or training. All comment payloads local.\n',encoding='utf8')
     return dict(total=1000,eligible=len(pool),batch_1=counts(groups[0]),small_source_selected=small,guard=dict(reserved),output=str(directory))
+
+
+def split_posts(rows, target=200, seed=SEED):
+    """Metadata-only source strata; randomized whole posts, no text/labels used.
+
+    Represent every source in T. A single-post source cannot occur in both sets.
+    Stop at the nearest attainable count along this randomized stratified path.
+    """
+    rng=random.Random(seed);posts=defaultdict(list);strata=defaultdict(list)
+    for r in sorted(rows,key=lambda r:r['comment_id']):posts[r['post_id']].append(r)
+    for pid,group in sorted(posts.items()):
+        names={r['source_name'] for r in group}
+        if len(names)!=1:raise ValueError('Conflicting source metadata within post')
+        strata[next(iter(names))].append(pid)
+    if len({r['comment_id'] for r in rows})!=len(rows):raise ValueError('Duplicate split input IDs')
+    chosen=set();taken=Counter();remaining={}
+    for name in sorted(strata):
+        values=strata[name][:];rng.shuffle(values)
+        pid=values.pop();chosen.add(pid);taken[name]+=len(posts[pid]);remaining[name]=values
+    selected=sum(taken.values())
+    if selected>target:raise ValueError('One-post-per-source minimum exceeds target; explicit policy required')
+    available={name:sum(len(posts[pid]) for pid in values) for name,values in remaining.items()}
+    total_available=sum(available.values());budget=target-selected
+    quotas={name:taken[name]+budget*available[name]/total_available for name in strata} if total_available else dict(taken)
+    while selected<target:
+        candidates=[name for name in sorted(strata) if remaining[name]]
+        if not candidates:break
+        name=max(candidates,key=lambda n:(quotas[n]-taken[n],n))
+        pid=remaining[name][-1];size=len(posts[pid])
+        if abs(selected+size-target)>=abs(selected-target):break
+        remaining[name].pop();chosen.add(pid);taken[name]+=size;selected+=size
+    t=sorted((r for r in rows if r['post_id'] in chosen),key=lambda r:r['comment_id'])
+    u=sorted((r for r in rows if r['post_id'] not in chosen),key=lambda r:r['comment_id'])
+    if not t or not u:raise ValueError('Whole-post split produced an empty set')
+    return t,u
+
+
+def split_counts(rows):
+    return dict(records=len(rows),posts=len({r['post_id'] for r in rows}),movies=len({r['movie_id'] for r in rows}),
+        source=dict(Counter(r['source_name'] for r in rows)),post=dict(Counter(r['post_id'] for r in rows)),
+        movie=dict(Counter(r['movie_id'] for r in rows)))
+
+
+def cross_split_duplicates(t,u):
+    variants=lambda row:[row.get('text_raw',''),row['text_clean']]
+    exact={normal(v) for r in u for v in variants(r) if normal(v)}
+    near=reference_index([fingerprints(v) for r in u for v in variants(r)])
+    return dict(exact=sum(any(normal(v) in exact for v in variants(r) if normal(v)) for r in t),
+                near=sum(any(near_any(v,near) for v in variants(r)) for r in t))
+
+
+def prepare_tu(round_directory, directory):
+    round_directory=Path(round_directory).resolve();directory=Path(directory).resolve()
+    verify_manifest(round_directory/'batch_01')  # Pins the original 1000-ID plan.
+    plan=load(round_directory/'selection_manifest.json')
+    expected={r['comment_id']:r for r in plan['selected_rows']}
+    if len(expected)!=1000 or len(plan['selected_rows'])!=1000:raise ValueError('Expected sealed 1000-ID selection')
+    checks={str(round_directory/'selection_manifest.json'):sha(round_directory/'selection_manifest.json')}
+    rows=[]
+    for entry in plan['source_files']:
+        if sha(entry['path'])!=entry['sha256']:raise ValueError('Original export changed')
+        checks[entry['path']]=entry['sha256']
+        with Path(entry['path']).open(encoding='utf-8-sig',newline='') as f:
+            rows.extend(r for r in csv.DictReader(f) if r['comment_id'] in expected)
+    if len(rows)!=1000 or len({r['comment_id'] for r in rows})!=1000:raise ValueError('Selection source coverage mismatch')
+    for r in rows:
+        e=expected[r['comment_id']]
+        if r['clean_status']!='KEEP' or digest(r['text_clean'])!=e['text_sha256'] or any(r[k]!=e[v] for k,v in [('post_id','post_id'),('movie_id','movie_id'),('source_name','source')]):
+            raise ValueError('Selection text or metadata changed')
+    assert_allowed([{**r,'platform':'facebook','text_view':r['text_clean']} for r in rows],'active_learning')
+    t,u=split_posts(rows);duplicates=cross_split_duplicates(t,u)
+    if any(duplicates.values()):raise ValueError('Cross T/U text duplicates; do not silently change selection')
+    contract=guideline_contract()
+    meta=dict(kind='POST_DISJOINT_TU',seed=SEED,target_T=200,selected=1000,counts={'T':split_counts(t),'U':split_counts(u)},
+        protected_inputs=checks,guideline_sha256=contract['guideline_sha256'],
+        splitting='Random post order within source; one post/source minimum in T; remaining budget weighted by available stratum size; nearest count on that path',
+        limitation='Single-post sources occur only in T under the all-source T policy; source proportions are not population representative. T is protocol test, not independent Gold.',
+        overlap=dict(comment_ids=0,post_ids=0,**duplicates),EC_status='WAITING_USER_EXAMPLE_IDS',
+        prohibited_T_uses=['train','prompt_examples','preprocessing_tuning','hyperparameter_tuning'],
+        stage_status='STEP_1_COMPLETE_ONLY_TU; E_C_PENDING; NO_AI_CHUNKS_OR_LABELS')
+    with staged(directory) as work:
+        for name,records in [('T',t),('U',u)]:
+            folder=work/name;folder.mkdir();snapshot_guideline(folder,directory/name,contract)
+            write_jsonl(folder/'records.local.jsonl',records)
+        if any(sha(p)!=h for p,h in checks.items()):raise ValueError('Inputs changed during split')
+        seal(work,meta)
+    return meta
+
+
+def prepare_blind_review(split_directory, directory):
+    split_directory=Path(split_directory).resolve();directory=Path(directory).resolve()
+    m=verify(split_directory)
+    if m.get('kind')!='POST_DISJOINT_TU':raise ValueError('Expected sealed post-disjoint T/U split')
+    rows=read_jsonl(split_directory/'T/records.local.jsonl')
+    if len(rows)<50:raise ValueError('T has fewer than 50 records')
+    selected=random.Random(SEED).sample(sorted(rows,key=lambda r:r['comment_id']),50)
+    contract=dict(guideline_file=str(split_directory/'T/guideline_snapshot.md'),guideline_sha256=m['guideline_sha256'])
+    if sha(contract['guideline_file'])!=contract['guideline_sha256']:raise ValueError('T guideline snapshot changed')
+    with staged(directory) as work:
+        snapshot_guideline(work,directory,contract)
+        write_csv(work/'workbook_input.local.csv',[dict(comment_id=r['comment_id'],text_clean=r['text_clean'],label='',note='') for r in selected],['comment_id','text_clean','label','note'])
+        save(work/'workbook_input.local.json',[dict(comment_id=r['comment_id'],text_clean=r['text_clean']) for r in selected])
+        result=seal(work,dict(kind='T_BLIND_50',seed=SEED,selected=50,source_split=str(split_directory),
+            source_manifest_sha256=sha(split_directory/'manifest.json'),guideline_sha256=m['guideline_sha256'],guideline_snapshot='guideline_snapshot.md',
+            selected_rows=[dict(comment_id=r['comment_id'],text_sha256=digest(r['text_clean'])) for r in selected],
+            status='AWAITING_USER_BLIND_LABELS_BEFORE_AI',EC_status='WAITING_USER_EXAMPLE_IDS',
+            note='Only step 2 export; no labels imported, no AI chunks, no AI calls, no train/evaluate'))
+    return result
 
 
 def verify_manifest(directory):

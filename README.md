@@ -95,6 +95,13 @@ câu. Không đoán tên từ chữ hoa; tên diễn viên/nhân vật viết th
 thu thêm tên/ID tác giả. Rỗng hoặc chỉ còn dấu câu như `?` vào EXCLUDE; chỉ emoji/emoticon/điểm số vào
 REVIEW kỹ thuật; có chữ vào KEEP dù kèm media. Đây không phải nhãn sentiment:
 người gán vẫn quyết định theo guideline. Link không đủ bằng chứng không bị xóa mù.
+
+**Không nhầm hai cột:** `clean_status=REVIEW` là cờ kiểm tra kỹ thuật của crawler;
+`sentiment_label=REVIEW` là quyết định không đủ căn cứ gán sentiment theo guideline.
+Không sao chép hoặc suy nhãn sentiment từ `clean_status`. Ví dụ, `😍` có thể mang
+`clean_status=REVIEW` nhưng được gán POS theo V3.2; `:))` đứng riêng có thể mang
+cùng trạng thái kỹ thuật nhưng được gán NEU. Người gán chỉ đọc `text_clean` và áp
+dụng guideline, không dùng cờ kỹ thuật làm gợi ý cực tính hay lý do loại câu.
 Journal cũ không có clean/evidence sẽ không được điền suy đoán.
 
 ## Dữ liệu ở đâu?

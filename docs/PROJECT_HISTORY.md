@@ -106,3 +106,13 @@ không thuộc workflow hiện tại. Các lock/recipe lịch sử và checkpoin
 README trình bày BTL theo nguồn dữ liệu → lọc/tiền xử lý → nhãn → train →
 đánh giá. Workspace VS Code mở repo và dữ liệu sau lọc; các folder phase trong
 outputs là bằng chứng bất biến, không phải các bước phải chạy lại.
+
+## Hướng V2: cảm xúc chung (15/11/2026)
+
+V1 phân loại thái độ đối với phim; V2 phân loại cảm xúc chung của người viết,
+chỉ từ `text_clean`, hướng tới bất kỳ đối tượng nào. Không dùng lại nhãn V1
+như cùng định nghĩa. Guideline V3.1 đã có lượt pilot 200 câu và đối soát riêng;
+[Kappa và kết quả](SENTIMENT_PILOT_RESULTS.md) chưa xác minh nguồn gán A/B.
+[V3.2](guidelines/SENTIMENT_GUIDELINE_V3_2.md) được cung cấp sau pilot, làm rõ
+EXCLUDE/NEU, công kích và tranh luận. Không áp hồi tố lên nhãn, SHA hoặc kết quả V3.1;
+chưa có train hay independent Gold V2.

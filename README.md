@@ -7,15 +7,18 @@ làm nguồn dữ liệu. Ba lớp sentiment: **POS / NEG / NEU**.
 
 ## Hướng hiện tại
 
-V2 chuyển sang **cảm xúc chung của toàn bình luận**, thay cho tiêu chí V1 chỉ
-đánh giá thái độ đối với phim. Hiện đang thu thập và kiểm tra chất lượng text.
-Quy tắc gán nhãn V2 cần chốt trước khi gán lại và huấn luyện.
+V2 phân loại **cảm xúc chung mà người viết thể hiện trong chính bình luận**,
+chỉ dùng `text_clean`. Đối tượng cảm xúc có thể là phim, diễn viên, người bình luận,
+group hoặc sự việc khác. Không suy sentiment từ comment cha/bài viết; không loại
+câu chỉ vì ngoài lề phim. POS / NEG / NEU là ba lớp mô hình; REVIEW / EXCLUDE là
+trạng thái xử lý, không phải hai lớp sentiment bổ sung.
 
-- Nhãn người, nhãn AI, model và Gold V1 giữ làm lịch sử, **không tự chuyển thành nhãn V2**.
-- Gold V1 đã được đánh giá một lần; không dùng lại để chọn preprocessing hoặc tune model.
-- Pilot đang chuẩn bị cho hai người gán độc lập; chưa có sentiment Gold V2.
-- Nhãn AI chỉ là đề xuất; kiểm tra chất lượng bằng mẫu ngẫu nhiên trước khi quyết định sử dụng.
-- Không có API gán nhãn tự động trong workflow đang chạy. Không cần cài Transformer để crawl.
+- [Guideline V3.2](docs/guidelines/SENTIMENT_GUIDELINE_V3_2.md) là bản mới người dùng cung cấp sau pilot. **V2 là hướng dự án; V3.2 là phiên bản guideline**, không phải phiên bản cleaning.
+- V1 xét thái độ đối với phim theo guideline V2.0/V2.1. Nhãn người, AI, model và Gold V1 chỉ giữ làm lịch sử, **không gộp hoặc đổi tên thành nhãn cảm xúc chung V2**. Muốn dùng lại phải gán lại theo định nghĩa mới và kiểm tra leakage.
+- Gold V1 đã đánh giá một lần; không dùng để chọn preprocessing hoặc tune model V2. Chưa có independent Gold V2.
+- Pilot V3.1 đã đối soát 200 quyết định: 31 POS, 92 NEG, 55 NEU, 16 REVIEW, 6 EXCLUDE. Đây là nhãn development theo lượt V3.1, **chưa được rà lại theo V3.2**; không tự đổi nhãn hoặc dùng Kappa cũ làm kết quả guideline V3.2.
+- Thiết kế là hai annotator A/B và người dùng adjudicator. Nguồn gán/AI hỗ trợ của hai workbook đã nhận chưa được xác minh; không khẳng định độ độc lập của lượt đó.
+- Không gọi API gán nhãn tự động trong workflow đang chạy. V3.2 yêu cầu người gán không dùng AI quyết định nhãn hoặc viết note. Không cần cài Transformer để crawl.
 
 ## Cài đặt
 
@@ -62,7 +65,7 @@ Với danh sách bài đã chọn sẵn, tạo CSV local có `movie_id,post_url`
 Giới hạn 100 là cấu hình thu thập, không phải số mẫu ngẫu nhiên hay cam kết lấy đủ.
 Không dùng các post test/reserved để phát triển crawler hoặc mô hình.
 
-Chiến dịch V2 dùng lại batch CLI, chưa tự thu thập 10–15k câu:
+Chiến dịch V2 dùng lại batch CLI; audit gần nhất ghi nhận 12.795 câu. Lệnh cho các đợt thu thập tiếp theo:
 
 ```powershell
 .\.venv\Scripts\python.exe -m src.crawler crawl-batch --campaign-v2 --input data/posts_v2.csv --channel brave --profile data/browser_profile_brave_manual --max-comments 300 --post-delay 5
@@ -89,8 +92,9 @@ dữ liệu train hay nhãn đã duyệt. Kế hoạch 40–80 bài/15–20 phim
 
 Giữ tiếng Việt, emoji Unicode/ảnh có alt emoji, emoticon, teencode, phủ định và dấu
 câu. Không đoán tên từ chữ hoa; tên diễn viên/nhân vật viết thuần vẫn giữ. Không
-thu thêm tên/ID tác giả. Link mơ hồ và phần chỉ còn dấu câu như `?` vào REVIEW;
-chỉ tag/URL hoặc trắng vào EXCLUDE. Emoji-only không bị tự gán POS/NEG.
+thu thêm tên/ID tác giả. Rỗng hoặc chỉ còn dấu câu như `?` vào EXCLUDE; chỉ emoji/emoticon/điểm số vào
+REVIEW kỹ thuật; có chữ vào KEEP dù kèm media. Đây không phải nhãn sentiment:
+người gán vẫn quyết định theo guideline. Link không đủ bằng chứng không bị xóa mù.
 Journal cũ không có clean/evidence sẽ không được điền suy đoán.
 
 ## Dữ liệu ở đâu?
@@ -105,7 +109,8 @@ Journal cũ không có clean/evidence sẽ không được điền suy đoán.
 | Output lịch sử đã gom ZIP | `data/archive/history_before_v2_20261113.zip` |
 
 Dataset tham chiếu V1 có **25.810 dòng**: 7.146 Facebook và 18.664 legacy,
-còn **425 nhãn sentiment người theo tiêu chí cũ**. Chưa có bộ nhãn V2 được duyệt.
+còn **425 nhãn sentiment người theo tiêu chí V1**. Bộ này không phải nhãn V3.1/V3.2.
+Pilot V3.1 mới nằm riêng tại `outputs/sentiment_pilot_v3_1/comparison_received_20261115/adjudicated/`; không nhập vào canonical V1.
 Bộ legacy thiếu xác minh nguồn/quyền sử dụng và cách tạo nhãn `overall`;
 **không dùng `overall` làm ground truth**.
 
@@ -160,10 +165,13 @@ không đăng corpus hoặc workbook.
 ### Pilot sentiment text-only (200 câu, hai người)
 
 Chỉ đọc `text_clean`, cảm xúc chung có thể hướng tới bất kỳ đối tượng nào.
-**Guideline chưa được chốt**: đã nhận bản V3.1 ở local, nhưng người dùng giữ trạng
-thái rà soát và đang yêu cầu đối chiếu SHA với bản gốc. Không chuyển READY hoặc
-đổi guideline/manifest pilot lúc này. [Bổ sung PROPOSED cũ](docs/guidelines/SENTIMENT_GUIDELINE_V3_1_PROPOSED.md)
-chỉ giữ để tham chiếu lịch sử; không tự coi là bản chính thức. Không thay V2.1 lịch sử.
+Pilot 200 câu vừa hoàn tất theo lượt **V3.1**; xem [kết quả và giới hạn](docs/SENTIMENT_PILOT_RESULTS.md).
+V3.1 và SHA/manifest cũ giữ nguyên; việc đối soát không tự phê duyệt byte guideline.
+Bản [V3.2](docs/guidelines/SENTIMENT_GUIDELINE_V3_2.md) làm rõ EXCLUDE, công kích,
+tranh luận và mỉa mai sau pilot. Không sửa quy tắc giữa một lượt gán đang chạy;
+lượt mới cần pin đúng guideline trước khi giao. Các lệnh hiện có bên dưới vẫn phục vụ
+workflow V3.1 đã triển khai, **chưa tự chuyển sang V3.2**. Không chạy prepare vào
+thư mục pilot đã có dữ liệu.
 
 ```powershell
 python -m src.annotation sentiment-pilot prepare --directory outputs/sentiment_pilot_v3_1
@@ -192,9 +200,9 @@ development, không được dùng làm independent test tương lai. Bộ lọc
 exact/near duplicate dùng guard hiện có; không đổi Gold hoặc split cũ.
 Compare giữ nhãn A/B riêng, xuất Kappa chính 5 nhãn và Kappa phụ trên các cặp
 POS/NEG/NEU kèm n/tỷ lệ giữ lại, ma trận 5×5, câu lệch và adjudication chưa điền.
-Kappa suy biến trả null kèm lý do, không thay bằng 0/1. Chưa có nhãn thật thì chưa có kết quả.
+Kappa suy biến trả null kèm lý do, không thay bằng 0/1. Kết quả lượt đã nhận được công bố riêng, không thay bằng kết quả sau đối soát.
 
-**A/B là đúng hai annotator độc lập; người dùng là adjudicator**, được xem cả
+**Thiết kế yêu cầu hai annotator độc lập A/B; người dùng là adjudicator**, được xem cả
 nhãn/ghi chú A/B sau khi hai người gán xong, không phải người gán độc lập thứ ba.
 Kappa luôn tính trên nhãn A/B gốc trước đối soát, không từ `final_label`.
 `adjudication.local.csv` / Excel có đúng các cột `comment_id, text_clean, label_A,
@@ -208,7 +216,9 @@ không hợp lệ. Nhãn cuối trống trên câu bắt buộc kiểm tra đư�
 không tự lấy nhãn A/B. Kết quả lưu riêng tại `comparison/adjudicated/`, có receipt/hash,
 giữ nguyên A/B cùng Kappa. `pilot_final_decisions.local.csv` luôn đủ 200 ID:
 đồng thuận **ngoài mẫu kiểm tra** lấy nhãn A=B (`AB_AGREE`); câu có nhãn do người dùng
-chốt là `ADJUDICATED`. Đồng thuận thuộc mẫu kiểm tra vẫn phải được người dùng chốt.
+chốt là `ADJUDICATED`. Đồng thuận thuộc mẫu kiểm tra vẫn phải được người dùng chốt. Riêng lượt đã nhận,
+người dùng xác nhận tường minh rằng ô không sửa nghĩa là giữ A=B; xác nhận này được
+lưu trong lịch sử riêng, không phải quy tắc tự điền mặc định cho lượt khác.
 `pilot_trainable.local.csv` chỉ gồm POS/NEG/NEU đã có final, không REVIEW/EXCLUDE/pending;
 đây chỉ là export, không tự đưa vào train hoặc Gold. `summary.json` báo số nguồn nhãn,
 phân bố nhãn cuối, trainable, REVIEW/EXCLUDE và số đồng thuận bị sửa. Còn pending thì

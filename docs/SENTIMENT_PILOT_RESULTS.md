@@ -2,6 +2,12 @@
 
 Date: 2026-11-15. Development pilot: 160 random-stratified and 40 deliberately difficult examples. Not an independent Gold Test.
 
+## Task definition and guideline versions
+
+Project V2 targets the overall sentiment expressed by the author in `text_clean`, toward any subject, not only the film. V1 labels targeted film sentiment under V2.0/V2.1 and are not interchangeable with these labels. No V1 label migration or pooling was performed.
+
+The user supplied [guideline V3.2](guidelines/SENTIMENT_GUIDELINE_V3_2.md) after this V3.1 pilot. The original decisions, adjudication and Kappa below are historical V3.1 results, not validation of V3.2. Some V3.2 examples differ from adjudicated V3.1 decisions; adopting V3.2 requires a separately recorded review, never silent relabeling. V3.1 bytes and manifest remain unchanged.
+
 ## Original A/B decisions
 
 Both workbooks passed validation: 200 unique expected IDs, unchanged text and valid labels. All original REVIEW decisions have notes. A/B provenance and AI assistance are unverified; these numbers describe workbook agreement, not verified independent human inter-annotator reliability.

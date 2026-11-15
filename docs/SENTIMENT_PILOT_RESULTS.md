@@ -49,3 +49,13 @@ A/B workbooks, their original labels and pre-adjudication Kappa were preserved. 
 The exact guideline byte approval remains pending. Completed adjudication does not approve the guideline, establish annotation independence, or create Gold. The enriched difficult-case sample cannot estimate corpus-wide label proportions.
 
 Local-only outputs: `outputs/sentiment_pilot_v3_1/comparison_received_20261115/`: original A/B snapshots, `agreement.json`, `adjudication.xlsx`, user confirmation history, and `adjudicated/pilot_final_decisions.local.csv` plus `pilot_trainable.local.csv`. No comment text, record IDs or per-record labels are included in this public report.
+
+## Official-guideline batch 1 prepared (2026-11-15)
+
+This is a new annotation round, not a relabeling of the draft pilot above. Four V2 exports contain 12,795 records. After KEEP, pilot-post/ID, reserved and exact/near duplicate exclusions, 9,590 remain eligible. A seeded post-stratified design selected 1,000 distinct records in five sets of 200, with at most 30 per post across the whole round. Each small source contributes 30 across the full selection; sources with fewer eligible rows than the post cap would be kept in full.
+
+Batch 1: 200 records, 61 posts and 49 supplied movie_id values. Source counts: Maybe You Never Watched This Movie 130; Chê Phim Review 52; XEM PHIM & BÌNH PHIM 6; Cuồng Phim 6; KhenPhim 6. No labels, agreement or model results exist for this batch. Only batch 1 workbooks have been exported. The remaining four sets are sealed selections, not delivered annotation batches.
+
+All 200 previous pilot IDs and all 28 pilot posts are excluded. The reserved guard found 16 EXACT_RESERVED_TEXT across the input: four were removed at that stage and 12 had already been removed by KEEP/pilot filtering. None are selected. Existing test guards were retained. Sampling did not use sentiment cues; this designed sample cannot estimate natural corpus sentiment prevalence.
+
+Each delivered batch contains `guideline_snapshot.md`, SHA `b25482675c3a6387321f281579e318565999fd3a579e12dadc3897938bb39714`. Compare/import validate that copy, even if the official file later changes. Before modifying the official guideline, archive the exact bytes as `history/SENTIMENT_GUIDELINE_<sha8>.md` and add a changelog entry. Local distributions and workbooks: `outputs/annotation_round_01/`; no payloads committed.

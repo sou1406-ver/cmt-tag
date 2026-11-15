@@ -12,7 +12,7 @@ from src.dataset.common import (ROOT, digest, load, normal, read_sheet, literal_
 from src.dataset.blind import assert_allowed
 from . import guidelines
 from .core import pair_metrics
-from .pilot import fingerprints, near_any, protection, guard_reason
+from .pilot import fingerprints, near_any, protection, guard_reason, reference_index
 
 SEED = 20261115
 LABELS = ['POS', 'NEG', 'NEU', 'REVIEW', 'EXCLUDE']
@@ -30,6 +30,26 @@ def guideline_contract():
         raise FileNotFoundError('Official guideline is missing or empty')
     return dict(guideline_file=str(path), guideline_sha256=sha(path),
                 status='READY', guideline_status='APPROVED_FOR_PILOT')
+
+
+def snapshot_guideline(work, directory, contract):
+    """Copy exact bytes; future validation uses only this batch-local snapshot."""
+    payload = Path(contract['guideline_file']).read_bytes()
+    if digest(payload) != contract['guideline_sha256']:
+        raise ValueError('Official guideline changed during prepare')
+    snapshot = 'guideline_snapshot.md'
+    (work/snapshot).write_bytes(payload)
+    return {**contract, 'guideline_source':contract['guideline_file'],
+            'guideline_file':str(directory/snapshot), 'guideline_snapshot':snapshot,
+            'guideline_sha256':sha(work/snapshot)}
+
+
+def batch_guideline(directory, manifest):
+    if 'guideline_snapshot' not in manifest:
+        return Path(manifest['guideline_file'])  # Historical pinned-path compatibility.
+    if manifest['guideline_snapshot'] != 'guideline_snapshot.md':
+        raise ValueError('Invalid batch guideline snapshot path')
+    return Path(directory)/manifest['guideline_snapshot']
 
 
 def eligible(source, guard):
@@ -140,6 +160,7 @@ def prepare(source=SOURCE, directory=DEFAULT):
         near_duplicate_rule='Existing fingerprint trigrams, normalized text length >=40, Jaccard >=0.9; exact normalized text always checked',
         warning='160 random + 40 hard (20%); cues are not labels. No population sentiment estimates from purposeful hard cohort.')
     with staged(directory) as work:
+        manifest.update(snapshot_guideline(work, directory, contract))
         save(work/'sampling_manifest.json', manifest)
         (work/'sampling_manifest.sha256').write_text(sha(work/'sampling_manifest.json')+'\n', encoding='ascii')
         save(work/'workbook_input.local.json', [dict(comment_id=r['comment_id'], text_clean=r['text_clean']) for r in selected])
@@ -159,13 +180,133 @@ sampling_manifest.json khóa seed, nguồn, text SHA, cohort và exposure. Pilot
     return {k: manifest[k] for k in ('status','eligible_records','selected','counts','exclusions')}
 
 
+def select_round(pool, total=1000, cap=30, batch_size=200):
+    """Seeded random within posts; census small-source strata up to post cap.
+
+    Remaining slots use round-robin posts, not sentiment cues or random Facebook
+    population sampling. Batches are balanced across posts, each exactly 200.
+    """
+    if total % batch_size:raise ValueError('Round size must divide into full batches')
+    rng=random.Random(SEED);bins=defaultdict(list)
+    for r in sorted(pool,key=lambda r:r['comment_id']):bins[r['post_id']].append(r)
+    small={'KhenPhim','Cuồng Phim','XEM PHIM & BÌNH PHIM'}
+    for records in bins.values():rng.shuffle(records)
+    chosen=[];counts=Counter();small_counts=Counter()
+    for pid in sorted(bins):
+        records=bins[pid]
+        if len({r['source_name'] for r in records})!=1:raise ValueError('Conflicting source metadata within post')
+        if records[0]['source_name'] in small:
+            take=min(cap,len(records));chosen.extend(records[:take]);counts[pid]+=take
+            small_counts[records[0]['source_name']]+=take;bins[pid]=records[take:]
+    if len(chosen)>total:raise ValueError('Small-source census exceeds requested sample; no silent truncation')
+    post_order=sorted(bins);rng.shuffle(post_order)
+    while len(chosen)<total:
+        progress=False
+        for pid in post_order:
+            if bins[pid] and counts[pid]<cap:
+                chosen.append(bins[pid].pop());counts[pid]+=1;progress=True
+                if len(chosen)==total:break
+        if not progress:raise ValueError('Insufficient post-capped unique pool; no quota relaxation')
+    groups=[[] for _ in range(total//batch_size)];per_post=[Counter() for _ in groups]
+    grouped=defaultdict(list)
+    for r in chosen:grouped[r['post_id']].append(r)
+    order=sorted(grouped);rng.shuffle(order)
+    for pid in order:
+        rng.shuffle(grouped[pid])
+        for r in grouped[pid]:
+            ties=list(range(len(groups)));rng.shuffle(ties)
+            b=min((i for i in ties if len(groups[i])<batch_size),key=lambda i:(per_post[i][pid],len(groups[i])))
+            groups[b].append(r);per_post[b][pid]+=1
+    for group in groups:rng.shuffle(group)
+    return groups,dict(small_counts)
+
+
+def prepare_round(sources, directory, exclude_pilot):
+    directory=Path(directory).resolve();sources=[Path(v).resolve() for v in sources]
+    if len(sources)!=4 or len(set(sources))!=4:raise ValueError('Exactly four distinct V2 exports required')
+    prior=Path(exclude_pilot).resolve();old=verify_manifest(prior)
+    prior_ids={r['comment_id'] for r in old['selected_rows']};prior_posts={r['post_id'] for r in old['selected_rows']}
+    contract=guideline_contract();inputs=[];raw=[];checks={}
+    for path in sources:
+        h=sha(path)
+        with path.open(encoding='utf-8-sig',newline='') as f:rows=list(csv.DictReader(f))
+        raw.extend(rows);inputs.append(dict(path=str(path),sha256=h,records=len(rows)));checks[str(path)]=h
+    if len({r['comment_id'] for r in raw})!=len(raw):raise ValueError('Duplicate IDs across exports')
+    guard=protection([],sources[0].parent,ROOT);checks.update(guard['checksums'])
+    for name in ('sampling_manifest.json','sampling_manifest.sha256'):checks[str(prior/name)]=sha(prior/name)
+    prior_rows=[]
+    with Path(old['source_file']).open(encoding='utf-8-sig',newline='') as f:
+        prior_rows=[r for r in csv.DictReader(f) if r['comment_id'] in prior_ids]
+    prior_texts={normal(r['text_clean']) for r in prior_rows}
+    prior_near=reference_index([fingerprints(r['text_clean']) for r in prior_rows])
+    pool=[];excluded=[];reserved=Counter();seen=set();near={'sets':[],'postings':defaultdict(set)}
+    for r in sorted(raw,key=lambda r:r['comment_id']):
+        view=dict(record_id=r['comment_id'],comment_id=r['comment_id'],post_id=r['post_id'],text_raw=r['text_raw'],text_minimal=r['text_clean'],text_annotation_view=r['text_clean'])
+        protected=guard_reason(view,guard)
+        if protected:reserved[protected]+=1
+        reason=None
+        if r['clean_status']!='KEEP':reason='CLEAN_STATUS_NOT_KEEP'
+        elif r['comment_id'] in prior_ids:reason='PILOT_ID'
+        elif r['post_id'] in prior_posts:reason='PILOT_POST'
+        elif protected:reason=protected
+        elif not r['post_id'] or not r['source_name'] or not r['text_clean'].strip():reason='MISSING_IDENTITY_OR_TEXT'
+        elif normal(r['text_clean']) in prior_texts:reason='EXACT_PILOT_TEXT'
+        elif near_any(r['text_clean'],prior_near):reason='NEAR_PILOT_TEXT'
+        elif normal(r['text_clean']) in seen:reason='EXACT_WITHIN_ROUND'
+        elif near_any(r['text_clean'],near):reason='NEAR_WITHIN_ROUND'
+        if reason:excluded.append(dict(comment_id=r['comment_id'],reason=reason));continue
+        pool.append(r);seen.add(normal(r['text_clean']));fp=fingerprints(r['text_clean'])
+        if fp:
+            i=len(near['sets']);near['sets'].append(fp)
+            for token in fp:near['postings'][token].add(i)
+    groups,small=select_round(pool)
+    all_selected=[r for group in groups for r in group]
+    assert_allowed([{**r,'platform':'facebook','text_view':r['text_clean']} for r in all_selected],'active_learning')
+    if any(sha(path)!=h for path,h in checks.items()):raise ValueError('Protected/source inputs changed')
+    def counts(records):
+        return dict(source=dict(Counter(r['source_name'] for r in records)),
+                    post=dict(Counter(r['post_id'] for r in records)),movie=dict(Counter(r['movie_id'] for r in records)))
+    meta=dict(seed=SEED,total=1000,batch_size=200,batches=5,post_cap=30,source_files=inputs,
+              eligible=len(pool),input_records=len(raw),prior_pilot_manifest_sha256=sha(prior/'sampling_manifest.json'),
+              prior_pilot_ids=len(prior_ids),prior_pilot_posts=len(prior_posts),reserved_guard_all_records=dict(reserved),
+              exclusions=dict(Counter(r['reason'] for r in excluded)),small_source_selected=small,
+              batches_counts={str(i+1):counts(g) for i,g in enumerate(groups)},
+              sampling='Seeded random within posts; small-source census capped at 30/post; round-robin other posts; no sentiment cues',
+              selected_rows=[dict(comment_id=r['comment_id'],text_sha256=digest(r['text_clean']),post_id=r['post_id'],movie_id=r['movie_id'],source=r['source_name'],batch=i+1) for i,g in enumerate(groups) for r in g])
+    with staged(directory) as work:
+        meta.update(snapshot_guideline(work,directory,contract))
+        save(work/'selection_manifest.json',meta)
+        write_csv(work/'selection.local.csv',[dict(batch=i+1,**r) for i,g in enumerate(groups) for r in g],['batch',*raw[0]])
+        write_csv(work/'exclusions.local.csv',excluded,['comment_id','reason'])
+        batch=work/'batch_01';batch.mkdir();final=directory/'batch_01'
+        # Batch snapshot copied from this sealed round, never reread the official file.
+        batch_contract=snapshot_guideline(batch,final,{**contract,'guideline_file':str(work/'guideline_snapshot.md')})
+        batch_contract['guideline_source']=contract['guideline_file']
+        selected=groups[0]
+        manifest=dict(**batch_contract,batch_number=1,selected=200,seed=SEED,source_files=inputs,
+            protected_checksums=checks,selected_rows=[dict(comment_id=r['comment_id'],text_sha256=digest(r['text_clean']),post_id=r['post_id'],movie_id=r['movie_id'],source=r['source_name'],record_type=r['record_type']) for r in selected],
+            exposure=dict(purpose='official_development_annotation_not_gold',post_ids=sorted({r['post_id'] for r in all_selected}),comment_ids=sorted(r['comment_id'] for r in all_selected)),
+            counts=counts(selected),round_manifest_sha256=sha(work/'selection_manifest.json'),
+            note='Only batch 1 prepared; batches 2-5 are sealed selections, no workbooks or labels yet')
+        save(batch/'sampling_manifest.json',manifest)
+        (batch/'sampling_manifest.sha256').write_text(sha(batch/'sampling_manifest.json')+'\n',encoding='ascii')
+        save(batch/'workbook_input.local.json',[dict(comment_id=r['comment_id'],text_clean=r['text_clean']) for r in selected])
+        (work/'README.md').write_text('# Official annotation round\n\nOnly batch_01 prepared. Selection: 1000 in five disjoint sets of 200. No sentiment labels or training. All comment payloads local.\n',encoding='utf8')
+    return dict(total=1000,eligible=len(pool),batch_1=counts(groups[0]),small_source_selected=small,guard=dict(reserved),output=str(directory))
+
+
 def verify_manifest(directory):
     directory = Path(directory)
     if sha(directory/'sampling_manifest.json') != (directory/'sampling_manifest.sha256').read_text(encoding='ascii').strip():
         raise ValueError('Sampling manifest checksum changed')
     m = load(Path(directory)/'sampling_manifest.json')
-    for key, h in [('source_file','source_sha256'), ('guideline_file','guideline_sha256')]:
-        if sha(m[key]) != m[h]: raise ValueError('Pinned source/guideline changed')
+    if m.get('round_manifest_sha256') and sha(Path(directory).parent/'selection_manifest.json')!=m['round_manifest_sha256']:
+        raise ValueError('Round selection manifest changed')
+    if sha(batch_guideline(directory,m)) != m['guideline_sha256']:
+        raise ValueError('Pinned guideline snapshot changed')
+    sources=m.get('source_files') or [dict(path=m['source_file'],sha256=m['source_sha256'])]
+    for entry in sources:
+        if sha(entry['path']) != entry['sha256']:raise ValueError('Pinned source changed')
     for p,h in m['protected_checksums'].items():
         if sha(p) != h: raise ValueError('Protected input changed')
     rows = m['selected_rows']
@@ -173,9 +314,12 @@ def verify_manifest(directory):
         raise ValueError('Invalid manifest ID coverage')
     expected = {r['comment_id']: r for r in rows}
     source = {}
-    with Path(m['source_file']).open(encoding='utf-8-sig', newline='') as f:
-        for r in csv.DictReader(f):
-            if r.get('comment_id') in expected: source[r['comment_id']] = r
+    for entry in sources:
+        with Path(entry['path']).open(encoding='utf-8-sig', newline='') as f:
+            for r in csv.DictReader(f):
+                if r.get('comment_id') in expected:
+                    if r['comment_id'] in source:raise ValueError('Selected ID repeats across source exports')
+                    source[r['comment_id']] = r
     if set(source) != set(expected) or any(digest(source[k]['text_clean']) != v['text_sha256'] for k,v in expected.items()):
         raise ValueError('Manifest text does not match pinned source')
     return m

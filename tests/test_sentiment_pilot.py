@@ -148,6 +148,55 @@ class SentimentPilotTests(unittest.TestCase):
                 self.assertEqual(g.resolve_guideline(outside),outside)
                 with self.assertRaises(FileNotFoundError):sha(outside)
 
+    def test_round_post_caps_small_source_census_and_disjoint_reproducible_batches(self):
+        rows=fixture()+[{**r,'comment_id':'extra'+r['comment_id'],'post_id':'extra'+r['post_id']} for r in fixture()]
+        for i,r in enumerate(rows):
+            r['source_name']='KhenPhim' if i<30 else 'major'
+        rows=rows[20:]  # Ten small-source rows: retain the full below-cap stratum.
+        before=copy.deepcopy(rows)
+        groups,small=p.select_round(rows)
+        again,_=p.select_round(rows[::-1])
+        self.assertEqual(groups,again);self.assertEqual(rows,before)
+        flat=[r for g in groups for r in g]
+        self.assertEqual([len(g) for g in groups],[200]*5)
+        self.assertEqual(len({r['comment_id'] for r in flat}),1000)
+        from collections import Counter
+        self.assertLessEqual(max(Counter(r['post_id'] for r in flat).values()),30)
+        self.assertEqual(small,{'KhenPhim':10})
+        self.assertTrue({r['comment_id'] for r in rows[:10]} <= {r['comment_id'] for r in flat})
+        with self.assertRaises(ValueError):p.select_round(rows[:60])
+
+    def test_prepare_round_excludes_pilot_posts_reserved_and_duplicates_with_snapshot(self):
+        from collections import Counter
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);official=root/'SENTIMENT_GUIDELINE.md';official.write_bytes(b'Approved fixture rules')
+            rows=[dict(comment_id=str(i),post_id=str(i//30),source_name='KhenPhim' if i>=1710 else 'major',
+                movie_id='movie'+str(i//90),text_raw='Unique fixture text '+str(i),text_clean='Unique fixture text '+str(i),
+                clean_status='KEEP',record_type='comment') for i in range(1800)]
+            rows[450]['text_clean']=rows[451]['text_clean'];rows[500]['clean_status']='REVIEW'
+            sources=[]
+            for i in range(4):
+                path=root/f'source_{i}.csv';sources.append(path)
+                with path.open('w',encoding='utf8',newline='') as f:
+                    w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows[i*450:(i+1)*450])
+            prior=root/'prior';prior.mkdir()
+            for name in ('sampling_manifest.json','sampling_manifest.sha256'):(prior/name).write_text('fixture',encoding='utf8')
+            old=dict(selected_rows=rows[:200],source_file=str(sources[0]))
+            guard=empty_guard();guard['text_hashes']={digest(p.normal(rows[501]['text_clean']))}
+            with patch.object(p.guidelines,'GUIDELINE',official),patch.object(p,'verify_manifest',return_value=old),patch.object(p,'protection',return_value=guard),patch.object(p,'assert_allowed'):
+                p.prepare_round(sources,root/'round',prior)
+            m=p.verify_manifest(root/'round/batch_01')
+            plan=json.loads((root/'round/selection_manifest.json').read_text(encoding='utf8'))
+            self.assertEqual(plan['total'],1000);self.assertEqual(plan['reserved_guard_all_records']['EXACT_RESERVED_TEXT'],1)
+            self.assertEqual(plan['exclusions']['EXACT_WITHIN_ROUND'],1)
+            self.assertFalse({r['post_id'] for r in rows[:200]} & {r['post_id'] for r in plan['selected_rows']})
+            self.assertNotIn('501',{r['comment_id'] for r in plan['selected_rows']})
+            self.assertLessEqual(max(Counter(r['post_id'] for r in plan['selected_rows']).values()),30)
+            self.assertEqual(m['selected'],200)
+            original_sha=m['guideline_sha256'];official.write_bytes(b'Changed next round rules')
+            self.assertEqual(p.verify_manifest(root/'round/batch_01')['guideline_sha256'],original_sha)
+            self.assertFalse(list((root/'round').glob('batch_02*')))
+
     def test_determinism_cohorts_and_no_labels(self):
         rows=fixture(); original=copy.deepcopy(rows)
         a,strata=p.select(rows); b,_=p.select(rows[::-1])
@@ -221,6 +270,8 @@ class SentimentPilotTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);source=root/'source.csv';directory=root/'pilot'
             rows=fixture()
+            official=root/'SENTIMENT_GUIDELINE.md';official.write_bytes(b'Synthetic official rules before prepare\n')
+            self.enterContext(patch.object(p.guidelines,'GUIDELINE',official))
             with source.open('w',encoding='utf8',newline='') as f:
                 w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
             before=source.read_bytes()
@@ -228,8 +279,15 @@ class SentimentPilotTests(unittest.TestCase):
                 result=p.prepare(source,directory)
             self.assertEqual(result['selected'],200);self.assertEqual(source.read_bytes(),before)
             m=p.verify_manifest(directory);original_manifest=(directory/'sampling_manifest.json').read_bytes()
-            self.assertEqual(m['guideline_file'],str(p.guidelines.GUIDELINE))
-            self.assertEqual(m['guideline_sha256'],sha(p.guidelines.GUIDELINE))
+            self.assertEqual(m['guideline_file'],str(directory/'guideline_snapshot.md'))
+            self.assertEqual(m['guideline_sha256'],sha(official))
+            snapshot=(directory/'guideline_snapshot.md').read_bytes()
+            official.write_bytes(b'Changed official rules AFTER prepare\n')
+            self.assertEqual(p.verify_manifest(directory)['guideline_sha256'],digest(snapshot))
+            (directory/'guideline_snapshot.md').write_bytes(snapshot+b'tamper')
+            with self.assertRaisesRegex(ValueError,'snapshot'):p.verify_manifest(directory)
+            (directory/'guideline_snapshot.md').write_bytes(snapshot)
+            official.unlink()  # compare and import below must not read the official file.
             self.assertNotIn('guideline_version',m)
             input_rows=json.loads((directory/'workbook_input.local.json').read_text(encoding='utf8'))
             for person in ('A','B'):

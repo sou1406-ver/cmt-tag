@@ -11,7 +11,8 @@ const rows=JSON.parse(await fs.readFile(path.join(directory,'workbook_input.loca
 const manifest=JSON.parse(await fs.readFile(path.join(directory,'sampling_manifest.json'),'utf8'));
 const hash=text=>createHash('sha256').update(text).digest('hex');
 if(hash(await fs.readFile(path.join(directory,'sampling_manifest.json')))!==(await fs.readFile(path.join(directory,'sampling_manifest.sha256'),'utf8')).trim())throw Error('Manifest checksum changed');
-let guidelinePath=manifest.guideline_file;
+if(manifest.guideline_snapshot && manifest.guideline_snapshot!=='guideline_snapshot.md')throw Error('Invalid snapshot path');
+let guidelinePath=manifest.guideline_snapshot?path.join(directory,manifest.guideline_snapshot):manifest.guideline_file;
 try {await fs.access(guidelinePath);} catch(error) {
   if(error.code!=='ENOENT')throw error;
   const expectedDirectory=path.resolve('docs/guidelines');
@@ -25,7 +26,7 @@ const names=['A','B'].map(a=>path.join(directory,`pilot_sentiment_annotator_${a}
 for(const name of names) {try {await fs.access(name);throw Error('Refusing to overwrite workbook: '+name);} catch(e) {if(e.code!=='ENOENT')throw e;}}
 const literal=v=>v.startsWith('=')?"'"+v:v;
 for(const [index,annotator] of ['A','B'].entries()) {
-  const wb=Workbook.create(); const s=wb.worksheets.add('Gán nhãn'); const guide=wb.worksheets.add('Hướng dẫn');
+  const wb=Workbook.create(); const guide=wb.worksheets.add('Hướng dẫn'); const s=wb.worksheets.add('Gán nhãn');
   s.showGridLines=false;
   const fields=['comment_id','text_clean','sentiment_label','note','annotator_id','cleaning_issue'];
   s.getRange('A1:F201').format.font={name:'Arial',size:11};
@@ -49,19 +50,19 @@ for(const [index,annotator] of ['A','B'].entries()) {
   }
   s.freezePanes.freezeRows(1);s.freezePanes.freezeColumns(2);s.tables.add('A1:F201',true,'SentimentInput');
   const instructions=[
-    `PILOT — NGƯỜI GÁN ${annotator} — ${approved?'READY / APPROVED_FOR_PILOT':'DRAFT — CHỜ XÁC MINH GUIDELINE'}`,
+    `${manifest.batch_number?'BATCH '+manifest.batch_number:'PILOT'} — NGƯỜI GÁN ${annotator} — ${approved?'READY / APPROVED_FOR_PILOT':'DRAFT — CHỜ XÁC MINH GUIDELINE'} — SHA256 ${manifest.guideline_sha256}`,
     'Chỉ đọc text_clean của chính bình luận. Không đọc bài viết/comment cha; không xem nhãn của người còn lại.',
     'Cột C: POS / NEG / NEU / REVIEW / EXCLUDE. Nhãn để trống; không có dự đoán hoặc gợi ý.',
     'Cột D: note bắt buộc nếu REVIEW. Viết ngắn: thiếu ngữ cảnh / không hiểu tiếng lóng / hỗn hợp chưa rõ chiều.',
     'Cột F: báo lỗi cleaning nếu có. Không sửa ID, text_clean hoặc annotator_id. Không cần confidence.',
     'Đồng tình thuần túy → NEU; không hiểu câu → REVIEW, không đoán ngữ cảnh. Cảm xúc có thể hướng đến đối tượng bất kỳ.',
-    'Nguồn: run Facebook fb_54e6c18b6c514f9ab822354611ab3316; coordinator và seed nằm trong sampling_manifest.json local.',
+    'Không dùng AI quyết định nhãn hay viết note',
     approved?`Guideline chính thức: ${manifest.guideline_file}; SHA256 ${manifest.guideline_sha256}`:`Guideline chưa duyệt: ${manifest.guideline_file}. Cần xác minh bản chính thức trước khi giao gán.`,
     'Câu dài: xem thêm tab Đọc dài nếu có, gán nhãn một lần ở Gán nhãn. Giữ nguyên toàn bộ text.',
   ];
   guide.showGridLines=false;guide.getRange('A:A').format.columnWidth=145;
   guide.getRange('A1:A9').values=instructions.map(t=>[t]);guide.getRange('A1:A9').format={font:{name:'Arial',size:12},wrapText:true,rowHeight:50,verticalAlignment:'top'};
-  guide.getRange('A1').format.fill='#FFF2CC';guide.getRange('A1').format.font.bold=true;
+  guide.getRange('A1').format.fill='#FFF2CC';guide.getRange('A1').format.font.bold=true;guide.getRange('A1').format.rowHeight=90;
   if(longParts.length) {
     const l=wb.worksheets.add('Đọc dài');l.showGridLines=false;
     l.getRange(`A1:C${longParts.length+1}`).values=[['comment_id','Phần','text_clean — chỉ đọc, gán ở tab Gán nhãn'],...longParts];

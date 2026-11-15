@@ -173,20 +173,22 @@ không đăng corpus hoặc workbook.
 
 Chỉ đọc `text_clean` theo [guideline chính thức](docs/guidelines/SENTIMENT_GUIDELINE.md).
 Đường dẫn được khai báo một lần tại `src/annotation/guidelines.py:GUIDELINE`.
-Prepare ghi SHA256 tại thời điểm giao; compare/import kiểm SHA đã pin, không tự
-thay bằng bản mới. Chỉ đổi guideline giữa các lượt và cập nhật changelog.
+Prepare chép nguyên byte thành `guideline_snapshot.md` trong batch và ghi SHA256
+của bản chép vào manifest. Compare/import kiểm snapshot, không đọc lại file chính thức.
+Đổi file chính thức cho lượt sau không làm mất khả năng kiểm lượt đã giao. Chỉ đổi guideline giữa các lượt và cập nhật changelog.
 Không chạy prepare vào thư mục có dữ liệu. Tên output mới không chứa phiên bản guideline.
 
 ```powershell
-python -m src.annotation sentiment-pilot prepare --directory outputs/sentiment_pilot
+# Thay PATH_TO_PREVIOUS_PILOT và bốn đường dẫn export; dùng thư mục lượt mới.
+python -m src.annotation sentiment-pilot prepare --directory outputs/annotation_round_NEW --exclude-pilot PATH_TO_PREVIOUS_PILOT --sources EXPORT_1.csv EXPORT_2.csv EXPORT_3.csv EXPORT_4.csv
 # Xuất Excel: Node bundled + @oai/artifact-tool, không cần API.
-node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot
+node scripts/export_sentiment_pilot.mjs outputs/annotation_round_NEW/batch_01
 # Sau khi hai người điền xong (không chạy trên file trống):
-python -m src.annotation sentiment-pilot compare --directory outputs/sentiment_pilot --agreement-audit-count 20
+python -m src.annotation sentiment-pilot compare --directory outputs/annotation_round_NEW/batch_01 --agreement-audit-count 20
 # Excel đối soát cho người dùng, sau khi compare thành công:
-node scripts/export_sentiment_pilot.mjs outputs/sentiment_pilot/comparison --adjudication
+node scripts/export_sentiment_pilot.mjs outputs/annotation_round_NEW/batch_01/comparison --adjudication
 # Sau khi người kiểm duyệt điền final_label / adjudication_note:
-python -m src.annotation sentiment-pilot adjudicate --directory outputs/sentiment_pilot --decisions outputs/sentiment_pilot/comparison/adjudication.xlsx --adjudicator user
+python -m src.annotation sentiment-pilot adjudicate --directory outputs/annotation_round_NEW/batch_01 --decisions outputs/annotation_round_NEW/batch_01/comparison/adjudication.xlsx --adjudicator user
 ```
 
 Lệnh export dùng runtime `@oai/artifact-tool` bundled của Codex, không phải npm deps
@@ -259,3 +261,31 @@ Chạy lại bằng `python scripts/sample_audit.py inventory --output outputs/v
 - [Pilot bản PROPOSED](docs/SENTIMENT_PILOT_RESULTS.md): manifest pin SHA `f079ce7b5ecedd6242d99808ee0b010b28ea6f8b8afc4ba01f7cf86552d08433`, chưa duyệt; B ghi DRAFT. Có 200 quyết định, 178 nhãn sentiment sau đối soát. Kappa là kết quả trước đối soát của lượt bản đề xuất, không phải kết quả bản V3.1 chính thức hay quy tắc mới.
 - Kết quả local đã chốt giữ nguyên ở `outputs/sentiment_pilot_v3_1/comparison_received_20261115/adjudicated/`. Tên và manifest cũ không đổi.
 - Manifest có đường dẫn guideline cũ được tra sang `history/` rồi kiểm đúng SHA; không tự thay bằng guideline chính thức mới. Luồng V1 giữ tham chiếu lịch sử riêng để tái lập, không dùng làm mặc định cho lượt cảm xúc chung mới.
+
+## Snapshot và chuẩn bị lượt gán chính thức
+
+Trước khi sửa guideline chính thức, chạy đoạn dưới để lưu đúng byte hiện tại vào
+history; sau đó thêm dòng changelog mô tả thay đổi và lượt áp dụng. Nếu tên SHA8
+đã có, phải kiểm SHA đầy đủ, không ghi đè một file khác nội dung.
+
+```powershell
+$guidePath = 'docs/guidelines/SENTIMENT_GUIDELINE.md'
+$guideHash = (Get-FileHash -LiteralPath $guidePath -Algorithm SHA256).Hash.ToLowerInvariant()
+$archivePath = 'docs/guidelines/history/SENTIMENT_GUIDELINE_' + $guideHash.Substring(0,8) + '.md'
+if (Test-Path -LiteralPath $archivePath) {
+    if ((Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $guideHash) { throw 'Archive SHA collision' }
+} else { Copy-Item -LiteralPath $guidePath -Destination $archivePath }
+# Sau đó sửa guideline và thêm dòng docs/guidelines/GUIDELINE_CHANGELOG.md.
+```
+
+CLI hiện có hỗ trợ `sentiment-pilot prepare --sources` với đúng bốn export,
+`--exclude-pilot` trỏ pilot cũ và `--directory` là thư mục lượt mới. Nó chọn
+1.000 KEEP, cap 30/post, ưu tiên census nguồn nhỏ trong cap; loại post/ID pilot,
+test/reserved và exact/near duplicates. Seed cố định, không chọn theo sentiment.
+Chỉ batch 1 được prepare; các phần 2–5 giữ trong selection manifest, chưa giao.
+
+Batch 1 đã giao tại `outputs/annotation_round_01/batch_01/`: A/B cùng 200 ID,
+nhãn và note trống; snapshot guideline gửi kèm. Trang đầu ghi SHA và
+**Không dùng AI quyết định nhãn hay viết note**. Phân bố theo nguồn/post/movie
+nằm trong `outputs/annotation_round_01/README.md`; có 61 post, 49 movie_id.
+Không dùng lại manifest pilot lịch sử hoặc gộp nhãn cũ vào lượt này.

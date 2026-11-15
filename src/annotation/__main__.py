@@ -46,8 +46,11 @@ def main():
     human=s.add_parser('sentiment-pilot',help='Text-only two-human development pilot; no canonical or Gold writes')
     hs=human.add_subparsers(dest='sentiment_command',required=True)
     for command in ('prepare','compare','adjudicate'):
-        q=hs.add_parser(command); q.add_argument('--directory',type=Path,default=Path('outputs/sentiment_pilot_v3_1'))
-        if command=='prepare': q.add_argument('--source',type=Path,default=Path('data/imports/fb_54e6c18b6c514f9ab822354611ab3316/comments.csv'))
+        q=hs.add_parser(command); q.add_argument('--directory',type=Path,default=Path('outputs/sentiment_pilot'))
+        if command=='prepare':
+            q.add_argument('--source',type=Path,default=Path('data/imports/fb_54e6c18b6c514f9ab822354611ab3316/comments.csv'))
+            q.add_argument('--sources',type=Path,nargs=4,help='Four V2 exports: seal 1000, prepare batch 1 only')
+            q.add_argument('--exclude-pilot',type=Path,help='Existing pilot directory to exclude by ID and post')
         else:
             q.add_argument('--output',type=Path)
             if command=='compare':q.add_argument('--agreement-audit-count',type=int,default=20)
@@ -71,7 +74,11 @@ def main():
     try:
         if args.cmd=='sentiment-pilot':
             from . import sentiment_pilot
-            if args.sentiment_command=='prepare':result=sentiment_pilot.prepare(args.source,args.directory)
+            if args.sentiment_command=='prepare':
+                if args.sources:
+                    if not args.exclude_pilot:raise ValueError('--exclude-pilot required with --sources')
+                    result=sentiment_pilot.prepare_round(args.sources,args.directory,args.exclude_pilot)
+                else:result=sentiment_pilot.prepare(args.source,args.directory)
             elif args.sentiment_command=='compare':result=sentiment_pilot.compare(args.directory,args.output,args.agreement_audit_count)
             else:result=sentiment_pilot.import_adjudication(args.directory,args.comparison or args.directory/'comparison',args.decisions,args.output,args.adjudicator)
         elif args.cmd=='pilot':

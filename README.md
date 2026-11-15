@@ -238,3 +238,5 @@ git push origin main
 
 [Báo cáo 12.795 bình luận](docs/V2_CRAWL_PRELIMINARY_AUDIT.md): thống kê kỹ thuật, nguồn, metadata và duplicate; chưa phải đánh giá sentiment.
 Chạy lại bằng `python scripts/sample_audit.py inventory --output outputs/v2_audit_verify` trên bốn export gốc được ghi SHA trong báo cáo. Output chi tiết chứa ID chỉ lưu local; chọn thư mục output mới mỗi lần chạy.
+
+- [V3.1 pilot: A/B agreement and user adjudication](docs/SENTIMENT_PILOT_RESULTS.md) — aggregate results only; 200 decisions, 178 sentiment labels, no training or Gold activation.

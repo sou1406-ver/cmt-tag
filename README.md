@@ -17,8 +17,8 @@ trạng thái xử lý, không phải hai lớp sentiment bổ sung.
 - V1 xét thái độ đối với phim theo guideline V2.0/V2.1. Nhãn người, AI, model và Gold V1 chỉ giữ làm lịch sử, **không gộp hoặc đổi tên thành nhãn cảm xúc chung V2**. Muốn dùng lại phải gán lại theo định nghĩa mới và kiểm tra leakage.
 - Gold V1 đã đánh giá một lần; không dùng để chọn preprocessing hoặc tune model V2. Chưa có independent Gold V2.
 - Pilot lịch sử đã đối soát 200 quyết định, có 178 nhãn sentiment. Nhãn thuộc về SHA đã giao, chưa tự chuyển sang quy tắc mới; xem phần lịch sử bên dưới.
-- Thiết kế là hai annotator A/B và người dùng adjudicator. Nguồn gán/AI hỗ trợ của hai workbook đã nhận chưa được xác minh; không khẳng định độ độc lập của lượt đó.
-- Không gọi API gán nhãn tự động trong workflow đang chạy. Guideline yêu cầu người gán không dùng AI quyết định nhãn hoặc viết note. Không cần cài Transformer để crawl.
+- Quy trình đang áp dụng: [AI gán trên web + người dùng duyệt](docs/annotation/QUY_TRINH_GAN_NHAN.md). Kế hoạch năm batch người gán đã thay thế; không giao thêm cho A/B.
+- ChatGPT, Claude và Gemini chỉ chạy trên web do người dùng thao tác; không gọi API. Chưa thực hiện bước nào của quy trình mới; không cần cài Transformer để crawl.
 
 ## Cài đặt
 
@@ -169,67 +169,26 @@ Audit relevance đã dừng ở **107/300** theo trao đổi với người dùn
 193 câu. [Tóm tắt để review](docs/SEMANTIC_AUDIT_SUMMARY.md) chỉ có thống kê,
 không đăng corpus hoặc workbook.
 
-### Pilot sentiment text-only (200 câu, hai người)
+### Gán nhãn: quy trình đang áp dụng
 
-Chỉ đọc `text_clean` theo [guideline chính thức](docs/guidelines/SENTIMENT_GUIDELINE.md).
-Đường dẫn được khai báo một lần tại `src/annotation/guidelines.py:GUIDELINE`.
-Prepare chép nguyên byte thành `guideline_snapshot.md` trong batch và ghi SHA256
-của bản chép vào manifest. Compare/import kiểm snapshot, không đọc lại file chính thức.
-Đổi file chính thức cho lượt sau không làm mất khả năng kiểm lượt đã giao. Chỉ đổi guideline giữa các lượt và cập nhật changelog.
-Không chạy prepare vào thư mục có dữ liệu. Tên output mới không chứa phiên bản guideline.
+Chỉ dùng [QUY_TRINH_GAN_NHAN.md](docs/annotation/QUY_TRINH_GAN_NHAN.md),
+[guideline chính thức](docs/guidelines/SENTIMENT_GUIDELINE.md) và
+[changelog](docs/guidelines/GUIDELINE_CHANGELOG.md). Không tự thêm bước hoặc đổi thứ tự.
+Quy trình mới dùng lại **selection 1.000 ID** trong `outputs/annotation_round_01/`;
+chưa chia E/C/T/U, chưa xuất workbook/chunk mới, chưa gán AI hoặc train.
+Prompt `docs/annotation/AI_LABEL_PROMPT.md` chưa được người dùng cung cấp;
+không tạo prompt thay người dùng, chưa pin SHA prompt.
 
-```powershell
-# Thay PATH_TO_PREVIOUS_PILOT và bốn đường dẫn export; dùng thư mục lượt mới.
-python -m src.annotation sentiment-pilot prepare --directory outputs/annotation_round_NEW --exclude-pilot PATH_TO_PREVIOUS_PILOT --sources EXPORT_1.csv EXPORT_2.csv EXPORT_3.csv EXPORT_4.csv
-# Xuất Excel: Node bundled + @oai/artifact-tool, không cần API.
-node scripts/export_sentiment_pilot.mjs outputs/annotation_round_NEW/batch_01
-# Sau khi hai người điền xong (không chạy trên file trống):
-python -m src.annotation sentiment-pilot compare --directory outputs/annotation_round_NEW/batch_01 --agreement-audit-count 20
-# Excel đối soát cho người dùng, sau khi compare thành công:
-node scripts/export_sentiment_pilot.mjs outputs/annotation_round_NEW/batch_01/comparison --adjudication
-# Sau khi người kiểm duyệt điền final_label / adjudication_note:
-python -m src.annotation sentiment-pilot adjudicate --directory outputs/annotation_round_NEW/batch_01 --decisions outputs/annotation_round_NEW/batch_01/comparison/adjudication.xlsx --adjudicator user
-```
+**Kế hoạch năm batch A/B đã thay thế. Batch 1 đã prepare, không giao**; workbook
+cũ không dùng tiếp và không giao thêm batch cho annotator A/B. Selection, manifest,
+snapshot và nhãn pilot lịch sử giữ nguyên. Các CLI `sentiment-pilot` hiện có phục vụ
+tái lập và kiểm tra luồng cũ, chưa phải implementation đầy đủ của quy trình mới;
+không chạy prepare/compare/import chỉ vì thấy các lệnh đó còn trong code.
 
-Lệnh export dùng runtime `@oai/artifact-tool` bundled của Codex, không phải npm deps
-của crawler. Nếu chưa có module resolution, tạo junction tạm `scripts/node_modules`
-tới `node_modules` do `load_workspace_dependencies` trả về rồi gỡ riêng link sau khi xuất;
-không cài thêm thư viện vào venv và không xóa runtime đích. Python prepare/compare không cần Node.
-Prepare từ chối ghi đè thư mục; export từ chối ghi đè Excel; compare xuất thư mục
-`comparison/` mới. Có thể chỉ định `compare --output outputs/PILOT_COMPARISON_NEW` khi cần chạy lại.
-
-Hai file `pilot_sentiment_annotator_A.xlsx` / `pilot_sentiment_annotator_B.xlsx`
-ở output local: cùng 200 ID/thứ tự, **160 random + 40 hard (20%)**, không có nhãn
-điền sẵn hoặc confidence bắt buộc. REVIEW cần note ngắn; báo lỗi ở `cleaning_issue`,
-không sửa text. Manifest khóa nguồn/text SHA và đánh dấu post/ID đã exposure cho
-development, không được dùng làm independent test tương lai. Bộ lọc reservation,
-exact/near duplicate dùng guard hiện có; không đổi Gold hoặc split cũ.
-Compare giữ nhãn A/B riêng, xuất Kappa chính 5 nhãn và Kappa phụ trên các cặp
-POS/NEG/NEU kèm n/tỷ lệ giữ lại, ma trận 5×5, câu lệch và adjudication chưa điền.
-Kappa suy biến trả null kèm lý do, không thay bằng 0/1. Kết quả lượt đã nhận được công bố riêng, không thay bằng kết quả sau đối soát.
-
-**Thiết kế yêu cầu hai annotator độc lập A/B; người dùng là adjudicator**, được xem cả
-nhãn/ghi chú A/B sau khi hai người gán xong, không phải người gán độc lập thứ ba.
-Kappa luôn tính trên nhãn A/B gốc trước đối soát, không từ `final_label`.
-`adjudication.local.csv` / Excel có đúng các cột `comment_id, text_clean, label_A,
-label_B, note_A, note_B, final_label, adjudication_note`. Toàn bộ bất đồng được
-đưa lên đầu và tô cam trong Excel; thêm mặc định tối đa 20 câu đồng thuận chọn
-ngẫu nhiên bằng seed cố định để kiểm tra chất lượng (tô xanh). Có thể chỉnh số
-câu đồng thuận qua `--agreement-audit-count`, không đổi mẫu pilot 200 câu.
-`final_label` để trống ở cả hai nhóm. Chỉ nhập hai cột cuối; REVIEW cần note.
-Importer từ chối sửa ID/text/nhãn hoặc note gốc A/B, thiếu/trùng dòng và nhãn cuối
-không hợp lệ. Nhãn cuối trống trên câu bắt buộc kiểm tra được giữ `PENDING_REVIEW`;
-không tự lấy nhãn A/B. Kết quả lưu riêng tại `comparison/adjudicated/`, có receipt/hash,
-giữ nguyên A/B cùng Kappa. `pilot_final_decisions.local.csv` luôn đủ 200 ID:
-đồng thuận **ngoài mẫu kiểm tra** lấy nhãn A=B (`AB_AGREE`); câu có nhãn do người dùng
-chốt là `ADJUDICATED`. Đồng thuận thuộc mẫu kiểm tra vẫn phải được người dùng chốt. Riêng lượt đã nhận,
-người dùng xác nhận tường minh rằng ô không sửa nghĩa là giữ A=B; xác nhận này được
-lưu trong lịch sử riêng, không phải quy tắc tự điền mặc định cho lượt khác.
-`pilot_trainable.local.csv` chỉ gồm POS/NEG/NEU đã có final, không REVIEW/EXCLUDE/pending;
-đây chỉ là export, không tự đưa vào train hoặc Gold. `summary.json` báo số nguồn nhãn,
-phân bố nhãn cuối, trainable, REVIEW/EXCLUDE và số đồng thuận bị sửa. Còn pending thì
-`INCOMPLETE_ADJUDICATION`; chỉ đủ 200 final hợp lệ mới `PILOT_ADJUDICATION_COMPLETE`.
-Workbook và mọi output chứa comment chỉ lưu local, không commit.
+Mỗi tập sẽ giữ snapshot nguyên byte của guideline và ghi SHA vào manifest.
+Compare/import kiểm snapshot, không đọc lại file chính thức. Một lượt cũ không tự
+đổi guideline khi file chính thức đổi; lịch sử pilot có lệch manifest/bộ giao được
+mô tả tại [báo cáo pilot](docs/SENTIMENT_PILOT_RESULTS.md).
 
 Chỉ commit code, tài liệu, config và fixture tổng hợp. `.gitignore` chặn dữ liệu,
 outputs, venv, profile, secrets và model. Không dùng `git add -f` để đẩy các file này.
@@ -258,11 +217,11 @@ Chạy lại bằng `python scripts/sample_audit.py inventory --output outputs/v
 ## Lịch sử guideline và nhãn
 
 - [Changelog](docs/guidelines/GUIDELINE_CHANGELOG.md) ghi các mốc V2.0/V2.1, V3.1/V3.2 và bản chính thức mới. Các byte cũ giữ tại `docs/guidelines/history/`.
-- [Pilot bản PROPOSED](docs/SENTIMENT_PILOT_RESULTS.md): manifest pin SHA `f079ce7b5ecedd6242d99808ee0b010b28ea6f8b8afc4ba01f7cf86552d08433`, chưa duyệt; B ghi DRAFT. Có 200 quyết định, 178 nhãn sentiment sau đối soát. Kappa là kết quả trước đối soát của lượt bản đề xuất, không phải kết quả bản V3.1 chính thức hay quy tắc mới.
+- [Pilot lịch sử và lệch provenance](docs/SENTIMENT_PILOT_RESULTS.md): manifest pin PROPOSED `f079ce7b…`, nhưng bộ giao A/B kèm file `2ba9f0…`; người dùng xác nhận người gán đọc file kèm. Có 200 quyết định, 178 nhãn sentiment sau đối soát. Kappa không xác nhận riêng một bản guideline hoặc độ độc lập người gán.
 - Kết quả local đã chốt giữ nguyên ở `outputs/sentiment_pilot_v3_1/comparison_received_20261115/adjudicated/`. Tên và manifest cũ không đổi.
 - Manifest có đường dẫn guideline cũ được tra sang `history/` rồi kiểm đúng SHA; không tự thay bằng guideline chính thức mới. Luồng V1 giữ tham chiếu lịch sử riêng để tái lập, không dùng làm mặc định cho lượt cảm xúc chung mới.
 
-## Snapshot và chuẩn bị lượt gán chính thức
+## Lưu lịch sử guideline
 
 Trước khi sửa guideline chính thức, chạy đoạn dưới để lưu đúng byte hiện tại vào
 history; sau đó thêm dòng changelog mô tả thay đổi và lượt áp dụng. Nếu tên SHA8
@@ -278,40 +237,15 @@ if (Test-Path -LiteralPath $archivePath) {
 # Sau đó sửa guideline và thêm dòng docs/guidelines/GUIDELINE_CHANGELOG.md.
 ```
 
-CLI hiện có hỗ trợ `sentiment-pilot prepare --sources` với đúng bốn export,
-`--exclude-pilot` trỏ pilot cũ và `--directory` là thư mục lượt mới. Nó chọn
-1.000 KEEP, cap 30/post, ưu tiên census nguồn nhỏ trong cap; loại post/ID pilot,
-test/reserved và exact/near duplicates. Seed cố định, không chọn theo sentiment.
-Chỉ batch 1 được prepare; các phần 2–5 giữ trong selection manifest, chưa giao.
+Bản trước khi thay hiện tại được giữ nguyên byte tại
+`docs/guidelines/history/SENTIMENT_GUIDELINE_b2548267.md`. Guideline chính thức
+mới bỏ mục workbook/quy trình và ví dụ “nổi da gà”, thêm quy tắc điểm số;
+quy trình vận hành nằm riêng trong tài liệu annotation.
 
-Batch 1 đã giao tại `outputs/annotation_round_01/batch_01/`: A/B cùng 200 ID,
-nhãn và note trống; snapshot guideline gửi kèm. Trang đầu ghi SHA và
-**Không dùng AI quyết định nhãn hay viết note**. Phân bố theo nguồn/post/movie
-nằm trong `outputs/annotation_round_01/README.md`; có 61 post, 49 movie_id.
-Không dùng lại manifest pilot lịch sử hoặc gộp nhãn cũ vào lượt này.
+### Kế hoạch cũ đã thay thế
 
-### Bước dự phòng sau batch 1: bổ sung nguồn nhỏ
-
-Chỉ là phương án dự phòng, **chưa chọn mẫu hoặc xuất thêm workbook**. Giữ nguyên
-batch 1 đã giao và bốn phần còn lại đã niêm phong. Cap 30/post của lượt hiện tại
-khiến mỗi nguồn nhỏ chỉ có một post còn phù hợp được chọn tối đa 30 câu; đây
-không phải thực hiện ý định lấy hết nguồn nhỏ. Chưa có nhãn batch 1 nên **chưa biết
-POS có thiếu hay không**; không suy tỷ lệ POS từ tên nguồn.
-
-Sau khi gán và đối soát batch 1, báo cả POS/200 quyết định và
-POS/(POS+NEG+NEU), cùng số REVIEW/EXCLUDE. Nếu tỷ lệ POS trong ba lớp sentiment
-thấp hơn khoảng 20%, xem xét một batch bổ sung khoảng 150 câu từ phần còn lại
-của KhenPhim, Cuồng Phim và XEM PHIM & BÌNH PHIM. Mốc 20% là tín hiệu xem xét,
-không tự kích hoạt hoặc bảo đảm cân bằng nhãn.
-
-Nếu thực hiện: manifest riêng ghi `sampling_type=purposeful`, mục đích tăng độ
-phủ nguồn/tìm thêm ứng viên POS, số thực tế, quota nguồn/post và mọi thay đổi so
-với cap 30/post của lượt trước. Không sửa manifest đã khóa. Chỉ lấy KEEP đủ điều
-kiện, loại toàn bộ 1.000 ID đã chọn, pilot/cùng post pilot, dữ liệu test/reserved
-và exact/near duplicates theo guard hiện có. Tổng 44/52 câu của một nguồn chưa
-phải số còn đủ điều kiện; phải đếm lại sau lọc, không ép đủ 150.
-
-Không gán sẵn POS theo nguồn: A/B vẫn gán độc lập theo snapshot guideline.
-Nhãn được duyệt có thể dùng cho train sau kiểm leakage; batch purposeful không
-dùng ước lượng phân bố nhãn toàn corpus hoặc làm test đại diện/độc lập. Khi chia
-train/dev vẫn nhóm theo post và duplicate; không chia ngẫu nhiên từng comment.
+Kế hoạch năm batch người gán và bước dự phòng bổ sung nguồn nhỏ theo tỷ lệ POS
+**đã thay thế**, không còn là bước tiếp theo. Batch 1 đã prepare, không giao;
+không lấy mẫu bổ sung hoặc sửa selection 1.000 ID. Thực hiện về sau chỉ theo
+[quy trình AI gán + người dùng duyệt](docs/annotation/QUY_TRINH_GAN_NHAN.md),
+chưa thực hiện bất kỳ bước nào trong lần cập nhật tài liệu này.

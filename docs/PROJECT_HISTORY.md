@@ -111,9 +111,19 @@ outputs là bằng chứng bất biến, không phải các bước phải chạ
 
 V1 phân loại thái độ đối với phim; V2 phân loại cảm xúc chung của người viết,
 chỉ từ `text_clean`, hướng tới bất kỳ đối tượng nào. Không dùng lại nhãn V1
-như cùng định nghĩa. Pilot 200 câu và đối soát riêng thực tế dùng bản V3.1 PROPOSED chưa duyệt,
-manifest pin SHA `f079ce7b5ecedd6242d99808ee0b010b28ea6f8b8afc4ba01f7cf86552d08433`;
+như cùng định nghĩa. Pilot 200 câu và đối soát riêng có lệch provenance: manifest pin bản PROPOSED
+SHA `f079ce7b5ecedd6242d99808ee0b010b28ea6f8b8afc4ba01f7cf86552d08433`,
+nhưng bộ A/B được giao kèm guideline `2ba9f0…` và người dùng xác nhận người gán đọc bản kèm;
 [Kappa và kết quả](SENTIMENT_PILOT_RESULTS.md) chưa xác minh nguồn gán A/B.
 [V3.2](guidelines/history/SENTIMENT_GUIDELINE_V3_2.md) được cung cấp sau pilot, làm rõ
 EXCLUDE/NEU, công kích và tranh luận. Không áp hồi tố lên nhãn, SHA hoặc kết quả V3.1;
 chưa có train hay independent Gold V2.
+
+## Thay kế hoạch gán nhãn (15/11/2026)
+
+Bộ pilot giao A/B kèm guideline SHA `2ba9f0…` theo DOC_TRUOC_KHI_GAN;
+người dùng xác nhận người gán đọc bản kèm, dù manifest vẫn pin PROPOSED `f079ce7b…`.
+Không sửa manifest/nhãn để che lệch provenance này. Kế hoạch năm batch người gán
+và bổ sung nguồn nhỏ đã thay bằng [quy trình AI-web + người dùng duyệt](annotation/QUY_TRINH_GAN_NHAN.md).
+Batch 1 đã prepare, không giao; selection 1.000 ID giữ nguyên, chưa chia tập hoặc
+thực hiện bước nào. Guideline b254 nguyên byte đã lưu history trước khi thay.

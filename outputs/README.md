@@ -2,6 +2,11 @@
 
 ## V2 đang kiểm tra
 
+Quy trình hiện hành: [AI gán trên web + người dùng duyệt](../docs/annotation/QUY_TRINH_GAN_NHAN.md).
+Kế hoạch năm batch A/B và bổ sung nguồn nhỏ đã thay thế; batch 1 cũ không giao.
+Giữ nguyên selection 1.000 ID tại `annotation_round_01/`; chưa thực hiện bước nào của quy trình mới.
+
+
 - **Hai batch crawl mới nhất đã gộp:** [Excel](crawl_merged_20261115/review.xlsx) · [CSV đủ metadata](crawl_merged_20261115/comments.csv) · [nguồn và checksum](crawl_merged_20261115/README.md). Có 7.202 câu từ 49 bài: 6.863 KEEP, 70 REVIEW, 269 EXCLUDE; không trùng ID.
 - Bản gộp 7.202 câu không gồm batch 2.521 câu ngày 14/11 hoặc batch mới bên dưới. CSV export gốc và raw/journal của từng run vẫn ở `../data/`, không xóa hay thay canonical.
 - **Batch mới tiếp theo (3.072 câu/12 bài):** [Excel](../data/imports/fb_a767303a5ad8426d8fad5accb8a313cb/review.xlsx) · [CSV](../data/imports/fb_a767303a5ad8426d8fad5accb8a313cb/comments.csv). 2.819 KEEP, 53 REVIEW, 200 EXCLUDE. Tổng bốn batch V2 là **12.795 câu**, 12.066 KEEP, 148 REVIEW, 581 EXCLUDE; 89 bài, 67 movie_id. KEEP là trạng thái kỹ thuật, chưa phải nhãn sentiment.

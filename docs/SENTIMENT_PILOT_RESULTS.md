@@ -1,4 +1,4 @@
-# PROPOSED-guideline sentiment pilot: A/B comparison and user adjudication
+# Historical sentiment pilot: A/B comparison, adjudication and provenance mismatch
 
 Date: 2026-11-15. Development pilot: 160 random-stratified and 40 deliberately difficult examples. Not an independent Gold Test.
 
@@ -6,7 +6,7 @@ Date: 2026-11-15. Development pilot: 160 random-stratified and 40 deliberately d
 
 Project V2 targets the overall sentiment expressed by the author in `text_clean`, toward any subject, not only the film. V1 labels targeted film sentiment under V2.0/V2.1 and are not interchangeable with these labels. No V1 label migration or pooling was performed.
 
-The user supplied [guideline V3.2](guidelines/history/SENTIMENT_GUIDELINE_V3_2.md) after this pilot. The actual manifest pins `SENTIMENT_GUIDELINE_V3_1_PROPOSED.md`, SHA `f079ce7b5ecedd6242d99808ee0b010b28ea6f8b8afc4ba01f7cf86552d08433`, with `PROPOSAL_NOT_APPROVED` / `DRAFT_GUIDELINE_SOURCE_MISSING`. Workbook B explicitly says DRAFT and references PROPOSED. These metrics are results of that draft-guideline round, not validation of the user's original V3.1, V3.2 or the current official guideline. The archived file with SHA `2ba9f0…` was not the pinned guideline. See the [provenance correction](guidelines/GUIDELINE_CHANGELOG.md). Original manifest, labels and metrics remain unchanged.
+The unchanged manifest pins `SENTIMENT_GUIDELINE_V3_1_PROPOSED.md`, SHA `f079ce7b5ecedd6242d99808ee0b010b28ea6f8b8afc4ba01f7cf86552d08433`, with `PROPOSAL_NOT_APPROVED` / `DRAFT_GUIDELINE_SOURCE_MISSING`. Workbook B retains a DRAFT header and PROPOSED reference. However, the actual A/B delivery package's `DOC_TRUOC_KHI_GAN.txt` instructs annotators to read the accompanying `SENTIMENT_GUIDELINE_V3_1.md`, SHA `2ba9f0ec3c755754181a194c3f7ef4bd9dde200d0f3726de7be7b20125583a81`, rather than PROPOSED. The packaged file matches that SHA. The user confirms annotators read this accompanying file. Thus the manifest/header and delivered/read guideline disagree. Do not attribute the Kappa to validation of only one version. Original manifests, decisions and metrics remain unchanged. See [changelog](guidelines/GUIDELINE_CHANGELOG.md).
 
 ## Original A/B decisions
 
@@ -46,22 +46,16 @@ A/B workbooks, their original labels and pre-adjudication Kappa were preserved. 
 
 ## Limits and local files
 
-The exact guideline byte approval remains pending. Completed adjudication does not approve the guideline, establish annotation independence, or create Gold. The enriched difficult-case sample cannot estimate corpus-wide label proportions.
+For this historical pilot, approval and provenance were unresolved at delivery. Completed adjudication does not repair the manifest/delivery mismatch, establish annotation independence, or create Gold. The enriched difficult-case sample cannot estimate corpus-wide label proportions.
 
 Local-only outputs: `outputs/sentiment_pilot_v3_1/comparison_received_20261115/`: original A/B snapshots, `agreement.json`, `adjudication.xlsx`, user confirmation history, and `adjudicated/pilot_final_decisions.local.csv` plus `pilot_trainable.local.csv`. No comment text, record IDs or per-record labels are included in this public report.
 
-## Official-guideline batch 1 prepared (2026-11-15)
+## Superseded A/B batch plan (2026-11-15)
 
-This is a new annotation round, not a relabeling of the draft pilot above. Four V2 exports contain 12,795 records. After KEEP, pilot-post/ID, reserved and exact/near duplicate exclusions, 9,590 remain eligible. A seeded post-stratified design selected 1,000 distinct records in five sets of 200, with at most 30 per post across the whole round. Each small source contributes 30 across the full selection; sources with fewer eligible rows than the post cap would be kept in full.
+The five-batch human-annotation plan is superseded by [the active AI-web labeling + user-review protocol](annotation/QUY_TRINH_GAN_NHAN.md). Batch 1 was prepared but **not delivered**; its blank A/B workbooks must not be handed out. No additional A/B batches will be delivered. The previously proposed small-source supplement is also superseded, not a pending action.
 
-Batch 1: 200 records, 61 posts and 49 supplied movie_id values. Source counts: Maybe You Never Watched This Movie 130; Chê Phim Review 52; XEM PHIM & BÌNH PHIM 6; Cuồng Phim 6; KhenPhim 6. No labels, agreement or model results exist for this batch. Only batch 1 workbooks have been exported. The remaining four sets are sealed selections, not delivered annotation batches.
+The selection of 1,000 records in `outputs/annotation_round_01/` remains unchanged for reuse by the new protocol. Four V2 exports contained 12,795 records; the sealed selection used KEEP, pilot-post/ID, reserved and exact/near duplicate exclusions, leaving 9,590 eligible records, then a 30/post cap. The historical batch 1 partition contains 200 records, 61 posts and 49 movie_id values: Maybe You Never Watched This Movie 130; Chê Phim Review 52; XEM PHIM & BÌNH PHIM 6; Cuồng Phim 6; KhenPhim 6. These counts describe the abandoned partition, not the new T/U sets.
 
-All 200 previous pilot IDs and all 28 pilot posts are excluded. The reserved guard found 16 EXACT_RESERVED_TEXT across the input: four were removed at that stage and 12 had already been removed by KEEP/pilot filtering. None are selected. Existing test guards were retained. Sampling did not use sentiment cues; this designed sample cannot estimate natural corpus sentiment prevalence.
+All original pilot IDs, labels, selection/annotation manifests, old snapshot `b25482675c3a6387321f281579e318565999fd3a579e12dadc3897938bb39714`, Gold V1 and canonical remain unchanged. The previous official guideline is archived as `guidelines/history/SENTIMENT_GUIDELINE_b2548267.md`. The new official guideline removes operational workbook/process sections and the goosebumps example, and adds score rules. Its exact SHA is recorded in the changelog and the active protocol's fixed-input section.
 
-Each delivered batch contains `guideline_snapshot.md`, SHA `b25482675c3a6387321f281579e318565999fd3a579e12dadc3897938bb39714`. Compare/import validate that copy, even if the official file later changes. Before modifying the official guideline, archive the exact bytes as `history/SENTIMENT_GUIDELINE_<sha8>.md` and add a changelog entry. Local distributions and workbooks: `outputs/annotation_round_01/`; no payloads committed.
-
-## Contingency only: small-source supplementation
-
-No resampling or extra batch has been performed. The current 30-per-post cap limited each small source to 30 across the sealed 1,000-record selection; this did not fulfill the user's intended source-level census. Batch 1 has no labels yet, so a POS shortage is not established from source names.
-
-After batch 1 is labeled and adjudicated, report POS both as a share of all 200 decisions and of POS+NEG+NEU. A sentiment-only POS share below roughly 20% prompts consideration of about 150 additional eligible KEEP records from the remaining small-source material; the threshold is advisory, and the count must be verified after exclusions. Keep the five sealed selections unchanged. A supplement needs a separate manifest with `sampling_type=purposeful`, recorded source/post quotas and any departure from the original post cap. Exclude all 1,000 selected IDs, pilot posts/IDs, protected test data and exact/near duplicates. Do not infer labels from source. Adjudicated labels may support training with post/duplicate guards, but this supplement cannot estimate corpus prevalence or serve as a representative independent test.
+This update only saves documentation and the new guideline. None of the new protocol's steps have been performed: no E selection, no C/T/U split, no blind-50 workbook, no AI chunks, no AI calls or labeling, no imports, calibration, model training or evaluation. `AI_LABEL_PROMPT.md` has not been supplied; no prompt was invented. Pilot label SHA provenance is not silently migrated to the new guideline.

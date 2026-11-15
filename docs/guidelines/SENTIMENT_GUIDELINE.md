@@ -105,11 +105,19 @@ Xét cả câu, mọi đối tượng đều tính, chọn chiều nổi trội.
 | con hợp thể / 50k để chuộc truyện | REVIEW (không hiểu) |
 | ê ý là hai phe khen chê thảo luận đọc tẩm đá thế nhỉ =))))) | REVIEW (không hiểu "tẩm đá") |
 | ghê dọ | REVIEW (hai nghĩa) |
-| gravity đoạn từ vũ trụ về nổi cả da gà 😂 | POS (khen cảnh, có 😂) |
 | …trúng Tú🤣🤣🤣 | POS (hào hứng) |
 | ng miền nam dễ tính thiệt chứ bộ :))) | POS (khen) |
 | mai mốt m lên bài phim mùi cỏ cháy cho xem này | NEU (rủ, không có cực tính) |
 | wow 🫨 / chuẩn bác ơi | NEU |
+
+## Điểm số
+
+Điểm do người viết chấm trên thang 10: từ 7 trở lên → POS; 5–6 → NEU; từ 4 trở xuống → NEG. Chữ trong câu nói rõ chiều khác thì theo chữ. Thang khác quy đổi về thang 10.
+
+| Câu | Nhãn |
+|---|---|
+| Chấm cho CCEE2 7/10 | POS |
+| …nd nhạt thếch chẳng có chút ý nghĩ gì hết 5 điểm | NEG (chữ chê rõ) |
 
 ## Cảm xúc người viết và nội dung được kể
 
@@ -125,15 +133,3 @@ Xét cả câu, mọi đối tượng đều tính, chọn chiều nổi trội.
 ## Tiếng Anh, Việt–Anh
 
 Không tự động EXCLUDE. "Peak cinema 🔥", "Nice" → POS; "Cringe thật sự" → NEG; "Coming soon" → NEU.
-
-## Cột workbook
-
-`comment_id`, `text_clean`, `sentiment_label`, `note` (bắt buộc khi REVIEW), `annotator_id`, `cleaning_issue`.
-
-Không dùng AI để quyết định nhãn hay viết note. Được tra nghĩa một từ lóng, ghi vào note là đã tra.
-
-## Quy trình
-
-1. Hai người gán độc lập, không xem nhãn của nhau hay nhãn AI.
-2. Kappa chính trên 5 quyết định; Kappa phụ trên các câu cả hai cùng chọn POS/NEG/NEU, kèm tỷ lệ giữ lại; ma trận lệch, nhất là NEG–NEU và NEU–REVIEW.
-3. Đối soát câu lệch. Chỉ đổi guideline giữa các lượt, không đổi trong lúc một lượt đang gán; đổi thì ghi vào GUIDELINE_CHANGELOG.md và pin SHA mới.

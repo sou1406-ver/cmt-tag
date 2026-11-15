@@ -1,4 +1,4 @@
-# V3.1 sentiment pilot: A/B comparison and user adjudication
+# PROPOSED-guideline sentiment pilot: A/B comparison and user adjudication
 
 Date: 2026-11-15. Development pilot: 160 random-stratified and 40 deliberately difficult examples. Not an independent Gold Test.
 
@@ -6,7 +6,7 @@ Date: 2026-11-15. Development pilot: 160 random-stratified and 40 deliberately d
 
 Project V2 targets the overall sentiment expressed by the author in `text_clean`, toward any subject, not only the film. V1 labels targeted film sentiment under V2.0/V2.1 and are not interchangeable with these labels. No V1 label migration or pooling was performed.
 
-The user supplied [guideline V3.2](guidelines/history/SENTIMENT_GUIDELINE_V3_2.md) after this V3.1 pilot. The original decisions, adjudication and Kappa below are historical V3.1 results, not validation of V3.2. Some V3.2 examples differ from adjudicated V3.1 decisions; adopting V3.2 requires a separately recorded review, never silent relabeling. V3.1 bytes and manifest remain unchanged.
+The user supplied [guideline V3.2](guidelines/history/SENTIMENT_GUIDELINE_V3_2.md) after this pilot. The actual manifest pins `SENTIMENT_GUIDELINE_V3_1_PROPOSED.md`, SHA `f079ce7b5ecedd6242d99808ee0b010b28ea6f8b8afc4ba01f7cf86552d08433`, with `PROPOSAL_NOT_APPROVED` / `DRAFT_GUIDELINE_SOURCE_MISSING`. Workbook B explicitly says DRAFT and references PROPOSED. These metrics are results of that draft-guideline round, not validation of the user's original V3.1, V3.2 or the current official guideline. The archived file with SHA `2ba9f0…` was not the pinned guideline. See the [provenance correction](guidelines/GUIDELINE_CHANGELOG.md). Original manifest, labels and metrics remain unchanged.
 
 ## Original A/B decisions
 

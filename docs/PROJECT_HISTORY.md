@@ -111,7 +111,8 @@ outputs là bằng chứng bất biến, không phải các bước phải chạ
 
 V1 phân loại thái độ đối với phim; V2 phân loại cảm xúc chung của người viết,
 chỉ từ `text_clean`, hướng tới bất kỳ đối tượng nào. Không dùng lại nhãn V1
-như cùng định nghĩa. Guideline V3.1 đã có lượt pilot 200 câu và đối soát riêng;
+như cùng định nghĩa. Pilot 200 câu và đối soát riêng thực tế dùng bản V3.1 PROPOSED chưa duyệt,
+manifest pin SHA `f079ce7b5ecedd6242d99808ee0b010b28ea6f8b8afc4ba01f7cf86552d08433`;
 [Kappa và kết quả](SENTIMENT_PILOT_RESULTS.md) chưa xác minh nguồn gán A/B.
 [V3.2](guidelines/history/SENTIMENT_GUIDELINE_V3_2.md) được cung cấp sau pilot, làm rõ
 EXCLUDE/NEU, công kích và tranh luận. Không áp hồi tố lên nhãn, SHA hoặc kết quả V3.1;

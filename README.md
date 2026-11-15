@@ -256,6 +256,6 @@ Chạy lại bằng `python scripts/sample_audit.py inventory --output outputs/v
 ## Lịch sử guideline và nhãn
 
 - [Changelog](docs/guidelines/GUIDELINE_CHANGELOG.md) ghi các mốc V2.0/V2.1, V3.1/V3.2 và bản chính thức mới. Các byte cũ giữ tại `docs/guidelines/history/`.
-- [Pilot V3.1](docs/SENTIMENT_PILOT_RESULTS.md): 200 quyết định, 178 nhãn sentiment; Kappa là kết quả trước đối soát, không phải kết quả của quy tắc mới.
+- [Pilot bản PROPOSED](docs/SENTIMENT_PILOT_RESULTS.md): manifest pin SHA `f079ce7b5ecedd6242d99808ee0b010b28ea6f8b8afc4ba01f7cf86552d08433`, chưa duyệt; B ghi DRAFT. Có 200 quyết định, 178 nhãn sentiment sau đối soát. Kappa là kết quả trước đối soát của lượt bản đề xuất, không phải kết quả bản V3.1 chính thức hay quy tắc mới.
 - Kết quả local đã chốt giữ nguyên ở `outputs/sentiment_pilot_v3_1/comparison_received_20261115/adjudicated/`. Tên và manifest cũ không đổi.
 - Manifest có đường dẫn guideline cũ được tra sang `history/` rồi kiểm đúng SHA; không tự thay bằng guideline chính thức mới. Luồng V1 giữ tham chiếu lịch sử riêng để tái lập, không dùng làm mặc định cho lượt cảm xúc chung mới.

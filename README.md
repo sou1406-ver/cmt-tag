@@ -289,3 +289,29 @@ nhãn và note trống; snapshot guideline gửi kèm. Trang đầu ghi SHA và
 **Không dùng AI quyết định nhãn hay viết note**. Phân bố theo nguồn/post/movie
 nằm trong `outputs/annotation_round_01/README.md`; có 61 post, 49 movie_id.
 Không dùng lại manifest pilot lịch sử hoặc gộp nhãn cũ vào lượt này.
+
+### Bước dự phòng sau batch 1: bổ sung nguồn nhỏ
+
+Chỉ là phương án dự phòng, **chưa chọn mẫu hoặc xuất thêm workbook**. Giữ nguyên
+batch 1 đã giao và bốn phần còn lại đã niêm phong. Cap 30/post của lượt hiện tại
+khiến mỗi nguồn nhỏ chỉ có một post còn phù hợp được chọn tối đa 30 câu; đây
+không phải thực hiện ý định lấy hết nguồn nhỏ. Chưa có nhãn batch 1 nên **chưa biết
+POS có thiếu hay không**; không suy tỷ lệ POS từ tên nguồn.
+
+Sau khi gán và đối soát batch 1, báo cả POS/200 quyết định và
+POS/(POS+NEG+NEU), cùng số REVIEW/EXCLUDE. Nếu tỷ lệ POS trong ba lớp sentiment
+thấp hơn khoảng 20%, xem xét một batch bổ sung khoảng 150 câu từ phần còn lại
+của KhenPhim, Cuồng Phim và XEM PHIM & BÌNH PHIM. Mốc 20% là tín hiệu xem xét,
+không tự kích hoạt hoặc bảo đảm cân bằng nhãn.
+
+Nếu thực hiện: manifest riêng ghi `sampling_type=purposeful`, mục đích tăng độ
+phủ nguồn/tìm thêm ứng viên POS, số thực tế, quota nguồn/post và mọi thay đổi so
+với cap 30/post của lượt trước. Không sửa manifest đã khóa. Chỉ lấy KEEP đủ điều
+kiện, loại toàn bộ 1.000 ID đã chọn, pilot/cùng post pilot, dữ liệu test/reserved
+và exact/near duplicates theo guard hiện có. Tổng 44/52 câu của một nguồn chưa
+phải số còn đủ điều kiện; phải đếm lại sau lọc, không ép đủ 150.
+
+Không gán sẵn POS theo nguồn: A/B vẫn gán độc lập theo snapshot guideline.
+Nhãn được duyệt có thể dùng cho train sau kiểm leakage; batch purposeful không
+dùng ước lượng phân bố nhãn toàn corpus hoặc làm test đại diện/độc lập. Khi chia
+train/dev vẫn nhóm theo post và duplicate; không chia ngẫu nhiên từng comment.

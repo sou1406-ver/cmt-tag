@@ -1,4 +1,4 @@
-"""Reproducible manual film-relevance audit; no sentiment inference or data edits."""
+"""Read-only crawl inventory and manual relevance audit; no sentiment inference."""
 import argparse
 from collections import Counter, defaultdict
 import csv
@@ -12,6 +12,9 @@ import shutil
 import posixpath
 import zipfile
 import xml.etree.ElementTree as ET
+import html
+import statistics
+import unicodedata
 
 SEED = 20261114
 LABELS = ('RELEVANT', 'IRRELEVANT', 'UNCERTAIN')
@@ -24,6 +27,8 @@ IMMUTABLE = tuple(f for f in FIELDS if f not in EDITABLE)
 DEFAULT_SOURCE = Path('data/imports/fb_54e6c18b6c514f9ab822354611ab3316/comments.csv')
 DEFAULT_OUTPUT = Path('outputs/semantic_audit_20261114')
 DEFAULT_GUIDELINE = Path('docs/guidelines/MOVIE_SENTIMENT_V2_1.md')
+V2_RUNS = ('fb_54e6c18b6c514f9ab822354611ab3316', 'fb_541bedc5adb54db295e456ed1a5dc62c',
+           'fb_cc583df7d16947a2aef7949550fa276d', 'fb_a767303a5ad8426d8fad5accb8a313cb')
 
 
 def sha(path):
@@ -403,15 +408,184 @@ Không dùng mẫu này hoặc các post đã audit làm independent test về s
     return write_report(output)
 
 
+def crawl_inventory(rows):
+    """Descriptive text/metadata diagnostics only; never infer sentiment or delete rows."""
+    from src.dataset.common import normal
+    from src.annotation.pilot import fingerprints
+    if not rows: raise ValueError('Empty crawl inventory')
+    ids = Counter(r['comment_id'] for r in rows); lookup = {r['comment_id']:r for r in rows}
+    flags = defaultdict(list); exact = defaultdict(list); controls = Counter(); evidence = Counter()
+    metadata = ('comment_id','post_id','post_url','parent_comment_id','movie_id','source_name','source_type',
+                'collected_at','crawl_run_id','comment_created_at','reaction_count')
+    url = re.compile(r'(?i)\b(?:https?://|www\.)\S+')
+    emoticon = re.compile(r'(?i)(?:[:;=8][-^]?[)(DPpVv]+|:D|:P|-_-)')
+    emoji = re.compile('[\U0001F300-\U0001FAFF\u2600-\u27BF]')
+    def number(r,k): return int(r.get(k) or 0)
+    for r in rows:
+        rid=r['comment_id']; text=r['text_clean']; raw=r['text_raw']
+        signal = dict(empty_clean=not text.strip(),url_remaining=bool(url.search(text)),
+            html_entity=html.unescape(text)!=text,not_nfc=unicodedata.normalize('NFC',text)!=text,
+            replacement_character='\uFFFD' in text,underscore='_' in text,
+            emoji_symbol=bool(emoji.search(text)),emoticon=bool(emoticon.search(text)),
+            teencode=bool(re.search(r'(?iu)\b(ko|k|đc|cx|mn|khum)\b',text)),
+            negation=bool(re.search(r'(?iu)\b(không|chưa|chẳng|chả|ko|k|đéo|đếch)\b',text)),
+            very_long=len(text)>1000,short_2_words=len(text.split())<=2 and bool(text.strip()),
+            raw_clean_changed=raw!=text,with_media=number(r,'non_text_media_count')>0,
+            with_removed_mentions=number(r,'mention_count')>0,with_removed_urls=number(r,'url_count')>0,
+            keep_without_letters=r['clean_status']=='KEEP' and not any(c.isalpha() for c in text))
+        cc=Counter(f'U+{ord(c):04X}' for c in text if unicodedata.category(c)=='Cc' and c not in '\t\n\r')
+        controls.update(cc);signal['control_character']=bool(cc)
+        for key,value in signal.items():
+            if value:flags[key].append(rid)
+        if text.strip():exact[normal(text)].append(r)
+        for event in json.loads(r.get('clean_evidence') or '[]'):evidence[event.get('kind','UNKNOWN')]+=1
+    # Direct unique-text pairs only; no transitive giant components and no auto-removal.
+    values=[];postings=defaultdict(set);near=[];near_ids=set();cross_pairs=0
+    for text,group in sorted(exact.items()):
+        features=fingerprints(text)
+        if not features:continue
+        overlap=Counter(i for key in features for i in postings[key])
+        for i,n in overlap.items():
+            old_features,old_group=values[i];score=n/(len(features)+len(old_features)-n)
+            if score>=.9:
+                near.append(dict(left_ids=[r['comment_id'] for r in old_group],right_ids=[r['comment_id'] for r in group],jaccard=score))
+                near_ids.update(r['comment_id'] for r in old_group+group)
+                cross_pairs+=sum(a['post_id']!=b['post_id'] for a in old_group for b in group)
+        idx=len(values);values.append((features,group))
+        for key in features:postings[key].add(idx)
+    def distribution(key, subset):
+        counts=Counter(r[key] for r in subset)
+        return dict(sorted(counts.items(),key=lambda item:(-item[1],item[0])))
+    def lengths(subset):
+        def describe(values):
+            values=sorted(values)
+            return dict(median=statistics.median(values),p90=values[math.ceil(.9*len(values))-1],max=max(values)) if values else dict(median=None,p90=None,max=None)
+        return dict(characters=describe([len(r['text_clean']) for r in subset]),words=describe([len(r['text_clean'].split()) for r in subset]))
+    replies=[r for r in rows if r['record_type']=='reply']
+    missing_parent=[r['comment_id'] for r in replies if not r.get('parent_comment_id') or r['parent_comment_id'] not in lookup]
+    wrong_post=[r['comment_id'] for r in replies if r.get('parent_comment_id') in lookup and lookup[r['parent_comment_id']]['post_id']!=r['post_id']]
+    groups=[g for g in exact.values() if len(g)>1]
+    keep=[r for r in rows if r['clean_status']=='KEEP'];keep_ids={r['comment_id'] for r in keep}
+    posts=distribution('post_id',rows);aliases={pid:f'P{i:03d}' for i,pid in enumerate(sorted(posts),1)}
+    stats=dict(records=len(rows),clean_status=distribution('clean_status',rows),record_types=distribution('record_type',rows),
+        duplicate_ids=sum(v-1 for v in ids.values()),missing_metadata={k:sum(not str(r.get(k) or '').strip() for r in rows) for k in metadata},
+        post_count=len(posts),movie_id_count=len({r['movie_id'] for r in rows}),source_counts=distribution('source_name',rows),
+        movie_counts=distribution('movie_id',rows),top_post_counts=[dict(alias=aliases[k],records=v) for k,v in list(posts.items())[:10]],
+        lengths_all=lengths(rows),lengths_keep=lengths(keep),control_codepoints=dict(controls),clean_evidence_events=dict(evidence),
+        removed_mentions=sum(number(r,'mention_count') for r in rows),removed_urls=sum(number(r,'url_count') for r in rows),
+        indicators={key:dict(all=len(value),keep=sum(rid in keep_ids for rid in value)) for key,value in sorted(flags.items())},
+        exact_text=dict(groups=len(groups),members=sum(len(g) for g in groups),excess=sum(len(g)-1 for g in groups),
+            short_groups=sum(len(normal(g[0]['text_clean']))<40 for g in groups),
+            cross_post_groups=sum(len({r['post_id'] for r in g})>1 for g in groups)),
+        near_text=dict(distinct_text_pairs=len(near),records_involved=len(near_ids),cross_post_record_pairs=cross_pairs),
+        context=dict(replies=len(replies),parent_absent=len(missing_parent),parent_wrong_post=len(wrong_post),
+                     replies_with_empty_parent=sum(not r.get('parent_comment_id') for r in replies)))
+    local=dict(flag_ids=dict(flags),missing_parent_ids=missing_parent,wrong_parent_post_ids=wrong_post,
+               near_pairs=near,post_alias_mapping=aliases)
+    return stats,local
+
+
+def inventory_report(stats, inputs, collection, protection_counts):
+    """Public report: aggregate values only; no comment IDs, URLs or text excerpts."""
+    n=stats['records'];keep=stats['clean_status'].get('KEEP',0)
+    pct=lambda x,d=n:f'{x:,} ({x/d:.2%})' if d else str(x)
+    lines=['# Đánh giá sơ bộ corpus crawl Facebook V2','',
+        'Ngày 15/11/2026. Audit dữ liệu, không phải đánh giá model hoặc sentiment Gold. Không gán nhãn tự động, không train, không sửa raw/cleaning/canonical/Gold.',
+        '', '## Tổng quan', '',f'- {n:,} comment ID; {stats["post_count"]} bài có dữ liệu, {stats["movie_id_count"]} movie_id, {len(stats["source_counts"])} nguồn.',
+        f'- ID trùng: {stats["duplicate_ids"]}. KEEP là đạt làm sạch kỹ thuật, chưa bảo đảm liên quan phim, hiểu độc lập hoặc đủ điều kiện train.',
+        '- movie_id là metadata người dùng nhập, có cả phim dài tập/anime và tên chưa chuẩn hóa; không coi số mã là số tác phẩm đã xác minh.',
+        '', '| clean_status | Số câu | Tỷ lệ |','|---|---:|---:|']
+    for key in ('KEEP','REVIEW','EXCLUDE'):lines.append(f'| {key} | {stats["clean_status"].get(key,0):,} | {stats["clean_status"].get(key,0)/n:.2%} |')
+    lines+=['','## Nguồn và mức tập trung','','| Nguồn | Số câu | Tỷ lệ |','|---|---:|---:|']
+    for key,value in stats['source_counts'].items():lines.append(f'| {key} | {value:,} | {value/n:.2%} |')
+    movie=list(stats['movie_counts'].items());top_posts=stats['top_post_counts']
+    lines += ['',f'Top 2 nguồn chiếm {sum(list(stats["source_counts"].values())[:2])/n:.2%}; top 5 movie_id chiếm {sum(v for _,v in movie[:5])/n:.2%}; top 5 bài chiếm {sum(r["records"] for r in top_posts[:5])/n:.2%}.',
+        '', '| movie_id (top 10) | Số câu |','|---|---:|']
+    for key,value in movie[:10]:lines.append(f'| {key} | {value:,} |')
+    lines+=['','## Độ dài và tín hiệu văn bản','','| Phạm vi | Trung vị ký tự | p90 ký tự | Dài nhất | Trung vị từ | p90 từ |','|---|---:|---:|---:|---:|---:|']
+    for key,label in (('lengths_all','Toàn bộ'),('lengths_keep','KEEP')):
+        a=stats[key];lines.append(f'| {label} | {a["characters"]["median"]} | {a["characters"]["p90"]} | {a["characters"]["max"]} | {a["words"]["median"]} | {a["words"]["p90"]} |')
+    lines+=['','Số từ tách theo whitespace, không phải word segmentation tiếng Việt; p90 dùng nearest-rank. Đếm emoji/ký hiệu là proxy theo vùng Unicode, teencode/phủ định là dấu hiệu từ vựng, không phải nhãn POS/NEG.',
+        '', '| Chỉ báo | Toàn bộ | Trong KEEP |','|---|---:|---:|']
+    for key in ('empty_clean','url_remaining','html_entity','not_nfc','replacement_character','control_character','underscore',
+                'emoji_symbol','emoticon','teencode','negation','short_2_words','very_long','with_media','with_removed_mentions','with_removed_urls','raw_clean_changed','keep_without_letters'):
+        v=stats['indicators'].get(key,dict(all=0,keep=0));lines.append(f'| {key} | {pct(v["all"])} | {pct(v["keep"],keep)} |')
+    lines += ['',f'Control codepoints trong text_clean: {stats["control_codepoints"] or "không phát hiện"}. Không sửa hoặc loại dòng trong audit.',
+        f'Metadata ghi nhận {stats["removed_mentions"]:,} mention và {stats["removed_urls"]:,} URL/link đã loại. Đây là số do crawler ghi, không phải precision/recall xóa mention. Không đoán tên người từ chữ hoa để tự cắt text.',
+        '', '## Metadata và ngữ cảnh','','| Trường | Thiếu |','|---|---:|']
+    for k,v in stats['missing_metadata'].items():lines.append(f'| {k} | {pct(v)} |')
+    c=stats['context'];lines += ['',f'Comment/reply: {stats["record_types"]}. Trong {c["replies"]:,} reply, {pct(c["parent_absent"],c["replies"])} không tra được parent trong 4 export; {c["parent_wrong_post"]} parent tìm thấy nhưng khác bài.',
+        'parent_comment_id rỗng ở comment gốc là hợp lệ; không dùng tỷ lệ thiếu parent trên toàn bộ làm tỷ lệ lỗi. Không suy thời điểm đăng từ collected_at, không điền reaction giả.',
+        'Guideline V3.1 đang được rà soát quy định text-only: không đưa parent/post vào đầu vào chỉ để cứu câu mơ hồ. Thiếu parent là chẩn đoán dữ liệu, không tự động EXCLUDE; câu không quyết định được từ chính text cần xử lý theo guideline đã chốt.',
+        '', '## Trùng văn bản và bảo vệ test', '',f'- Exact sau NFC + casefold + gộp whitespace: {stats["exact_text"]}. Bỏ qua text trống khi đếm.',
+        f'- Near duplicate trực tiếp: {stats["near_text"]}. Trigram token Jaccard ≥0,9, độ dài normalized ≥40 ký tự; loại cặp exact khỏi chỉ số near.',
+        '- Không nối bắc cầu thành giant component. Câu ngắn giống nhau có thể là ý kiến độc lập; near là cờ cần kiểm tra, không phải bằng chứng sao chép và không tự xóa.',
+        f'- Cờ so với test/reserved/holdout qua guard hiện có: {protection_counts}. Chỉ so fingerprint/metadata nguồn được bảo vệ, không đọc nhãn Gold hoặc chạy model trên Gold.',
+        '- Các cờ này chưa phải tập train được duyệt. Giữ post/ID và duplicate protection khi chia train/dev; toàn bộ corpus đã audit là nguồn phát triển, không tự coi một phần tách lại là independent Gold.',
+        '', '## Giới hạn thu thập', '',f'Tổng từ journal/report của 4 run: {collection}. DOM parse observations có thể lặp cùng một lỗi; không phải số comment duy nhất bị thiếu.',
+        'Thu thập bị giới hạn theo bài, số vòng và timeout; không phải lấy mẫu ngẫu nhiên từ Facebook. Success có thể là đạt cap hoặc hết DOM đang tải được, không chứng minh coverage toàn bài. Bài không đóng góp comment mới có thể liên quan dedup hoặc khả năng truy cập/DOM; không suy nguyên nhân chỉ từ số 0.',
+        '', '## Kết luận và việc tiếp theo', '',
+        ('**NOT_READY**: cần xử lý lỗi identity/raw/KEEP rỗng trước khi dùng.' if stats['duplicate_ids'] or collection.get('raw_validation_errors',0) or stats['missing_metadata']['comment_id'] or stats['indicators'].get('empty_clean',{}).get('keep',0)
+         else '**READY_WITH_LIMITATIONS** để chuẩn bị gán nhãn/phát triển, không phải tuyên bố corpus đã sạch ngữ nghĩa hay sẵn sàng train có giám sát.'),
+        '1. Giữ nguyên nguồn. Kiểm tra cờ control/URL/encoding nếu có trên bản làm việc riêng trước khi thay preprocessing; không tự sửa artifact đã khóa.',
+        '2. Chốt đúng byte guideline V3.1, rồi A/B gán pilot 200 độc lập; người dùng adjudicate. Đếm KEEP không thay thế nhãn sentiment.',
+        '3. Rà text-only cho câu ngắn/mơ hồ; không mặc định NEU hoặc bỏ toàn bộ reply. Lấy mẫu kiểm tra cả trường hợp không bị flag, không suy chất lượng từ độ dài.',
+        '4. Kiểm soát tập trung nguồn/phim, nhóm theo post và cặp duplicate khi thiết kế dev; không giả định đã cân bằng POS/NEG/NEU.',
+        'Audit relevance 107 câu trước là audit phụ trợ, chưa hoàn thành mẫu ngẫu nhiên và chỉ thuộc một phần nguồn: không suy rộng tỷ lệ liên quan của audit đó lên 12k câu này. Không có Macro-F1/Kappa sentiment V3.1 mới trong báo cáo.',
+        '', '## Tái lập và bảo toàn', '',
+        '`python scripts/sample_audit.py inventory` đọc đúng 4 export gốc, không cộng thêm CSV gộp (sẽ nhân đôi ID). Dữ liệu local/diagnostics không commit; báo cáo public không có text, tên người, ID comment/post hoặc URL nguồn cá nhân.',
+        '', '| Export | Dòng | SHA256 CSV |','|---|---:|---|']
+    for item in inputs:lines.append(f'| {item["path"]} | {item["records"]:,} | `{item["sha256"]}` |')
+    return '\n'.join(lines)+'\n'
+
+
+def inventory(sources, output):
+    import sys
+    sys.path.insert(0,str(Path.cwd()))
+    from src.annotation.pilot import protection,guard_reason
+    from src.dataset.common import ROOT,normal
+    inputs=[];rows=[];collection=Counter();checks={}
+    for path in sources:
+        path=Path(path);before=sha(path);part=read_csv(path);rows.extend(part)
+        inputs.append(dict(path=path.as_posix(),sha256=before,records=len(part)));checks[str(path)]=before
+        run_ids={r['crawl_run_id'] for r in part}
+        if len(run_ids)!=1:raise ValueError('Use original one-run CSV exports, not a merged file')
+        run=ROOT/'data/crawl_runs'/next(iter(run_ids));report=run/'crawl_report.json';raw=run/'raw_comments.jsonl'
+        info=json.loads(report.read_text(encoding='utf8'));checks[str(report)]=sha(report);checks[str(raw)]=sha(raw)
+        if info['raw_sha256']!=checks[str(raw)] or info['total_records']!=len(part):raise ValueError('Raw/export lineage mismatch')
+        for k in ('requested_posts','posts_without_result','raw_validation_errors','dom_parse_observations'):collection[k]+=info[k]
+        for k,v in info['post_status_counts'].items():collection['posts_'+k]+=v
+    stats,local=crawl_inventory(rows)
+    guard=protection([],sources[0].parent,ROOT);checks.update(guard['checksums']);blocked=Counter()
+    for r in rows:
+        reason=guard_reason(dict(record_id=r['comment_id'],comment_id=r['comment_id'],post_id=r['post_id'],
+            text_raw=r['text_raw'],text_minimal=r['text_clean'],text_annotation_view=r['text_clean']),guard)
+        if reason:blocked[reason]+=1;local.setdefault('test_protection_flags',[]).append(dict(comment_id=r['comment_id'],reason=reason))
+    result=inventory_report(stats,inputs,dict(collection),dict(blocked))
+    if any(sha(p)!=h for p,h in checks.items()):raise ValueError('Input changed during audit')
+    output=Path(output)
+    if output.exists():raise FileExistsError('Choose a new audit output directory')
+    output.mkdir(parents=True)
+    (output/'REPORT.md').write_text(result,encoding='utf8')
+    (output/'metrics.local.json').write_text(json.dumps(dict(stats=stats,inputs=inputs,collection=dict(collection),
+        protection_counts=dict(blocked),input_checksums=checks,local=local),ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+    return dict(records=stats['records'],clean_status=stats['clean_status'],duplicate_ids=stats['duplicate_ids'],
+                exact=stats['exact_text'],near=stats['near_text'],context=stats['context'],protection_flags=dict(blocked),output=str(output))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__); commands = parser.add_subparsers(dest='cmd', required=True)
     p = commands.add_parser('sample'); p.add_argument('--source', type=Path, default=DEFAULT_SOURCE)
     p.add_argument('--output', type=Path, default=DEFAULT_OUTPUT); p.add_argument('--guideline', type=Path, default=DEFAULT_GUIDELINE)
     p = commands.add_parser('summarize'); p.add_argument('--directory', type=Path, default=DEFAULT_OUTPUT)
     p.add_argument('--workbook', type=Path, help='Filled Excel; otherwise prefer DIRECTORY/audit_sample.xlsx when present')
+    p=commands.add_parser('inventory',help='Aggregate read-only V2 crawl diagnostics; no sentiment labels/model evaluation')
+    p.add_argument('--sources',type=Path,nargs='+',default=[Path('data/imports')/run/'comments.csv' for run in V2_RUNS])
+    p.add_argument('--output',type=Path,default=Path('outputs/v2_preliminary_audit_20261115'))
     args = parser.parse_args()
     try:
-        result = sample(args.source, args.output, args.guideline) if args.cmd == 'sample' else write_report(args.directory, args.workbook)
+        if args.cmd=='inventory':result=inventory(args.sources,args.output)
+        else:result = sample(args.source, args.output, args.guideline) if args.cmd == 'sample' else write_report(args.directory, args.workbook)
         print(json.dumps(result))
     except (ValueError, OSError) as error: parser.exit(2, str(error) + '\n')
 

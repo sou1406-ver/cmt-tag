@@ -233,3 +233,8 @@ git push origin main
 - [Lịch sử dự án](docs/PROJECT_HISTORY.md)
 - [Báo cáo lọc dataset V1](docs/DATASET_FILTER_REPORT.md)
 - [Guideline V2.1 lịch sử của bài toán V1](docs/guidelines/MOVIE_SENTIMENT_V2_1.md) — không phải guideline cảm xúc chung mới.
+
+## Audit sơ bộ dữ liệu crawl V2
+
+[Báo cáo 12.795 bình luận](docs/V2_CRAWL_PRELIMINARY_AUDIT.md): thống kê kỹ thuật, nguồn, metadata và duplicate; chưa phải đánh giá sentiment.
+Chạy lại bằng `python scripts/sample_audit.py inventory --output outputs/v2_audit_verify` trên bốn export gốc được ghi SHA trong báo cáo. Output chi tiết chứa ID chỉ lưu local; chọn thư mục output mới mỗi lần chạy.

@@ -10,6 +10,7 @@ from xml.sax.saxutils import escape
 
 from scripts.sample_audit import (FIELDS, EDITABLE, IMMUTABLE, estimate, load_source, read_csv, read_audit, row_hash,
                                  select_sample, sha, validate_audit, write_report)
+from scripts.sample_audit import crawl_inventory, inventory_report
 
 
 def frame():
@@ -26,6 +27,51 @@ def frame():
 
 
 class SemanticAuditTests(unittest.TestCase):
+    def inventory_row(self,rid,text,post='post_fixture',kind='comment',parent=''):
+        return dict(comment_id=rid,text_raw=text,text_clean=text,post_id=post,post_url='https://www.facebook.com/groups/fixture/posts/123',
+            source_name='Fixture community',source_type='group',movie_id='fixture_movie',record_type=kind,parent_comment_id=parent,
+            clean_status='KEEP',mention_count='0',url_count='0',non_text_media_count='0',clean_evidence='[]',
+            collected_at='2026-11-15T00:00:00Z',crawl_run_id='fixture_run',comment_created_at='',reaction_count='')
+
+    def test_inventory_flags_context_and_no_source_edits(self):
+        rows=[self.inventory_row('one','Phim hay'),self.inventory_row('two','không hay :))',kind='reply',parent='one'),
+              self.inventory_row('three','cần ngữ cảnh',kind='reply',parent='absent'),
+              self.inventory_row('four','ký tự\x08 👩\u200d💻 &amp; https://example.test',post='other',kind='reply',parent='one')]
+        original=copy.deepcopy(rows);stats,local=crawl_inventory(rows)
+        self.assertEqual(stats['records'],4);self.assertEqual(stats['context']['parent_absent'],1)
+        self.assertEqual(stats['context']['parent_wrong_post'],1)
+        self.assertEqual(stats['control_codepoints'],{'U+0008':1})
+        self.assertEqual(stats['indicators']['negation']['all'],1)
+        self.assertEqual(stats['indicators']['url_remaining']['all'],1)
+        self.assertEqual(stats['missing_metadata']['comment_created_at'],4)
+        self.assertEqual(rows,original)
+
+    def test_inventory_exact_near_are_distinct_direct_flags(self):
+        text=' '.join('word'+str(i) for i in range(100))
+        variant=' '.join(['word'+str(i) for i in range(99)]+['different'])
+        rows=[self.inventory_row('one',text),self.inventory_row('two',text.upper(),post='other'),self.inventory_row('three',variant,post='third')]
+        stats,local=crawl_inventory(rows)
+        self.assertEqual(stats['duplicate_ids'],0);self.assertEqual(stats['exact_text']['excess'],1)
+        self.assertEqual(stats['exact_text']['cross_post_groups'],1)
+        self.assertEqual(stats['near_text']['distinct_text_pairs'],1)
+        self.assertEqual(stats['near_text']['records_involved'],3)
+        self.assertEqual(stats['near_text']['cross_post_record_pairs'],2)
+        self.assertEqual(len(rows),3)
+
+    def test_inventory_public_report_has_no_comment_text_or_private_ids(self):
+        row=self.inventory_row('PRIVATE_COMMENT_ID','SYNTHETIC PRIVATE CONTENT NOT FOR PUBLIC REPORT',post='PRIVATE_POST_ID')
+        stats,_=crawl_inventory([row])
+        report=inventory_report(stats,[dict(path='fixture.csv',records=1,sha256='abc')],{}, {})
+        for value in (row['comment_id'],row['post_id'],row['post_url'],row['text_raw']):self.assertNotIn(value,report)
+        self.assertIn('READY_WITH_LIMITATIONS',report)
+        stats['duplicate_ids']=1
+        self.assertIn('**NOT_READY**',inventory_report(stats,[],{},{}))
+
+    def test_inventory_length_percentile_is_nearest_rank(self):
+        stats,_=crawl_inventory([self.inventory_row(str(i),'a'*i) for i in range(1,11)])
+        self.assertEqual(stats['lengths_keep']['characters'],dict(median=5.5,p90=9,max=10))
+        self.assertEqual(stats['lengths_keep']['words']['median'],1)
+
     def test_excel_import_preserves_source_and_rejects_edits(self):
         rows, _ = select_sample(frame())
         manifest = {'selected': [dict(comment_id=r['comment_id'], immutable_sha256=row_hash(r)) for r in rows]}

@@ -170,7 +170,7 @@ class SentimentPilotTests(unittest.TestCase):
         from collections import Counter
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);official=root/'SENTIMENT_GUIDELINE.md';official.write_bytes(b'Approved fixture rules')
-            rows=[dict(comment_id=str(i),post_id=str(i//30),source_name='KhenPhim' if i>=1710 else 'major',
+            rows=[dict(comment_id=str(i),post_id=str(i//30),source_name=['KhenPhim','Cuồng Phim','XEM PHIM & BÌNH PHIM'][(i-1710)//30] if i>=1710 else 'major',
                 movie_id='movie'+str(i//90),text_raw='Unique fixture text '+str(i),text_clean='Unique fixture text '+str(i),
                 clean_status='KEEP',record_type='comment') for i in range(1800)]
             rows[450]['text_clean']=rows[451]['text_clean'];rows[500]['clean_status']='REVIEW'
@@ -215,9 +215,11 @@ class SentimentPilotTests(unittest.TestCase):
             (root/'split/T/guideline_snapshot.md').write_bytes(b'tamper')
             with self.assertRaises(ValueError):p.prepare_blind_review(root/'split',root/'invalid_blind')
             self.assertFalse((root/'invalid_blind').exists())
+            (root/'split/SUPERSEDED.json').write_text('{}',encoding='utf8')
+            with self.assertRaisesRegex(ValueError,'SUPERSEDED'):p.prepare_blind_review(root/'split',root/'superseded_blind')
 
 
-    def test_tu_whole_posts_all_sources_seed_and_metadata_only(self):
+    def test_tu_whole_posts_seed_and_metadata_only(self):
         rows=[dict(comment_id=str(i),post_id=str(i//10),source_name='small' if i<10 else 'large',movie_id='m',
                    text_clean='No sentiment selection',text_raw='No sentiment selection') for i in range(100)]
         original=copy.deepcopy(rows)
@@ -226,8 +228,7 @@ class SentimentPilotTests(unittest.TestCase):
         self.assertEqual((t,u),(t2,u2));self.assertEqual(rows,original)
         self.assertEqual(len(t),30);self.assertEqual(len(u),70)
         self.assertFalse({r['post_id'] for r in t}&{r['post_id'] for r in u})
-        self.assertEqual({r['source_name'] for r in t},{'small','large'})
-        self.assertNotIn('small',{r['source_name'] for r in u})
+        self.assertTrue({r['source_name'] for r in t} <= {'small','large'})
         changed=copy.deepcopy(rows)
         for r in changed:r['text_clean']='Arbitrary changed text';r['text_raw']='Other text'
         a,b=p.split_posts(changed,target=30)
@@ -236,6 +237,87 @@ class SentimentPilotTests(unittest.TestCase):
         with self.assertRaises(ValueError):p.split_posts(rows+[rows[0]],target=30)
         changed=copy.deepcopy(rows);changed[0]['source_name']='conflicting'
         with self.assertRaises(ValueError):p.split_posts(changed,target=30)
+
+    def test_tu_one_small_post_in_T_two_in_U_and_proportional_major_sources(self):
+        from collections import Counter
+        names=['KhenPhim','Cuồng Phim','XEM PHIM & BÌNH PHIM','major_A','major_B']
+        rows=[]
+        for i in range(1000):
+            source=names[i//30] if i<90 else 'major_A' if i<690 else 'major_B'
+            post=source if i<90 else 'post'+str((i-90)//10)
+            rows.append(dict(comment_id=str(i),post_id=post,source_name=source,movie_id='m'))
+        t,u=p.split_posts(rows);small=set(names[:3])
+        self.assertEqual(len({r['post_id'] for r in t if r['source_name'] in small}),1)
+        self.assertEqual(len({r['post_id'] for r in u if r['source_name'] in small}),2)
+        self.assertFalse({r['post_id'] for r in t}&{r['post_id'] for r in u})
+        c=Counter(r['source_name'] for r in t)
+        self.assertLessEqual(abs(c['major_A']/(c['major_A']+c['major_B'])-600/910),.06)
+        self.assertEqual(p.split_posts(rows),p.split_posts(rows[::-1]))
+        self.assertLessEqual(abs(len(t)-200),10)
+
+    def test_ec_user_recheck_blank_and_scientific_ids_are_not_guessed(self):
+        pilot=[dict(comment_id=str(1000000000000000+i),text_clean='unique text '+str(i),final_label='NEU') for i in range(200)]
+        examples=[dict(comment_id=r['comment_id'],text_clean=r['text_clean'],label='NEU') for r in pilot[:41]]
+        rechecks=[dict(comment_id='1E+15',text_clean=pilot[41]['text_clean'],final_label_cu='NEU',final_label_moi='NEG'),
+                  dict(comment_id='1E+15',text_clean=pilot[42]['text_clean'],final_label_cu='NEU',final_label_moi='')]
+        original=copy.deepcopy((pilot,examples,rechecks));e,c,excluded,mapping=p.partition_ec(pilot,examples,rechecks)
+        self.assertEqual((len(e),len(c),len(excluded)),(41,158,1))
+        modified=next(r for r in c if r['comment_id']==pilot[41]['comment_id'])
+        self.assertEqual((modified['label'],modified['label_source']),('NEG','USER_RECHECK_V_CURRENT'))
+        self.assertEqual(mapping[0]['comment_id'],pilot[41]['comment_id'])
+        self.assertEqual((pilot,examples,rechecks),original)
+        bad=copy.deepcopy(pilot);bad[43]['text_clean']=bad[41]['text_clean']
+        with self.assertRaises(ValueError):p.partition_ec(bad,examples,rechecks)
+        bad=copy.deepcopy(rechecks);bad[0]['comment_id']='2E+15'
+        with self.assertRaises(ValueError):p.partition_ec(pilot,examples,bad)
+        with self.assertRaises(ValueError):p.partition_ec(pilot,examples+[examples[0]],rechecks)
+        bad=copy.deepcopy(rechecks);bad[0]['final_label_moi']='MIXED'
+        with self.assertRaises(ValueError):p.partition_ec(pilot,examples,bad)
+
+    def test_chunk_export_is_two_columns_seeded_and_keeps_all_states(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);a=root/'a';b=root/'b';a.mkdir();b.mkdir()
+            records=[dict(comment_id=str(i),text_clean='synthetic '+str(i),label=p.LABELS[i%5],post_id='private') for i in range(159)]
+            first=p.write_chunks(a,{'C':records});again=p.write_chunks(b,{'C':records[::-1]})
+            self.assertEqual(first,again)
+            self.assertEqual([r['records'] for r in first['C']],[100,59])
+            result=[]
+            for entry in first['C']:
+                with (a/entry['file']).open(encoding='utf-8-sig',newline='') as f:
+                    reader=csv.DictReader(f);self.assertEqual(reader.fieldnames,['comment_id','text_clean']);result+=list(reader)
+            self.assertEqual({r['comment_id'] for r in result},{r['comment_id'] for r in records})
+            self.assertEqual(len(result),159)
+
+    def test_ec_prompt_pin_and_chunk_integration_refuses_prompt_change(self):
+        from src.dataset.common import seal,write_jsonl
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);official=root/'guide.md';official.write_bytes(b'Official synthetic rules')
+            pilot=[dict(comment_id=str(10000+i),text_clean='pilot text '+str(i),final_label='NEU') for i in range(200)]
+            examples=[dict(comment_id=r['comment_id'],text_clean=r['text_clean'],label='NEU') for r in pilot[:41]]
+            recheck=[dict(comment_id=pilot[41]['comment_id'],text_clean=pilot[41]['text_clean'],final_label_cu='NEU',final_label_moi='NEG')]
+            files=[]
+            for name,records in [('pilot.csv',pilot),('examples.csv',examples),('recheck.csv',recheck)]:
+                path=root/name;files.append(path)
+                with path.open('w',encoding='utf8',newline='') as f:
+                    w=csv.DictWriter(f,fieldnames=list(records[0]));w.writeheader();w.writerows(records)
+            prompt=root/'prompt.md';original='\n'.join(r['text_clean']+' → NEU' for r in examples);prompt.write_text(original,encoding='utf8')
+            with patch.object(p.guidelines,'GUIDELINE',official):result=p.prepare_ec(*files,prompt,root/'ec')
+            self.assertEqual((result['E'],result['C'],result['C_user_rechecked']),(41,159,1))
+            split=root/'split';split.mkdir()
+            for name,indices in [('T',range(1000,1002)),('U',range(1002,1005))]:
+                folder=split/name;folder.mkdir();(folder/'guideline_snapshot.md').write_bytes(official.read_bytes())
+                write_jsonl(folder/'records.local.jsonl',[dict(comment_id=str(i),post_id=name,text_clean='test text '+str(i)) for i in indices])
+            seal(split,dict(kind='POST_DISJOINT_TU',guideline_sha256=sha(official)))
+            prompt.write_text(original+' changed',encoding='utf8')
+            with self.assertRaisesRegex(ValueError,'Prompt changed'):p.export_chunks(root/'ec',split,prompt,root/'invalid')
+            self.assertFalse((root/'invalid').exists());prompt.write_text(original,encoding='utf8')
+            chunks=p.export_chunks(root/'ec',split,prompt,root/'chunks')
+            self.assertEqual(chunks['counts'],dict(C=159,T=2,U=3))
+            self.assertEqual(chunks['prompt_sha256'],sha(prompt))
+            self.assertIn('DO_NOT_SEND_T',chunks['T_gate'])
+            self.assertEqual((root/'chunks/AI_LABEL_PROMPT.md').read_bytes(),prompt.read_bytes())
+            (root/'ec/C/records.local.jsonl').write_text('tamper',encoding='utf8')
+            with self.assertRaises(ValueError):p.export_chunks(root/'ec',split,prompt,root/'bad_ec')
 
     def test_cross_split_duplicate_guard_exact_and_near(self):
         a=' '.join('word'+str(i) for i in range(100));b=a.replace('word99','different')

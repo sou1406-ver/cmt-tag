@@ -136,6 +136,7 @@ async function exportAdjudication(directory) {
 
 
 async function exportBlindReview(directory) {
+  try{await fs.access(path.join(directory,'SUPERSEDED.json'));throw Error('Blind workbook is SUPERSEDED');}catch(e){if(e.code!=='ENOENT')throw e;}
   const hash=v=>createHash('sha256').update(v).digest('hex');
   const m=JSON.parse(await fs.readFile(path.join(directory,'manifest.json'),'utf8'));
   if(m.kind!=='T_BLIND_50' || m.selected!==50 || m.guideline_snapshot!=='guideline_snapshot.md')throw Error('Expected sealed blind-50 export');

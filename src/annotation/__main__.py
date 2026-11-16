@@ -43,7 +43,7 @@ def main():
             q.add_argument('--annotator',required=True)
             q.add_argument('--origin',choices=['human','human_reviewed_ai','ai'],required=True)
             q.add_argument('--workbook',type=Path);q.add_argument('--output',type=Path)
-    human=s.add_parser('sentiment-pilot',help='Text-only two-human development pilot; no canonical or Gold writes')
+    human=s.add_parser('sentiment-pilot',help='Text-only annotation preparation, blind review and historical A/B comparison')
     hs=human.add_subparsers(dest='sentiment_command',required=True)
     for command in ('prepare','compare','adjudicate'):
         q=hs.add_parser(command); q.add_argument('--directory',type=Path,default=Path('outputs/sentiment_pilot'))
@@ -64,6 +64,10 @@ def main():
     q=hs.add_parser('blind-review',help='Step 2 only: prepare 50 blank blind T records')
     q.add_argument('--split',dest='split_directory',type=Path,required=True)
     q.add_argument('--directory',type=Path,required=True)
+    q=hs.add_parser('prepare-ec',help='User-selected 41 E IDs and pilot C labels with explicit rechecks')
+    for key in ('pilot-final','examples','recheck','prompt','directory'):q.add_argument('--'+key,type=Path,required=True)
+    q=hs.add_parser('export-chunks',help='Step 3 only: blinded 100-record C/T/U files; no AI calls')
+    for key in ('ec','split','prompt','directory'):q.add_argument('--'+key,type=Path,required=True)
     g=s.add_parser('gold',help='One-annotator new-Facebook gold: sample, recheck, agreement, evaluate')
     gs=g.add_subparsers(dest='gold_command',required=True)
     for command in ('sample','recheck','agreement','evaluate'):
@@ -87,6 +91,8 @@ def main():
                 else:result=sentiment_pilot.prepare(args.source,args.directory)
             elif args.sentiment_command=='split-tu':result=sentiment_pilot.prepare_tu(args.round_directory,args.directory)
             elif args.sentiment_command=='blind-review':result=sentiment_pilot.prepare_blind_review(args.split_directory,args.directory)
+            elif args.sentiment_command=='prepare-ec':result=sentiment_pilot.prepare_ec(args.pilot_final,args.examples,args.recheck,args.prompt,args.directory)
+            elif args.sentiment_command=='export-chunks':result=sentiment_pilot.export_chunks(args.ec,args.split,args.prompt,args.directory)
             elif args.sentiment_command=='compare':result=sentiment_pilot.compare(args.directory,args.output,args.agreement_audit_count)
             else:result=sentiment_pilot.import_adjudication(args.directory,args.comparison or args.directory/'comparison',args.decisions,args.output,args.adjudicator)
         elif args.cmd=='pilot':

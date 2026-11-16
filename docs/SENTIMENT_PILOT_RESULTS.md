@@ -60,20 +60,24 @@ All original pilot IDs, labels, selection/annotation manifests, old snapshot `b2
 
 The earlier guideline/documentation update did not execute the protocol. In the subsequent authorized task, only the T/U portion of step 1 and the blind-50 export of step 2 were performed, as recorded below. No E selection, C split, AI chunks/calls/labeling, imports, calibration, model training or evaluation occurred. `AI_LABEL_PROMPT.md` has not been supplied; no prompt was invented. Pilot label SHA provenance is not silently migrated to the new guideline.
 
-## Protocol steps 1–2: post-disjoint T/U and blind-50 export
+## Protocol revision: new T/U, E/C and chunk export (2026-11-16)
 
-From the unchanged 1,000-ID selection, seed 20261115 selects randomized whole posts within source strata. T represents each of the five sources with at least one post; the remaining budget is allocated by available source-stratum size, stopping at the nearest count on that randomized path. This yielded exactly 200 T records (10 posts, 10 movie_id) and 800 U records (51 posts, 42 movie_id). No text/sentiment cues are used to choose posts.
+The original all-source-T split and old blind-50 workbook were unused/unlabeled and are marked SUPERSEDED via new sidecars, with original manifests/files preserved. The sealed 1,000-ID selection was not changed. The replacement removes the one-post-per-source-in-T requirement: seed 20261115 chooses one of the three small-source posts for T, two for U, then allocates the remaining T budget in proportion to the two major sources' counts (660:250), keeping whole posts. The nearest size on that path is T=202 and U=798.
 
 | Source | T | U |
 |---|---:|---:|
-| Maybe You Never Watched This Movie | 78 | 582 |
-| Chê Phim Review | 32 | 218 |
-| Cuồng Phim | 30 | 0 |
+| Maybe You Never Watched This Movie | 125 | 535 |
+| Chê Phim Review | 47 | 203 |
 | KhenPhim | 30 | 0 |
-| XEM PHIM & BÌNH PHIM | 30 | 0 |
+| Cuồng Phim | 0 | 30 |
+| XEM PHIM & BÌNH PHIM | 0 | 30 |
 
-The three small sources each have only one post in the selection. Representing all sources in T places each such post wholly into T; they cannot also appear in U. T therefore overrepresents these sources and must not be described as a representative estimate of natural corpus proportions. Three movie_id values occur in both sets; only post separation is required. ID, post, normalized exact and existing token-trigram near-duplicate checks across T/U all return zero, including raw/clean text variants. The near rule is Jaccard >=0.9 at normalized length >=40 characters, not a guarantee against all semantic similarity.
+T: 12 posts / 11 movie_id. U: 49 posts / 39 movie_id. One movie_id is shared; post, ID, normalized exact and existing token-trigram near-duplicate overlap remain zero. T is a protocol test set, not independent Gold or an estimate of natural corpus source proportions.
 
-A fresh directory contains 50 random T IDs in shuffled order and one blank workbook with only `comment_id,text_clean,label,note`. No source/post/movie, prior labels or AI predictions are embedded. The user has not yet labeled/imported these records; no labeled hash lock exists. New snapshots match the official guideline SHA `2e4ba18c3c12c97b3bf4c33f39e11a87a684c71af1459e671860aec046d9568e`. E/C are not created pending user-supplied example IDs. No step 3 or later was performed. Gold V1, canonical, old pilot labels and the original selection remain unchanged.
+E contains exactly the 41 user-provided pilot IDs. C is the 159-record complement. The final supplied recheck file contains 17 filled labels: each is used as USER_RECHECK_V_CURRENT; there are no blank-recheck exclusions. The remaining C labels are unchanged pilot final decisions; historical guideline provenance is not silently migrated. Seventeen rounded scientific-notation IDs were resolved only with unique exact-text match, matching old label and Decimal rounding consistency, with local mapping and byte-identical original input snapshots. No original pilot labels were overwritten.
 
-Local files: `outputs/annotation_tu_01/REPORT.md` contains full source/post/movie distributions; `outputs/annotation_blind_50_01/T_blind_50.xlsx` is the only workbook for the user. The T/U split is a test of this protocol, not independent Gold. Reproducibility and unit tests use metadata/fixtures; no model is run on T.
+The user's prompt contains exactly those 41 E examples and no C examples. The local-only file `docs/annotation/AI_LABEL_PROMPT.md` has SHA `528021b7b88bfacbc5eaba24b2e1bc4762248396ac2f7264acebddf558f77a17`; it is ignored by Git. Each output manifest pins that SHA and matching guideline snapshot. No real example text or per-record labels appear in this public report.
+
+Thirteen two-column, shuffled CSV chunks were prepared: C=100+59; T=100+100+2; U=7×100+98. They contain only comment_id,text_clean. No provider request or step 4+ operation has occurred. A new blank blind-50 workbook belongs to the replacement T. Do not send T chunks to any AI before those new 50 blind labels have been imported and hash-locked.
+
+Local outputs: `outputs/annotation_tu_02/REPORT.md`, `outputs/annotation_blind_50_02/T_blind_50.xlsx`, `outputs/annotation_ec_01/` and `outputs/annotation_chunks_01/`. Old artifacts, selection, canonical and Gold V1 remain unchanged. This supersedes the earlier 200/800 split and its source distribution; counts are not model or AI-labeling results.

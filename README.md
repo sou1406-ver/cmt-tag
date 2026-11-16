@@ -18,7 +18,7 @@ trạng thái xử lý, không phải hai lớp sentiment bổ sung.
 - Gold V1 đã đánh giá một lần; không dùng để chọn preprocessing hoặc tune model V2. Chưa có independent Gold V2.
 - Pilot lịch sử đã đối soát 200 quyết định, có 178 nhãn sentiment. Nhãn thuộc về SHA đã giao, chưa tự chuyển sang quy tắc mới; xem phần lịch sử bên dưới.
 - Quy trình đang áp dụng: [AI gán trên web + người dùng duyệt](docs/annotation/QUY_TRINH_GAN_NHAN.md). Kế hoạch năm batch người gán đã thay thế; không giao thêm cho A/B.
-- ChatGPT, Claude và Gemini chỉ chạy trên web do người dùng thao tác; không gọi API. Đã chia T/U và xuất 50 câu T gán mù; E/C chờ ID từ người dùng, chưa làm bước 3 trở đi. Không cần cài Transformer để crawl.
+- ChatGPT, Claude và Gemini chỉ chạy trên web do người dùng thao tác; không gọi API. Đã chia T/U và xuất 50 câu T gán mù; E=41/C=159 đã chuẩn bị theo ID/recheck người dùng; đã xuất chunk C/T/U, chưa làm bước 4 trở đi. Không cần cài Transformer để crawl.
 
 ## Cài đặt
 
@@ -175,16 +175,17 @@ Chỉ dùng [QUY_TRINH_GAN_NHAN.md](docs/annotation/QUY_TRINH_GAN_NHAN.md),
 [guideline chính thức](docs/guidelines/SENTIMENT_GUIDELINE.md) và
 [changelog](docs/guidelines/GUIDELINE_CHANGELOG.md). Không tự thêm bước hoặc đổi thứ tự.
 Quy trình mới dùng lại **selection 1.000 ID** trong `outputs/annotation_round_01/`;
-đã chia T/U theo nguyên post và xuất workbook 50 câu T gán mù. E/C chờ danh sách
-ID từ người dùng; chưa có nhãn mù được import, chưa xuất chunk cho AI hoặc train.
-Prompt `docs/annotation/AI_LABEL_PROMPT.md` chưa được người dùng cung cấp;
-không tạo prompt thay người dùng, chưa pin SHA prompt.
+đã chia lại T/U theo chính sách 1/3 post nguồn nhỏ, xuất workbook 50 câu mù mới và
+chuẩn bị E=41/C=159 cùng chunk C/T/U. Chưa có nhãn mù mới được import, chưa gọi AI hoặc train.
+Prompt người dùng đã cung cấp được lưu **local, không commit** tại
+`docs/annotation/AI_LABEL_PROMPT.md`, SHA `528021b7b88bfacbc5eaba24b2e1bc4762248396ac2f7264acebddf558f77a17`. Manifest pin SHA;
+prompt snapshot trong thư mục chunk. Không sửa prompt hoặc dùng nhãn gợi ý thay nhãn người dùng.
 
 **Kế hoạch năm batch A/B đã thay thế. Batch 1 đã prepare, không giao**; workbook
 cũ không dùng tiếp và không giao thêm batch cho annotator A/B. Selection, manifest,
 snapshot và nhãn pilot lịch sử giữ nguyên. Các CLI `sentiment-pilot` hiện có phục vụ
-tái lập luồng cũ và hai thao tác mới `split-tu`, `blind-review`. Chưa có implementation
-đầy đủ cho bước 3 trở đi; không chạy prepare/compare/import cũ để thay các bước đó.
+tái lập luồng cũ cùng `split-tu`, `blind-review`, `prepare-ec`, `export-chunks`. Chưa triển khai
+bước 4 trở đi; không chạy import/analyze cũ để thay các bước chưa được giao.
 
 Mỗi tập sẽ giữ snapshot nguyên byte của guideline và ghi SHA vào manifest.
 Compare/import kiểm snapshot, không đọc lại file chính thức. Một lượt cũ không tự
@@ -250,19 +251,14 @@ Kế hoạch năm batch người gán và bước dự phòng bổ sung nguồn 
 không lấy mẫu bổ sung hoặc sửa selection 1.000 ID. Thực hiện về sau chỉ theo
 [quy trình AI gán + người dùng duyệt](docs/annotation/QUY_TRINH_GAN_NHAN.md),
 việc chốt tài liệu trước đó không chạy workflow. Theo yêu cầu tiếp theo, đã làm
-riêng chia T/U và xuất 50 câu mù; chưa làm bước 3 trở đi.
+chia T/U mới, xuất 50 câu mù mới, tách E/C và xuất chunk; chưa làm bước 4 trở đi.
 
-### Trạng thái bước 1–2 (15/11/2026)
+### Trạng thái bước 1–3 (16/11/2026)
 
-- T: **200 câu / 10 post / 10 movie_id**; U: **800 câu / 51 post / 42 movie_id**.
-- Seed `20261115`; phân tầng nguồn, xáo post rồi giữ nguyên từng post. T ưu tiên có đủ năm nguồn. Ba nguồn nhỏ chỉ có một post/nguồn nên nằm trọn ở T, U không có chúng; tỷ lệ nguồn T không phản ánh phân phối tự nhiên.
-- Không giao nhau theo ID/post; exact/near theo guard hiện có cũng bằng 0. Ba movie_id xuất hiện ở cả T/U; đây là chia theo post, không phải holdout theo phim.
-- Workbook mù: `outputs/annotation_blind_50_01/T_blind_50.xlsx`, 50 ID ngẫu nhiên thuộc T, chỉ bốn cột `comment_id,text_clean,label,note`, chưa có nhãn. Dùng `guideline_snapshot.md` bên cạnh; khi gán không xem AI hoặc metadata T/U.
-- Báo phân bố local: `outputs/annotation_tu_01/REPORT.md`. Chưa import/khóa nhãn người dùng; E/C đang chờ ID, chưa làm bước 3 trở đi.
-
-```powershell
-# Chỉ tái lập khi cần, với thư mục output mới; không ghi đè kết quả đã giao.
-python -m src.annotation sentiment-pilot split-tu --round outputs/annotation_round_01 --directory outputs/NEW_TU
-python -m src.annotation sentiment-pilot blind-review --split outputs/NEW_TU --directory outputs/NEW_BLIND_50
-node scripts/export_sentiment_pilot.mjs outputs/NEW_BLIND_50 --blind-review
-```
+- Split cũ `outputs/annotation_tu_01/` và blind cũ `outputs/annotation_blind_50_01/` đã **SUPERSEDED**, giữ nguyên file/manifest, chưa gán. Không dùng workbook cũ.
+- Split mới `outputs/annotation_tu_02/`: **T 202 câu / 12 post / 11 movie_id**, **U 798 câu / 49 post / 39 movie_id**. Seed `20261115`; post KhenPhim vào T, Cuồng Phim và XEM PHIM & BÌNH PHIM vào U. Hai nguồn lớn trong T: 125 Maybe You Never Watched This Movie, 47 Chê Phim Review.
+- Workbook mù mới: `outputs/annotation_blind_50_02/T_blind_50.xlsx`, bốn cột ID/text/label/note; chỉ dùng cùng snapshot trong thư mục này. Nhãn mới chưa import/khóa.
+- E=41 theo file người dùng; C=159, gồm 17 `USER_RECHECK_V_CURRENT`. Bản recheck cuối đã điền đủ; không có ID bị loại do trống. ID scientific của 17 dòng chỉ được nối bằng text khớp duy nhất + nhãn cũ khớp + giá trị làm tròn phù hợp; mapping riêng ở `outputs/annotation_ec_01/`, không sửa file gốc.
+- Chunk `outputs/annotation_chunks_01/`: C 100+59; T 100+100+2; U 7×100+98. Chỉ hai cột `comment_id,text_clean`, seed cố định; không có nhãn/source/post/movie.
+- **Không gửi T cho AI trước khi 50 câu mù mới đã gán, import và khóa hash.** Đã xuất file, chưa làm bước 4 hoặc gọi API. Thứ tự khi được tiếp tục là C → T → U, mỗi chunk một chat mới theo quy trình.
+- Phân bố nguồn/post/movie đầy đủ: `outputs/annotation_tu_02/REPORT.md`. Không thay selection 1.000 ID, nhãn pilot, Gold V1 hoặc canonical.

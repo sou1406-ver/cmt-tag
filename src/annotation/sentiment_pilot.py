@@ -1,4 +1,4 @@
-"""Offline two-person text-only pilot. No canonical writes, models or API calls."""
+"""Offline annotation preparation and review. No canonical writes, models or API calls."""
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -296,10 +296,11 @@ def prepare_round(sources, directory, exclude_pilot):
 
 
 def split_posts(rows, target=200, seed=SEED):
-    """Metadata-only source strata; randomized whole posts, no text/labels used.
+    """Randomize whole posts by source; exactly one small-source post goes to T.
 
-    Represent every source in T. A single-post source cannot occur in both sets.
-    Stop at the nearest attainable count along this randomized stratified path.
+    The other two small-source posts go wholly to U. Remaining T quotas are
+    proportional to the two major sources' counts in the sealed selection.
+    No text or labels participate in allocation.
     """
     rng=random.Random(seed);posts=defaultdict(list);strata=defaultdict(list)
     for r in sorted(rows,key=lambda r:r['comment_id']):posts[r['post_id']].append(r)
@@ -308,17 +309,23 @@ def split_posts(rows, target=200, seed=SEED):
         if len(names)!=1:raise ValueError('Conflicting source metadata within post')
         strata[next(iter(names))].append(pid)
     if len({r['comment_id'] for r in rows})!=len(rows):raise ValueError('Duplicate split input IDs')
-    chosen=set();taken=Counter();remaining={}
-    for name in sorted(strata):
-        values=strata[name][:];rng.shuffle(values)
-        pid=values.pop();chosen.add(pid);taken[name]+=len(posts[pid]);remaining[name]=values
-    selected=sum(taken.values())
-    if selected>target:raise ValueError('One-post-per-source minimum exceeds target; explicit policy required')
+    small={'KhenPhim','Cuồng Phim','XEM PHIM & BÌNH PHIM'}
+    present=small & set(strata);chosen=set()
+    if present:
+        if present!=small or any(len(strata[name])!=1 for name in small):
+            raise ValueError('Expected three single-post small sources')
+        chosen.add(rng.choice(sorted(strata[name][0] for name in small)))
+    major=sorted(set(strata)-small)
+    remaining={name:strata[name][:] for name in major}
+    for name in major:rng.shuffle(remaining[name])
+    selected=sum(len(posts[pid]) for pid in chosen);taken=Counter()
+    if selected>=target:raise ValueError('Small-source post leaves no major-source quota')
     available={name:sum(len(posts[pid]) for pid in values) for name,values in remaining.items()}
-    total_available=sum(available.values());budget=target-selected
-    quotas={name:taken[name]+budget*available[name]/total_available for name in strata} if total_available else dict(taken)
+    budget=target-selected;total_available=sum(available.values())
+    if not total_available:raise ValueError('No major-source posts available')
+    quotas={name:budget*available[name]/total_available for name in major}
     while selected<target:
-        candidates=[name for name in sorted(strata) if remaining[name]]
+        candidates=[name for name in major if remaining[name]]
         if not candidates:break
         name=max(candidates,key=lambda n:(quotas[n]-taken[n],n))
         pid=remaining[name][-1];size=len(posts[pid])
@@ -368,8 +375,8 @@ def prepare_tu(round_directory, directory):
     contract=guideline_contract()
     meta=dict(kind='POST_DISJOINT_TU',seed=SEED,target_T=200,selected=1000,counts={'T':split_counts(t),'U':split_counts(u)},
         protected_inputs=checks,guideline_sha256=contract['guideline_sha256'],
-        splitting='Random post order within source; one post/source minimum in T; remaining budget weighted by available stratum size; nearest count on that path',
-        limitation='Single-post sources occur only in T under the all-source T policy; source proportions are not population representative. T is protocol test, not independent Gold.',
+        splitting='Exactly one of three single-post small sources randomly assigned to T; two to U; remaining T quota proportional to major-source record counts; random whole posts within each source; nearest count on that path',
+        limitation='Single-post sources cannot occur in both sets: one in T, two in U. T is protocol test, not independent Gold; exact 200 and source ratios may differ under whole-post constraint.',
         overlap=dict(comment_ids=0,post_ids=0,**duplicates),EC_status='WAITING_USER_EXAMPLE_IDS',
         prohibited_T_uses=['train','prompt_examples','preprocessing_tuning','hyperparameter_tuning'],
         stage_status='STEP_1_COMPLETE_ONLY_TU; E_C_PENDING; NO_AI_CHUNKS_OR_LABELS')
@@ -384,6 +391,7 @@ def prepare_tu(round_directory, directory):
 
 def prepare_blind_review(split_directory, directory):
     split_directory=Path(split_directory).resolve();directory=Path(directory).resolve()
+    if (split_directory/'SUPERSEDED.json').exists():raise ValueError('Split is SUPERSEDED')
     m=verify(split_directory)
     if m.get('kind')!='POST_DISJOINT_TU':raise ValueError('Expected sealed post-disjoint T/U split')
     rows=read_jsonl(split_directory/'T/records.local.jsonl')
@@ -400,6 +408,124 @@ def prepare_blind_review(split_directory, directory):
             selected_rows=[dict(comment_id=r['comment_id'],text_sha256=digest(r['text_clean'])) for r in selected],
             status='AWAITING_USER_BLIND_LABELS_BEFORE_AI',EC_status='WAITING_USER_EXAMPLE_IDS',
             note='Only step 2 export; no labels imported, no AI chunks, no AI calls, no train/evaluate'))
+    return result
+
+
+def partition_ec(pilot, examples, rechecks):
+    """User IDs only; resolve Excel-rounded IDs only with unique exact-text proof."""
+    from decimal import Decimal
+    by={r['comment_id']:r for r in pilot}
+    if len(by)!=200 or len(pilot)!=200:raise ValueError('Expected original 200 pilot decisions')
+    eids=[r['comment_id'] for r in examples]
+    if len(eids)!=41 or len(set(eids))!=41 or not set(eids)<=set(by):raise ValueError('Expected exactly 41 unique known E IDs')
+    for r in examples:
+        ref=by[r['comment_id']]
+        if r.get('text_clean')!=ref['text_clean'] or r.get('label')!=ref['final_label']:raise ValueError('E text/label differs from pilot final decision')
+    updates={};mapping=[]
+    for r in rechecks:
+        original=r['comment_id'];rid=original;mode='EXACT_ID'
+        if rid not in by:
+            matches=[v for v in pilot if v['text_clean']==r['text_clean']]
+            if not re.fullmatch(r'\d+(?:\.\d+)?[Ee]\+?\d+',original) or len(matches)!=1:
+                raise ValueError('Unresolvable/ambiguous recheck ID')
+            rid=matches[0]['comment_id']
+            if Decimal(rid).quantize(Decimal(original).normalize())!=Decimal(original):raise ValueError('Scientific ID does not match exact-text candidate')
+            mode='UNIQUE_EXACT_TEXT_AND_SCIENTIFIC_ROUNDING'
+        if rid in updates or rid in eids:raise ValueError('Repeated recheck ID or recheck overlaps E')
+        if by[rid]['text_clean']!=r['text_clean'] or by[rid]['final_label']!=r['final_label_cu']:raise ValueError('Recheck source text/old label edited')
+        label=r['final_label_moi'].strip().upper()
+        if label and label not in LABELS:raise ValueError('Invalid user recheck label')
+        updates[rid]=label;mapping.append(dict(input_comment_id=original,comment_id=rid,resolution=mode,final_label_moi=label))
+    e=[];c=[];excluded=[]
+    for rid in sorted(by):
+        r=by[rid];entry=dict(comment_id=rid,text_clean=r['text_clean'],label=r['final_label'],label_source='PILOT_FINAL_DECISION')
+        if rid in eids:e.append({**entry,'set':'E','example_selection_source':'USER_E_EXAMPLES_FILE'})
+        elif rid in updates and not updates[rid]:excluded.append(dict(comment_id=rid,reason='USER_RECHECK_BLANK'))
+        else:
+            if rid in updates:entry.update(label=updates[rid],label_source='USER_RECHECK_V_CURRENT')
+            c.append({**entry,'set':'C'})
+    if any(r['label'] not in LABELS for r in e+c):raise ValueError('Invalid pilot final label')
+    return e,c,excluded,mapping
+
+
+def prepare_ec(pilot_final, examples, recheck, prompt, directory):
+    paths=[Path(v).resolve() for v in [pilot_final,examples,recheck,prompt]];directory=Path(directory).resolve()
+    checks={str(p):sha(p) for p in paths}
+    def read(path):
+        with path.open(encoding='utf-8-sig',newline='') as f:return list(csv.DictReader(f))
+    e,c,excluded,mapping=partition_ec(read(paths[0]),read(paths[1]),read(paths[2]))
+    prompt_text=paths[3].read_text(encoding='utf8')
+    actual=[]
+    for line in prompt_text.splitlines():
+        match=re.fullmatch(r'(.*?)\s*→\s*(POS|NEG|NEU|REVIEW|EXCLUDE)\s*',line)
+        if match:actual.append((normal(match[1]),match[2]))
+    expected={(normal(r['text_clean']),r['label']) for r in e}
+    if len(actual)!=41 or len(set(actual))!=41 or set(actual)!=expected:raise ValueError('Prompt examples must match exactly the 41 user-selected E texts/labels')
+    if any(normal(r['text_clean']) in {v[0] for v in actual} for r in c):raise ValueError('C leaked into prompt examples')
+    contract=guideline_contract()
+    meta=dict(kind='USER_SELECTED_EC',E=len(e),C_before_recheck=159,C=len(c),excluded_recheck_blank=len(excluded),
+        recheck_rows=len(mapping),recheck_resolved_scientific_ids=sum(r['resolution']!='EXACT_ID' for r in mapping),
+        C_user_rechecked=sum(r['label_source']=='USER_RECHECK_V_CURRENT' for r in c),source_sha256=checks,
+        prompt_file=str(paths[3]),prompt_sha256=checks[str(paths[3])],guideline_sha256=contract['guideline_sha256'],
+        label_provenance='Pilot final labels retained except explicit user rechecks; historical manifest/delivery mismatch is not relabeled or repaired',
+        status='E_C_PREPARED_NO_AI_RESULTS')
+    with staged(directory) as work:
+        for name,records in [('E',e),('C',c)]:
+            folder=work/name;folder.mkdir();snapshot_guideline(folder,directory/name,contract);write_jsonl(folder/'records.local.jsonl',records)
+        original=work/'originals';original.mkdir()
+        for path in paths[1:3]:(original/path.name).write_bytes(path.read_bytes())
+        write_csv(work/'recheck_id_mapping.local.csv',mapping,['input_comment_id','comment_id','resolution','final_label_moi'])
+        write_csv(work/'C_exclusions.local.csv',excluded,['comment_id','reason'])
+        if any(sha(p)!=h for p,h in checks.items()):raise ValueError('User inputs changed during EC preparation')
+        seal(work,meta)
+    return meta
+
+
+def write_chunks(work, sets, seed=SEED):
+    index={}
+    for name,records in sets.items():
+        folder=work/name;folder.mkdir();ordered=sorted(records,key=lambda r:r['comment_id'])
+        random.Random(seed+ord(name)).shuffle(ordered)
+        index[name]=[]
+        for i in range(0,len(ordered),100):
+            batch=ordered[i:i+100];filename=f'{name}_chunk_{i//100+1:02d}.csv'
+            write_csv(folder/filename,batch,['comment_id','text_clean'])
+            index[name].append(dict(file=name+'/'+filename,records=len(batch),sha256=sha(folder/filename),
+                                    comment_ids=[r['comment_id'] for r in batch]))
+    return index
+
+
+def export_chunks(ec_directory, split_directory, prompt, directory):
+    ec_directory=Path(ec_directory).resolve();split_directory=Path(split_directory).resolve()
+    prompt=Path(prompt).resolve();directory=Path(directory).resolve()
+    if (split_directory/'SUPERSEDED.json').exists():raise ValueError('Split is SUPERSEDED')
+    ec=verify(ec_directory);split=verify(split_directory)
+    if ec['kind']!='USER_SELECTED_EC' or split['kind']!='POST_DISJOINT_TU':raise ValueError('Invalid EC/TU inputs')
+    if sha(prompt)!=ec['prompt_sha256']:raise ValueError('Prompt changed after E/C preparation')
+    if ec['guideline_sha256']!=split['guideline_sha256']:raise ValueError('E/C and T/U snapshots differ')
+    sets={'C':read_jsonl(ec_directory/'C/records.local.jsonl'),
+          'T':read_jsonl(split_directory/'T/records.local.jsonl'),'U':read_jsonl(split_directory/'U/records.local.jsonl')}
+    e=read_jsonl(ec_directory/'E/records.local.jsonl')
+    ids=[r['comment_id'] for rows in [e,*sets.values()] for r in rows]
+    if len(ids)!=len(set(ids)):raise ValueError('Cross-set ID overlap')
+    training=[*e,*sets['C'],*sets['U']]
+    if {r['post_id'] for r in sets['T']}&{r['post_id'] for r in sets['U']}:raise ValueError('T/U post overlap')
+    if any(cross_split_duplicates(sets['T'],training).values()):raise ValueError('T overlaps training text/near duplicates')
+    source_snapshots={'C':ec_directory/'C/guideline_snapshot.md','T':split_directory/'T/guideline_snapshot.md','U':split_directory/'U/guideline_snapshot.md'}
+    with staged(directory) as work:
+        chunks=write_chunks(work,sets)
+        (work/'AI_LABEL_PROMPT.md').write_bytes(prompt.read_bytes())
+        for name,path in source_snapshots.items():
+            if sha(path)!=ec['guideline_sha256']:raise ValueError('Set snapshot changed')
+            (work/name/'guideline_snapshot.md').write_bytes(path.read_bytes())
+        if sha(prompt)!=ec['prompt_sha256']:raise ValueError('Prompt changed during export')
+        result=seal(work,dict(kind='AI_WEB_INPUT_CHUNKS_ONLY',seed=SEED,shuffle_seed_rule='base seed + Unicode codepoint of set name',
+            chunk_size=100,chunks=chunks,counts={name:len(r) for name,r in sets.items()},
+            EC_manifest_sha256=sha(ec_directory/'manifest.json'),TU_manifest_sha256=sha(split_directory/'manifest.json'),
+            prompt_file=str(prompt),prompt_snapshot='AI_LABEL_PROMPT.md',prompt_sha256=ec['prompt_sha256'],guideline_sha256=ec['guideline_sha256'],
+            T_gate='DO_NOT_SEND_T_TO_AI_UNTIL_NEW_BLIND_50_COMPLETED_IMPORTED_AND_HASH_LOCKED',
+            status='STEP_3_EXPORT_ONLY_NO_PROVIDER_CALLS_OR_RESULTS',
+            note='No step 4 or later. Upload only the requested two-column chunk, prompt and matching guideline; never EC label/coordinator files.'))
     return result
 
 

@@ -8,7 +8,7 @@ Bản đang dùng: `docs/guidelines/SENTIMENT_GUIDELINE.md`. Mỗi lượt gán 
 | 15/11/2026 | V3.1 — PROPOSED | Chuyển sang cảm xúc chung, chỉ đọc `text_clean`; bản đề xuất do Codex soạn, chưa được duyệt | Pilot 200: manifest pin PROPOSED `f079ce7b…`, nhưng bộ giao A/B kèm bản `2ba9f0…`; người dùng xác nhận người gán đọc bản kèm. Có lệch provenance; Kappa 5 quyết định 0,60, 3 nhãn 0,78 trên 158/200 câu |
 | 15/11/2026 | V3.2 | Thu hẹp EXCLUDE; công kích người là NEG; tách tranh luận NEU/NEG; mỉa mai đọc nghĩa đen | Không có |
 | 15/11/2026 | V3.3 | Mọi đối tượng đều tính; cảm xúc thuật lại hoặc giả định không tính; chốt tín hiệu mỉa mai và đánh giá nhẹ ("không tệ" là POS); lời lịch sự không tính; spam/quảng cáo EXCLUDE; bỏ ví dụ còn tranh cãi | đã prepare batch 1, không giao — thay bằng quy trình AI gán + người dùng duyệt |
-| 15/11/2026 | Bản chính thức mới | Bỏ mục workbook/quy trình khỏi guideline; bỏ ví dụ “nổi da gà”; thêm quy tắc điểm số. SHA `2e4ba18c3c12c97b3bf4c33f39e11a87a684c71af1459e671860aec046d9568e` | Quy trình AI gán + người dùng duyệt; đã tách T/U và xuất 50 câu mù theo bước 1–2; E/C chờ ID, chưa bước 3 |
+| 15/11/2026 | Bản chính thức mới | Bỏ mục workbook/quy trình khỏi guideline; bỏ ví dụ “nổi da gà”; thêm quy tắc điểm số. SHA `2e4ba18c3c12c97b3bf4c33f39e11a87a684c71af1459e671860aec046d9568e` | Quy trình AI gán + người dùng duyệt; T/U đã chia lại; E=41/C=159; blind 50 mới và chunk đã xuất; chưa bước 4 |
 
 ## Đối chiếu provenance ngày 15/11/2026
 

@@ -51,3 +51,6 @@ __pycache__/
 **/cookies.txt
 **/storage_state.json
 **/browser_profile*/
+
+# User-provided prompt embeds real comments; local only.
+/docs/annotation/AI_LABEL_PROMPT.md

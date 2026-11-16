@@ -5,7 +5,7 @@
 ## Cố định trước khi bắt đầu
 
 - Guideline: `docs/guidelines/SENTIMENT_GUIDELINE.md`, SHA `2e4ba18c3c12c97b3bf4c33f39e11a87a684c71af1459e671860aec046d9568e`. Mỗi tập chép snapshot như hiện có.
-- Prompt AI: `docs/annotation/AI_LABEL_PROMPT.md` (người dùng cung cấp), pin SHA vào manifest. Đổi prompt giữa chừng thì tập đang gán phải gán lại toàn bộ.
+- Prompt AI: `docs/annotation/AI_LABEL_PROMPT.md` (người dùng cung cấp, chỉ lưu local vì có comment thật), SHA `528021b7b88bfacbc5eaba24b2e1bc4762248396ac2f7264acebddf558f77a17`, pin SHA vào manifest. Đổi prompt giữa chừng thì tập đang gán phải gán lại toàn bộ.
 - 3 AI chạy trên web do người dùng tự thao tác: ChatGPT, Claude, Gemini. Không gọi API.
 - Không commit comment text, workbook, nhãn. Không ghi đè output cũ; mỗi bước một thư mục mới.
 
@@ -13,8 +13,8 @@
 
 | Tập | Nguồn | Cỡ | Dùng để |
 |---|---|---|---|
-| E — ví dụ | Pilot đã đối soát | ~50 | Đưa vào prompt AI |
-| C — hiệu chuẩn | Phần pilot còn lại | ~150 | Đo AI so với nhãn người; không đưa vào prompt |
+| E — ví dụ | Pilot đã đối soát, đúng ID người dùng chọn | 41 | Đưa vào prompt AI |
+| C — hiệu chuẩn | Phần pilot còn lại, áp nhãn recheck người dùng | 159 trước khi loại recheck trống | Đo AI so với nhãn người; không đưa vào prompt |
 | T — test | `annotation_round_01`, chọn theo post | ~200 | Chấm mô hình; người dùng duyệt 100% |
 | U — train | Phần còn lại của `annotation_round_01` | ~800 | AI gán, người dùng duyệt một phần |
 
@@ -22,9 +22,9 @@
 
 ### 1. Tách tập (Codex)
 
-- E: người dùng gửi danh sách `comment_id`; Codex chỉ ghi lại, không tự chọn. C = pilot trừ E.
-- T và U chia lại 1.000 ID đã chọn của `annotation_round_01` **theo post**, không theo câu: chọn ngẫu nhiên (seed cố định) từng post, phân tầng theo nguồn, đưa vào T đến khi đạt ~200 câu; post còn lại vào U. Không post nào có mặt ở cả T và U. Báo phân bố nguồn/post/movie của T và U.
-- Batch 1 cũ của `annotation_round_01` bỏ, không giao. Ghi lại trong README là đã bỏ.
+- E: đúng 41 `comment_id` trong `E_examples.csv` người dùng cung cấp; Codex chỉ ghi lại, không tự chọn. C = 159 câu pilot còn lại. Nhãn C lấy từ `pilot_final_decisions`; với ID trong `pilot_can_xem_lai.csv`, dùng `final_label_moi` người dùng điền, `label_source=USER_RECHECK_V_CURRENT`; ô trống thì loại khỏi C, không lấy nhãn gợi ý hoặc nhãn cũ để điền.
+- T và U chia lại 1.000 ID đã chọn của `annotation_round_01` **theo post**, không theo câu. Ba nguồn nhỏ một-post (KhenPhim, Cuồng Phim, XEM PHIM & BÌNH PHIM): chọn ngẫu nhiên với seed cố định đúng 1 post vào T, 2 post còn lại vào U. Phần T còn lại lấy post ngẫu nhiên từ Maybe You Never Watched This Movie và Chê Phim Review theo tỷ lệ hai nguồn trong 1.000 ID, đến ~200. Không có quy tắc mỗi nguồn ít nhất 1 post trong T. Không post nào có mặt ở cả T và U. Báo phân bố nguồn/post/movie; giữ nguyên post nên T có thể lệch 200.
+- Batch 1 cũ của `annotation_round_01` bỏ, không giao. Split và blind 50 cũ chưa dùng: đánh dấu SUPERSEDED, không xóa; tạo output mới, không sửa manifest/nhãn cũ.
 
 ### 2. Người dùng gán mù 50 câu của T (trước khi AI thấy T)
 
@@ -34,7 +34,7 @@
 ### 3. Xuất file cho AI (Codex)
 
 - Mỗi tập C, T, U tách thành các chunk 100 câu, xáo thứ tự, chỉ 2 cột `comment_id,text_clean`. Đặt tên `<tập>_chunk_<nn>.csv`.
-- Không kèm nhãn, nguồn, post, movie.
+- Không kèm nhãn, nguồn, post, movie. Việc chuẩn bị T chunk không có nghĩa T đã được gửi cho AI: chỉ gửi T sau khi 50 câu mù mới đã gán, import và khóa hash.
 
 ### 4. AI gán (người dùng)
 
@@ -55,8 +55,8 @@
 
 ### 7. Chốt T (người dùng duyệt 100%)
 
-- Codex xuất bảng 200 câu: nhãn 3 AI, nhãn mù của người dùng (50 câu), cột `final_label`, `note` trống.
-- Người dùng chốt tất cả 200. Không câu nào tự lấy nhãn AI.
+- Codex xuất bảng toàn bộ T (~200 câu): nhãn 3 AI, nhãn mù của người dùng (50 câu), cột `final_label`, `note` trống.
+- Người dùng chốt tất cả câu T. Không câu nào tự lấy nhãn AI.
 - Báo: agreement giữa nhãn mù và nhãn cuối trên 50 câu; agreement giữa AI 3/3 và nhãn cuối.
 
 ### 8. Chốt U (người dùng duyệt một phần)

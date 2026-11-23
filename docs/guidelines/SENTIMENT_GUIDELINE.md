@@ -10,9 +10,9 @@ Xét cảm xúc do chính người viết thể hiện, bất kể hướng tớ
 
 | Nhãn | Khi nào |
 |---|---|
-| POS | Có tín hiệu tích cực rõ: khen, thích thú, hào hứng, hài lòng, xúc động tích cực |
+| POS | Có tín hiệu tích cực rõ: khen, thích thú, hào hứng, hài lòng, xúc động tích cực, tán thưởng ý kiến (ví dụ “Chuẩn!”) |
 | NEG | Có tín hiệu tiêu cực rõ: chê, bực, chửi, công kích, chế giễu, thất vọng, buồn, sợ, mỉa mai có dấu hiệu rõ |
-| NEU | Hiểu được câu và câu không có từ hay biểu cảm nào mang cực tính: hỏi, kể, thông tin, rủ rê, hẹn hò, xã giao, đồng tình hoặc phản đối thuần túy, đính chính, ngạc nhiên không rõ chiều |
+| NEU | Hiểu được câu và câu không có từ hay biểu cảm nào mang cực tính: hỏi, kể, thông tin, lời mời, hẹn hò, xã giao, đùa vui không rõ cực tính, xác nhận hoặc phản đối thuần túy, đính chính, ngạc nhiên không rõ chiều |
 | REVIEW | (a) Không hiểu câu; (b) có từ mang cảm xúc nhưng hai nghĩa ngược nhau và không có gì trong câu để chọn; (c) khen và chê ngang nhau. Bắt buộc ghi `note` |
 | EXCLUDE | Không có nội dung văn bản dùng được, hoặc nằm ngoài phạm vi dữ liệu: chỉ tên người hoặc tiếng gọi, chỉ tag, ký tự vô nghĩa, spam/quảng cáo/bán hàng (kể cả có lời khen), ngôn ngữ ngoài tiếng Việt và tiếng Anh |
 
@@ -20,7 +20,7 @@ REVIEW và EXCLUDE là trạng thái xử lý, không phải lớp của mô hì
 
 ## EXCLUDE và câu xã giao
 
-Câu ngắn, xã giao, chuyện riêng, không liên quan phim vẫn là câu có nội dung: gán NEU nếu không có cực tính. Mô hình sẽ gặp những câu này khi chạy thật nên cần học chúng. Spam, quảng cáo, bán hàng thì EXCLUDE dù có lời khen, vì đó không phải ý kiến của người dùng.
+Giữ câu có nội dung sử dụng được, kể cả câu ngắn hoặc ngoài lề phim. Kể lại diễn biến, rủ đi xem, hỏi hoặc đùa vui mang nhãn NEU khi chính câu không thể hiện cực tính. Nếu câu đùa có lời khen hoặc công kích rõ thì gán POS hoặc NEG theo sắc thái của câu. Dùng EXCLUDE cho các trường hợp trong bảng trên, chẳng hạn chỉ có tag tên, ký tự vô nghĩa hoặc spam.
 
 Lời lịch sự ("cảm ơn", "ạ", "nhé", "bạn ơi") không phải cực tính: xét phần còn lại của câu.
 
@@ -49,7 +49,9 @@ Chê hay chửi bất kỳ ai (người bình luận, người viết review, gr
 | …gu ông chắc xem nhiều clip tổng tài bá đạo ở tiktok… | NEG |
 | …sao k đi hát đi mà ở đây review phim vậy c :)))) | NEG (chế giễu) |
 
-## Tranh luận: NEU hay NEG
+## Tán thưởng và tranh luận
+
+“Chuẩn!” hoặc “Chuẩn bác ơi” đứng riêng được gán POS khi dùng như lời tán thưởng. Đối tượng ở đây là ý kiến người viết đang tán thưởng. Cụm xác nhận đơn thuần như “ừ” vẫn là NEU nếu không có sắc thái rõ. Với câu có thêm nội dung, xét toàn câu. “Chuẩn, phim dở thật” là NEG vì lời chê trong chính bình luận chi phối sắc thái.
 
 Tranh luận, đính chính, phản biện bằng lý lẽ mà không có từ chê hay giọng gắt → NEU. Có từ chê, chê đối phương, hoặc giọng gắt → NEG. Từ chê trong câu giả định hay nói chung chung ("nếu kịch bản tệ thì…") không tính.
 
@@ -108,7 +110,8 @@ Xét cả câu, mọi đối tượng đều tính, chọn chiều nổi trội.
 | …trúng Tú🤣🤣🤣 | POS (hào hứng) |
 | ng miền nam dễ tính thiệt chứ bộ :))) | POS (khen) |
 | mai mốt m lên bài phim mùi cỏ cháy cho xem này | NEU (rủ, không có cực tính) |
-| wow 🫨 / chuẩn bác ơi | NEU |
+| wow 🫨 / ừ, mình cũng đọc rồi | NEU |
+| Chuẩn! / Chuẩn bác ơi | POS (tán thưởng ý kiến) |
 
 ## Điểm số
 

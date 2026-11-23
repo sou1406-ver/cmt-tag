@@ -6,7 +6,7 @@ Ngày chạy 24/11/2026
 
 ## Kiểm tra nhãn đa số trên 159 câu C
 
-Đối chiếu nhãn GPT, Claude và Gemini ở lượt 1 với nhãn người theo `comment_id`. Có 149 câu cả ba AI trùng, 9 câu đúng hai AI trùng và 1 câu cả ba khác. Trong nhóm đúng hai AI trùng, phiếu đa số khớp nhãn người ở **5/9 câu (55,6%)** và sai ở 4 câu. Phép tính dùng khớp nhãn chính xác trên POS, NEG, NEU, REVIEW và EXCLUDE. Kết quả là thống kê hiệu chuẩn trên nhóm nhỏ. Quy tắc lựa chọn nhãn được giữ nguyên.
+Đối chiếu nhãn GPT, Claude và Gemini ở lượt 1 với nhãn người theo `comment_id`. Có 149 câu cả ba AI trùng, 9 câu đúng hai AI trùng và 1 câu cả ba khác. Trong nhóm đúng hai AI trùng, phiếu đa số khớp nhãn người ở **5/9 câu (55,6%)** và sai ở 4 câu. Phép tính dùng khớp nhãn chính xác trên POS, NEG, NEU, REVIEW và EXCLUDE. Mẫu chỉ có 9 câu, chưa đủ căn cứ để tự động nhận nhãn đa số 2/3. Quy tắc lựa chọn nhãn được giữ nguyên.
 
 ## Thiết kế và dữ liệu
 
@@ -51,7 +51,7 @@ Giá trị tổng hợp là trung bình ± độ lệch chuẩn mẫu qua 3 seed
 
 ## Learning curve của baseline
 
-Ba seed cho cùng điểm ở mỗi cấu hình trên split cố định, nên mọi độ lệch chuẩn ở bảng này bằng 0.
+Các baseline cho kết quả tất định với cùng dữ liệu và cấu hình trong phép thử này. Trên split cố định, cả ba seed cho cùng dự đoán, nên độ lệch chuẩn của tất cả chỉ số bằng 0.
 
 | Mốc | Mô hình | Macro-F1 | Accuracy | F1 POS | F1 NEG | F1 NEU |
 |---|---|---:|---:|---:|---:|---:|
@@ -68,12 +68,46 @@ Ba seed cho cùng điểm ở mỗi cấu hình trên split cố định, nên m
 | 50 | BoW + MultinomialNB | 0,5982 | 0,6577 | 0,5532 | 0,7614 | 0,4800 |
 | 50 | BoW + ComplementNB | 0,5579 | 0,6174 | 0,5200 | 0,7326 | 0,4211 |
 
+## Learning curve PhoBERT và ViSoBERT
+
+Các mốc 20 và 35 được bổ sung trên Modal L4 với cùng revision checkpoint gốc, cấu hình full fine-tune 4 epoch và ba seed. Mỗi mốc dùng đúng ID train của baseline và chấm cùng 149 câu C. Kết quả mốc 50 lấy từ lượt đã hoàn tất. Bảng đặt hai BERT cạnh TF-IDF từ, baseline có macro-F1 cao nhất ở từng mốc.
+
+| Mô hình | Mốc | Train | Macro-F1 | Accuracy | F1 POS | F1 NEG | F1 NEU |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| ViSoBERT | 20 | 2.012 | 0,7702 ± 0,0134 | 0,7987 ± 0,0178 | 0,6862 ± 0,0227 | 0,8439 ± 0,0222 | 0,7807 ± 0,0238 |
+| PhoBERT | 20 | 2.012 | 0,7381 ± 0,0309 | 0,7651 ± 0,0232 | 0,6769 ± 0,0578 | 0,8211 ± 0,0152 | 0,7162 ± 0,0254 |
+| TF-IDF từ + LinearSVC | 20 | 2.012 | 0,6720 ± 0,0000 | 0,7047 ± 0,0000 | 0,5769 ± 0,0000 | 0,7561 ± 0,0000 | 0,6829 ± 0,0000 |
+| ViSoBERT | 35 | 2.893 | 0,7767 ± 0,0193 | 0,8098 ± 0,0169 | 0,6853 ± 0,0212 | 0,8663 ± 0,0098 | 0,7786 ± 0,0297 |
+| PhoBERT | 35 | 2.893 | 0,7602 ± 0,0206 | 0,7785 ± 0,0178 | 0,7283 ± 0,0387 | 0,8257 ± 0,0143 | 0,7265 ± 0,0175 |
+| TF-IDF từ + LinearSVC | 35 | 2.893 | 0,6729 ± 0,0000 | 0,6980 ± 0,0000 | 0,5882 ± 0,0000 | 0,7317 ± 0,0000 | 0,6988 ± 0,0000 |
+| ViSoBERT | 50 | 3.778 | 0,7914 ± 0,0163 | 0,8166 ± 0,0169 | 0,7251 ± 0,0166 | 0,8638 ± 0,0166 | 0,7854 ± 0,0177 |
+| PhoBERT | 50 | 3.778 | 0,7790 ± 0,0135 | 0,7875 ± 0,0103 | 0,7925 ± 0,0374 | 0,8273 ± 0,0042 | 0,7172 ± 0,0310 |
+| TF-IDF từ + LinearSVC | 50 | 3.778 | 0,6558 ± 0,0000 | 0,6846 ± 0,0000 | 0,5490 ± 0,0000 | 0,7195 ± 0,0000 | 0,6988 ± 0,0000 |
+
+Bảng đối chiếu đầy đủ với cả bốn baseline, điểm từng seed và manifest lưu cục bộ trong `outputs/annotation_v2_fixed_c_3seed_01/full_learning_curve/`.
+Chi phí Modal trước tín dụng cho bước 1 là **0,2386 USD**, gồm **0,1167 USD** cho ViSoBERT và **0,1219 USD** cho PhoBERT. Sáu lượt mốc 50 đã có nằm ngoài khoản này.
+
 ## Diễn giải
 
 Ở mốc 50, ViSoBERT và PhoBERT hơn baseline mạnh nhất lần lượt 0,1356 và 0,1232 macro-F1. ViSoBERT dẫn về macro-F1, F1 NEG và F1 NEU, còn PhoBERT dẫn về F1 POS. ViSoBERT có macro-F1 cao hơn ở hai trong ba seed. Chênh lệch trung bình 0,0124 giữa hai BERT chỉ mô tả kết quả trên tập C cố định. Độ lệch chuẩn qua seed phản ánh biến động lần chạy trên tập này.
 
 Baseline TF-IDF từ đứng đầu ở cả ba mốc và đạt đỉnh ở mốc 35. Khi thêm dữ liệu đến mốc 50, macro-F1 của mô hình này giảm 0,0171, trong khi BoW + MultinomialNB tiếp tục tăng. Báo cáo sơ bộ trước dùng checkpoint V1 và 69 câu C, nên hai bảng có tập chấm và cách khởi tạo khác nhau. Xem [báo cáo tiến độ gán nhãn và thử nghiệm sơ bộ V2](BAO_CAO_THU_NGHIEM_MO_HINH_V2.md).
 
+## Cross-validation theo bài trên 184 câu E+C
+
+Dùng 5 fold chia theo bài bằng StratifiedGroupKFold cho mỗi seed 20261123 và 20261124. Mỗi fold train trên phần E+C của fold và toàn bộ tập train mốc 50, lọc lại theo bài, ID, nội dung trùng hoặc gần trùng với phần validation. Các phân hoạch ở hai seed khác nhau. Cả hai BERT khởi tạo lại từ đúng checkpoint gốc ở từng fold, cùng cấu hình như ở trên. TF-IDF từ + LinearSVC dùng cùng phân hoạch và ID train.
+
+Mỗi fold có 3.922–3.928 mẫu train sau lọc. Mỗi model có đúng một dự đoán ngoài fold cho mỗi ID trong 184 câu ở từng seed. Macro-F1 được tính trên 184 dự đoán gộp của mỗi seed.
+
+| Mô hình | Seed 20261123 | Seed 20261124 | Macro-F1 mean ± std |
+| --- | ---: | ---: | ---: |
+| ViSoBERT | 0,8287 | 0,8131 | 0,8209 ± 0,0110 |
+| PhoBERT | 0,7685 | 0,7717 | 0,7701 ± 0,0023 |
+| TF-IDF từ + LinearSVC | 0,6788 | 0,6843 | 0,6815 ± 0,0039 |
+
+Chi phí Modal bước 2 là **0,6277 USD**. Hai bước cộng lại **0,8663 USD** theo Billing trước tín dụng, với ngân sách **2 USD**, còn **1,1337 USD**. App CV đã dừng sau khi nhận đủ 20 kết quả.
+Manifest, bảng điểm và dự đoán ngoài fold lưu cục bộ trong `outputs/annotation_v2_fixed_c_3seed_01/human_cv/`. Thực nghiệm dừng sau cross-validation. Tập T và huấn luyện mô hình cuối nằm ngoài phạm vi.
+
 ## Tệp thực nghiệm
 
-SHA-256 manifest của snapshot trước khi train là `55591c36de6a74f17e023447b4e9981bf524fe1f74b596fa35864a389c55ec75`. Manifest, bảng tổng hợp, điểm từng seed và dự đoán theo ID được lưu cục bộ trong `outputs/annotation_v2_fixed_c_3seed_01/`. Đã đối chiếu đủ 149 ID C cho từng lượt và tính lại các chỉ số từ dự đoán lưu trên máy.
+SHA-256 manifest của snapshot trước khi train là `55591c36de6a74f17e023447b4e9981bf524fe1f74b596fa35864a389c55ec75`. Manifest, bảng tổng hợp, điểm từng seed và dự đoán theo ID được lưu cục bộ trong `outputs/annotation_v2_fixed_c_3seed_01/`. Đã đối chiếu đủ 149 ID C cho từng lượt trên split cố định và 184 ID E+C ngoài fold cho từng model và seed trong cross-validation. Các chỉ số được tính lại từ dự đoán đã lưu.

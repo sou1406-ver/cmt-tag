@@ -1,5 +1,19 @@
 # Dữ liệu local sau dọn
 
+## T2 · Tập test chính V2
+
+- [Nhãn người T2](cmt_v2_20261125/T2_nhan_nguoi.local.csv) gồm 652 quyết định. [T2 dùng để chấm](cmt_v2_20261125/T2_cham_3_nhan.local.jsonl) gồm 613 câu, giữ nguồn từng câu để báo điểm riêng T gốc và test bổ sung.
+- [Chunk chờ ba AI gán](cmt_v2_20261125/ai_pending/) gồm 1.731 câu, chia thành 18 file từ `cmt_cho_gan_01.csv` đến `cmt_cho_gan_18.csv`. [Chỉ mục cục bộ](cmt_v2_20261125/cmt_cho_gan_chi_muc.local.csv) ghi nguồn và trạng thái giữ riêng. Toàn bộ 1.731 câu cùng bài với test, chỉ dùng để bổ sung test sau khi duyệt nhãn người.
+- [Manifest](cmt_v2_20261125/manifest.json) ghi nguồn và SHA-256. Các kết quả cũ vẫn tham chiếu đúng snapshot ban đầu.
+
+## Test bổ sung 25/11/2026
+
+- [Sheet nhập link Facebook và mã phim](../test_posts.xlsx) có 42 link, gồm 26 link đã có mã và 16 link chờ mã.
+- [Bình luận crawl đã gộp](test_extra_crawl_20261125_final/comments_top80.csv) và [độ phủ theo phim](test_extra_crawl_20261125_final/coverage_by_movie.csv).
+- [Workbook nhãn người đã khôi phục](test_extra_label_20261125/Gan_nhan_test_bo_sung_450.xlsx) lưu 450 quyết định, trong đó 424 câu có nhãn POS/NEG/NEU.
+- [Báo cáo chấm 424 câu](../docs/annotation/BAO_CAO_TEST_BO_SUNG_V2.md) và [bảng kết quả sáu mô hình](test_extra_label_20261125/evaluation/results/comparison.csv).
+- [Kho lưu trữ các lượt crawl, smoke test và log cũ](../data/archive/outputs_history_20261125.zip) giữ nguyên đường dẫn cũ và SHA-256 từng tệp trong `ARCHIVE_INDEX.json`.
+
 ## V2 đang kiểm tra
 
 Quy trình hiện hành: [AI gán trên web + người dùng duyệt](../docs/annotation/QUY_TRINH_GAN_NHAN.md).
@@ -29,7 +43,6 @@ Giữ nguyên selection 1.000 ID tại `annotation_round_01/`. Split/blind _01 �
 | Gold V1 | [thư mục](gold/) | Đã khóa và evaluate một lần; giữ lịch sử, không train/tune lại |
 | Crawl kiểm tra text sạch | [thư mục](crawler_review_20261114/) | Excel 65 dòng đầu; batch tiếp 95 dòng/3 phim, xem batch_summary.json để đến CSV export; không nhập canonical/train |
 | Thực nghiệm gần nhất V1 | [REPORT.md](development_silver_cv_20261113_partial_03/REPORT.md) | Kết quả tạm thời với silver chưa approved |
-| Output lịch sử đã gom | [history_before_v2_20261113.zip](../data/archive/history_before_v2_20261113.zip) | Bản sao nguyên byte; ARCHIVE_INDEX.json chứa đường dẫn/SHA từng file |
 | Biên bản dọn local | [thư mục](local_cleanup_20261113_v2/) | Plan, SHA trước/sau, receipt xóa và unittest log |
 
 ## Cách dùng
@@ -42,19 +55,16 @@ V2 đã chọn **cảm xúc chung của toàn bình luận**. Nhãn và kết qu
 sentiment về phim chỉ là lịch sử; chưa phải nhãn/metric V2. Chưa crawl, gán hoặc
 train lại trong lần dọn này.
 
-Các phase cũ đã được lưu ZIP rồi xóa bản rời sau khi kiểm SHA từng file. Khi cần
-replay một bước lịch sử, đọc ARCHIVE_INDEX.json, khôi phục đúng prefix cần thiết
-về root repo và không ghi đè file hiện có. Không phải giải nén tất cả để chạy
-workflow hiện tại. ZIP là backup nghiên cứu local, không được push.
+Ba ZIP backup trước V2 đã được xóa ngày 25/11/2026. Kho `outputs_history_20261125.zip`
+lưu các lượt crawl test bổ sung và log trung gian của V2.
 
 Giữ phase_g/master và blind_test, phase_g1/phase_g2 vì code gold/exposure còn đọc
 chúng; giữ rebuild_20261112 để đối chiếu provenance/bộ lọc. Các đường dẫn này cùng
 raw/journal, labels, test reservations và evaluation receipts không bị chuyển.
 Một log trong development_support chưa đọc được nên giữ nguyên thư mục này.
 
-Cache pretrained đã xóa; demo checkpoint đã fine-tune vẫn còn. Chạy lại huấn luyện
-Transformer cần tải pretrained theo revision/checksum cũ. Không khởi động lại run
-đã hủy. Code WIP của run hủy vẫn được bảo toàn và chưa nằm trong commit dọn.
+Demo checkpoint cũ và cache pretrained được liệt kê riêng trong `outputs/demo_transformers_425/`
+và `data/local_models/`. Lượt fine-tune V2 ghim revision và checksum của model gốc.
 
 Mọi data/import/task/comment chỉ lưu local và bị .gitignore chặn. Ngừng track không
 xóa các bản trong Git history; không rewrite history trong nhiệm vụ này.

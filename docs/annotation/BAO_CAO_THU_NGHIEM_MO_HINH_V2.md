@@ -88,6 +88,6 @@ Kết quả so sánh các mô hình sau khi dùng cùng đợt nhãn V2. Hai BER
 
 ### Tệp thực nghiệm
 
-Bảng điểm sáu mô hình (`comparison.csv`) và danh sách train, tập chấm, cấu hình (`split.local.json`) được lưu cục bộ trong `outputs/annotation_v2_consensus_bert_smoke_01/`.
+Bảng điểm sáu mô hình (`comparison.csv`) và danh sách train, tập chấm, cấu hình (`split.local.json`) được lưu cục bộ dưới đường dẫn `outputs/annotation_v2_consensus_bert_smoke_01/` trong kho `data/archive/outputs_history_20261125.zip`.
 
 [Báo cáo gán nhãn V2 đến chunk 20](BAO_CAO_GAN_NHAN_V2.md)

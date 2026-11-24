@@ -5,6 +5,8 @@ làm nguồn dữ liệu. Ba lớp sentiment: **POS / NEG / NEU**.
 
 **Crawl → Lọc dữ liệu → Tiền xử lý tối thiểu → Kiểm tra chất lượng → Gán nhãn → Train → Đánh giá.**
 
+[Báo cáo bài tập lớn](docs/BAO_CAO_BTL.md) dùng **T2** làm tập test chính. Xem [chỉ mục local](outputs/README.md) để tìm bộ nhãn, lô chờ gán và manifest.
+
 ## Hướng hiện tại
 
 V2 phân loại **cảm xúc chung mà người viết thể hiện trong chính bình luận**,
@@ -15,10 +17,10 @@ trạng thái xử lý, không phải hai lớp sentiment bổ sung.
 
 - Chỉ dùng [guideline chính thức](docs/guidelines/SENTIMENT_GUIDELINE.md) và [changelog](docs/guidelines/GUIDELINE_CHANGELOG.md). Mỗi lượt prepare ghi SHA256 của bản được giao; không đổi luật giữa lượt gán.
 - V1 xét thái độ đối với phim theo guideline V2.0/V2.1. Nhãn người, AI, model và Gold V1 chỉ giữ làm lịch sử, **không gộp hoặc đổi tên thành nhãn cảm xúc chung V2**. Muốn dùng lại phải gán lại theo định nghĩa mới và kiểm tra leakage.
-- Gold V1 đã đánh giá một lần; không dùng để chọn preprocessing hoặc tune model V2. Chưa có independent Gold V2.
+- Gold V1 đã đánh giá một lần và chỉ dùng để tham chiếu lịch sử. T2 là tập chấm chính của V2, gồm 613 câu thuộc ba lớp sentiment.
 - Pilot lịch sử đã đối soát 200 quyết định, có 178 nhãn sentiment. Nhãn thuộc về SHA đã giao, chưa tự chuyển sang quy tắc mới; xem phần lịch sử bên dưới.
 - Quy trình đang áp dụng: [AI gán trên web + người dùng duyệt](docs/annotation/QUY_TRINH_GAN_NHAN.md). Kế hoạch năm batch người gán đã thay thế; không giao thêm cho A/B.
-- ChatGPT, Claude và Gemini chỉ chạy trên web do người dùng thao tác; không gọi API. Đã chia T/U và xuất 50 câu T gán mù; E=41/C=159 đã chuẩn bị theo ID/recheck người dùng; đã xuất chunk C/T/U, chưa làm bước 4 trở đi. Không cần cài Transformer để crawl.
+- ChatGPT, Claude và Gemini được dùng để gán nhãn qua web. T2 đã gộp T gốc với phần test mở rộng đã duyệt. Hàng chờ hiện có 1.731 câu. Không cần cài Transformer để crawl.
 
 ## Cài đặt
 
@@ -113,7 +115,6 @@ Journal cũ không có clean/evidence sẽ không được điền suy đoán.
 | Excel kiểm tra crawler và thống kê batch gần nhất | `outputs/crawler_review_20261114/` |
 | Dataset V1 sau lọc để tham chiếu | `outputs/canonical/versions/filtered_20261112_final/` |
 | Nhãn người/AI và kết quả cũ | Xem [chỉ mục local](outputs/README.md) |
-| Output lịch sử đã gom ZIP | `data/archive/history_before_v2_20261113.zip` |
 
 Dataset tham chiếu V1 có **25.810 dòng**: 7.146 Facebook và 18.664 legacy,
 còn **425 nhãn sentiment người theo tiêu chí V1**. Bộ này khác định nghĩa cảm xúc chung.

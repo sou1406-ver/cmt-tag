@@ -63,7 +63,6 @@ Các file lịch sử còn ở working tree có lý do cụ thể:
 | `docs/guidelines/history/MOVIE_SENTIMENT_V2_0.md` | `src/annotation/guidelines.py:validate_guideline` kiểm task cũ bằng SHA `b094bcffc28f5099b6aa0278f95eaf4ee35cba1ee4f3965afa7009d26bd43844`; V2.1 giữ nguyên SHA `7d0a308a6c64f36308cd980b4e05b4b7fb7eb76b3d80d5f172b96f7c2619ee9a` |
 | `requirements/locks/classical-windows-py312.txt` | Lock Windows/Python 3.12 cho kết quả CV cũ; không sửa pin |
 | `requirements/transformer.txt`, `requirements/torch-cpu.txt` | Recipe dependency của checkpoint H được giữ: tag `before-cleanup-20261112:docs/archive/PHASE_H_REPORT.md` dòng 93–101 yêu cầu các root include trỏ tới hai file này; package pins/CPU index giữ nguyên, không dùng cho workflow hiện tại |
-| `docs/figures/phase_e2/*.png` | Sáu figure ROC/PR/scores của kết quả E.2 đã khóa, không phải hướng dẫn chạy hiện tại |
 | `docs/annotation_reviews/multifilm_20261110/*` (local, không track Git) | Audit/decision evidence có text thật; giữ nguyên local vì `outputs/development/reviewed/manifest.json` pin `audit_report.json`. Không đưa trở lại public Git. |
 | `data/**` và `outputs/README.md` | Snapshot data/task/provenance và chỉ mục đã tồn tại, giữ nguyên byte; hướng dẫn cũ ở đó chỉ thuộc snapshot, dùng tag để tái lập |
 | `configs/phase_i.json` | `src/data/quality.py` đọc `exact_ui_strings`; filter đọc lineage/test reservation config đã pin |
@@ -72,6 +71,8 @@ Các file lịch sử còn ở working tree có lý do cụ thể:
 
 Bằng chứng audit đầy đủ từng file/import/pin/blob backup nằm local tại
 `outputs/repository_simplification_20261112/`. Không đưa comment hoặc dataset mới lên Git.
+
+Sáu biểu đồ ROC, PR và phân bố điểm của Phase E.2 nằm trong lịch sử Git. Kết quả tổng hợp của lượt đó được ghi ở mục 2.
 
 ### Kiểm chứng sau dọn
 

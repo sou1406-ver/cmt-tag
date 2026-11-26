@@ -19,9 +19,10 @@ if not DEST.is_relative_to(OUT.resolve()) or DEST == OUT.resolve():
 if DEST.exists():
     parser.error('--output already exists')
 STEP1=OUT/'02_Du_lieu_va_nhan/04_Kiem_tra_nguon_V2'
-EXP=OUT/'annotation_expansion_round_01'
-T2=OUT/'cmt_v2_20261125'
-SOURCE_NEW=OUT/'test_extra_crawl_20261125_final/comments_top80.csv'
+V2_SOURCES=OUT/'02_Du_lieu_va_nhan/Nguon_V2'
+EXP=V2_SOURCES/'Nhan_AI_chunk_01_50'
+T2=OUT/'01_T2_va_cho_gan/T2_da_khoa'
+SOURCE_NEW=V2_SOURCES/'Crawl_bo_sung/comments_top80.csv'
 LABELS={'POS','NEG','NEU','REVIEW','EXCLUDE'}
 SENTIMENT={'POS','NEG','NEU'}
 DIGITS=re.compile(r'[0-9]+\Z')
@@ -37,7 +38,14 @@ expansion_manifest=load(EXP/'manifest.json')
 def pinned(path):
     rel=path.relative_to(ROOT).as_posix()
     hashed=sha(path)
-    expected=v1['inputs_sha256'].get(rel)
+    historic=rel
+    for current, original in ((EXP, OUT/'annotation_expansion_round_01'),
+                              (T2, OUT/'cmt_v2_20261125'),
+                              (SOURCE_NEW.parent, OUT/'test_extra_crawl_20261125_final')):
+        if path.is_relative_to(current):
+            historic=(original/path.relative_to(current)).relative_to(ROOT).as_posix()
+            break
+    expected=v1['inputs_sha256'].get(historic)
     if expected is not None:assert hashed==expected,rel
     hashes[rel]=hashed
     return path

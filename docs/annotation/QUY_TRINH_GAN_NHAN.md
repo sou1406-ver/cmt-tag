@@ -24,7 +24,7 @@
 
 - E: đúng 41 `comment_id` trong `E_examples.csv` người dùng cung cấp; Codex chỉ ghi lại, không tự chọn. C = 159 câu pilot còn lại. Nhãn C lấy từ `pilot_final_decisions`; với ID trong `pilot_can_xem_lai.csv`, dùng `final_label_moi` người dùng điền, `label_source=USER_RECHECK_V_CURRENT`; ô trống thì loại khỏi C, không lấy nhãn gợi ý hoặc nhãn cũ để điền.
 - T và U chia lại 1.000 ID đã chọn của `annotation_round_01` **theo post**, không theo câu. Ba nguồn nhỏ một-post (KhenPhim, Cuồng Phim, XEM PHIM & BÌNH PHIM): chọn ngẫu nhiên với seed cố định đúng 1 post vào T, 2 post còn lại vào U. Phần T còn lại lấy post ngẫu nhiên từ Maybe You Never Watched This Movie và Chê Phim Review theo tỷ lệ hai nguồn trong 1.000 ID, đến ~200. Không có quy tắc mỗi nguồn ít nhất 1 post trong T. Không post nào có mặt ở cả T và U. Báo phân bố nguồn/post/movie; giữ nguyên post nên T có thể lệch 200.
-- Batch 1 cũ của `annotation_round_01` bỏ, không giao. Split và blind 50 cũ chưa dùng: đánh dấu SUPERSEDED, không xóa; tạo output mới, không sửa manifest/nhãn cũ.
+- Batch 1 cũ của `annotation_round_01` bỏ, không giao. Split và workbook gán mù _01 chưa dùng đã được đánh dấu SUPERSEDED khi tạo _02, rồi dọn khỏi `outputs` ngày 25/11/2026. Nhãn người đã chốt của T gốc nằm trong `outputs/02_Du_lieu_va_nhan/Nguon_V2/Nhan_T_goc_da_chot/`.
 
 ### 2. Người dùng gán mù 50 câu của T (trước khi AI thấy T)
 

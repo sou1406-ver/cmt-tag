@@ -7,6 +7,8 @@ làm nguồn dữ liệu. Ba lớp sentiment: **POS / NEG / NEU**.
 
 [Báo cáo bài tập lớn](docs/BAO_CAO_BTL.md) dùng **T2** làm tập test chính. Xem [chỉ mục local](outputs/README.md) để tìm bộ nhãn, lô chờ gán và manifest.
 
+Crawl bằng [Python CLI](docs/CRAWLER.md). Script [chuẩn hóa bình luận](scripts/chuan_hoa_binh_luan_v2.py) nhận một câu hoặc file Excel và xuất lại Excel. [Báo cáo BTL](docs/BAO_CAO_BTL.md#chuẩn-hóa-bản-đọc-v2) có lệnh CMD cho cả hai chế độ.
+
 ## Hướng hiện tại
 
 V2 phân loại **cảm xúc chung mà người viết thể hiện trong chính bình luận**,
@@ -112,13 +114,14 @@ Journal cũ không có clean/evidence sẽ không được điền suy đoán.
 |---|---|
 | Raw và checkpoint từng run | `data/crawl_runs/RUN_ID/` |
 | CSV raw + clean + metadata, import config | `data/imports/RUN_ID/` |
-| Excel kiểm tra crawler và thống kê batch gần nhất | `outputs/crawler_review_20261114/` |
-| Dataset V1 sau lọc để tham chiếu | `outputs/canonical/versions/filtered_20261112_final/` |
-| Nhãn người/AI và kết quả cũ | Xem [chỉ mục local](outputs/README.md) |
+| Workbook V2 chính và nhãn nguồn | `outputs/02_Du_lieu_va_nhan/` |
+| T2 và các lô còn chờ gán | `outputs/01_T2_va_cho_gan/` |
+| Train, T2 và cấu hình đã đóng băng | `outputs/03_Dau_vao_chinh_thuc/` |
+| Kết quả các thử nghiệm phát triển | [Báo cáo BTL](docs/BAO_CAO_BTL.md) |
 
 Dataset tham chiếu V1 có **25.810 dòng**: 7.146 Facebook và 18.664 legacy,
 còn **425 nhãn sentiment người theo tiêu chí V1**. Bộ này khác định nghĩa cảm xúc chung.
-Nhãn pilot hiện được lưu riêng; không nhập vào canonical V1.
+Kết quả pilot V1 nằm trong báo cáo lịch sử.
 Bộ legacy thiếu xác minh nguồn/quyền sử dụng và cách tạo nhãn `overall`;
 **không dùng `overall` làm ground truth**.
 
@@ -158,35 +161,19 @@ bài đăng. Chưa công bố kết quả V2; không dùng điểm V1 thay cho �
 
 ## Git và tài liệu
 
-Audit relevance phụ trợ cho batch mới (không đổi mục tiêu cảm xúc chung V2):
-`python scripts/sample_audit.py sample` xuất 240 random + 60 hard KEEP vào
-`outputs/semantic_audit_20261114/`. Người gán điền bốn cột theo hướng dẫn;
-Excel `audit_sample.xlsx` có tab **Gán nhãn**, điền bốn cột vàng C–F;
-`python scripts/sample_audit.py summarize` ưu tiên đọc Excel nếu có, kiểm ID/text
-và metadata trước khi tổng hợp. CSV gốc được giữ nguyên.
-Chỉ random có trọng số dùng ước lượng; chưa có nhãn người thì chưa có tỷ lệ relevance.
-
-Audit relevance đã dừng ở **107/300** theo trao đổi với người dùng, không gán nốt
-193 câu. [Tóm tắt để review](docs/SEMANTIC_AUDIT_SUMMARY.md) chỉ có thống kê,
-không đăng corpus hoặc workbook.
+Audit relevance lấy 240 câu ngẫu nhiên và 60 câu KEEP khó. Người gán đã rà **107/300** câu. [Báo cáo audit](docs/SEMANTIC_AUDIT_SUMMARY.md) lưu thống kê của lượt này.
 
 ### Gán nhãn: quy trình đang áp dụng
 
 Chỉ dùng [QUY_TRINH_GAN_NHAN.md](docs/annotation/QUY_TRINH_GAN_NHAN.md),
 [guideline chính thức](docs/guidelines/SENTIMENT_GUIDELINE.md) và
 [changelog](docs/guidelines/GUIDELINE_CHANGELOG.md). Không tự thêm bước hoặc đổi thứ tự.
-Quy trình mới dùng lại **selection 1.000 ID** trong `outputs/annotation_round_01/`;
-đã chia lại T/U theo chính sách 1/3 post nguồn nhỏ, xuất workbook 50 câu mù mới và
-chuẩn bị E=41/C=159 cùng chunk C/T/U. Chưa có nhãn mù mới được import, chưa gọi AI hoặc train.
+Quy trình dùng selection 1.000 ID để chia T/U. Nhãn E, C, U, T gốc và phiếu AI chunk 01–50 chuyển vào `outputs/02_Du_lieu_va_nhan/Nguon_V2/`. T2 và các lô đang chờ gán nằm trong `outputs/01_T2_va_cho_gan/T2_da_khoa/`.
 Prompt người dùng đã cung cấp được lưu **local, không commit** tại
 `docs/annotation/AI_LABEL_PROMPT.md`, SHA `528021b7b88bfacbc5eaba24b2e1bc4762248396ac2f7264acebddf558f77a17`. Manifest pin SHA;
 prompt snapshot trong thư mục chunk. Không sửa prompt hoặc dùng nhãn gợi ý thay nhãn người dùng.
 
-**Kế hoạch năm batch A/B đã thay thế. Batch 1 đã prepare, không giao**; workbook
-cũ không dùng tiếp và không giao thêm batch cho annotator A/B. Selection, manifest,
-snapshot và nhãn pilot lịch sử giữ nguyên. Các CLI `sentiment-pilot` hiện có phục vụ
-tái lập luồng cũ cùng `split-tu`, `blind-review`, `prepare-ec`, `export-chunks`. Chưa triển khai
-bước 4 trở đi; không chạy import/analyze cũ để thay các bước chưa được giao.
+Kế hoạch năm batch A/B đã thay thế khi chuyển sang AI gán và người dùng duyệt. Các lượt pilot và CV trước đó nêu trong báo cáo.
 
 Mỗi tập sẽ giữ snapshot nguyên byte của guideline và ghi SHA vào manifest.
 Compare/import kiểm snapshot, không đọc lại file chính thức. Một lượt cũ không tự
@@ -221,7 +208,7 @@ Chạy lại bằng `python scripts/sample_audit.py inventory --output outputs/v
 
 - [Changelog](docs/guidelines/GUIDELINE_CHANGELOG.md) ghi các mốc V2.0/V2.1, V3.1/V3.2 và bản chính thức mới. Các byte cũ giữ tại `docs/guidelines/history/`.
 - [Pilot lịch sử và lệch provenance](docs/SENTIMENT_PILOT_RESULTS.md): manifest pin PROPOSED `f079ce7b…`, nhưng bộ giao A/B kèm file `2ba9f0…`; người dùng xác nhận người gán đọc file kèm. Có 200 quyết định, 178 nhãn sentiment sau đối soát. Kappa không xác nhận riêng một bản guideline hoặc độ độc lập người gán.
-- Kết quả local đã chốt giữ nguyên ở `outputs/sentiment_pilot_v3_1/comparison_received_20261115/adjudicated/`. Tên và manifest cũ không đổi.
+- Báo cáo pilot lưu thống kê sau đối soát. Thư mục kết quả thử nghiệm đã được dọn.
 - Manifest có đường dẫn guideline cũ được tra sang `history/` rồi kiểm đúng SHA; không tự thay bằng guideline chính thức mới. Luồng V1 giữ tham chiếu lịch sử riêng để tái lập, không dùng làm mặc định cho lượt cảm xúc chung mới.
 
 ## Lưu lịch sử guideline
@@ -245,21 +232,6 @@ Bản trước khi thay hiện tại được giữ nguyên byte tại
 mới bỏ mục workbook/quy trình và ví dụ “nổi da gà”, thêm quy tắc điểm số;
 quy trình vận hành nằm riêng trong tài liệu annotation.
 
-### Kế hoạch cũ đã thay thế
+### Mốc chia và rà nhãn V2
 
-Kế hoạch năm batch người gán và bước dự phòng bổ sung nguồn nhỏ theo tỷ lệ POS
-**đã thay thế**, không còn là bước tiếp theo. Batch 1 đã prepare, không giao;
-không lấy mẫu bổ sung hoặc sửa selection 1.000 ID. Thực hiện về sau chỉ theo
-[quy trình AI gán + người dùng duyệt](docs/annotation/QUY_TRINH_GAN_NHAN.md),
-việc chốt tài liệu trước đó không chạy workflow. Theo yêu cầu tiếp theo, đã làm
-chia T/U mới, xuất 50 câu mù mới, tách E/C và xuất chunk; chưa làm bước 4 trở đi.
-
-### Trạng thái bước 1–3 (16/11/2026)
-
-- Split cũ `outputs/annotation_tu_01/` và blind cũ `outputs/annotation_blind_50_01/` đã **SUPERSEDED**, giữ nguyên file/manifest, chưa gán. Không dùng workbook cũ.
-- Split mới `outputs/annotation_tu_02/`: **T 202 câu / 12 post / 11 movie_id**, **U 798 câu / 49 post / 39 movie_id**. Seed `20261115`; post KhenPhim vào T, Cuồng Phim và XEM PHIM & BÌNH PHIM vào U. Hai nguồn lớn trong T: 125 Maybe You Never Watched This Movie, 47 Chê Phim Review.
-- Workbook mù mới: `outputs/annotation_blind_50_02/T_blind_50.xlsx`, bốn cột ID/text/label/note; chỉ dùng cùng snapshot trong thư mục này. Nhãn mới chưa import/khóa.
-- E=41 theo file người dùng; C=159, gồm 17 `USER_RECHECK_V_CURRENT`. Bản recheck cuối đã điền đủ; không có ID bị loại do trống. ID scientific của 17 dòng chỉ được nối bằng text khớp duy nhất + nhãn cũ khớp + giá trị làm tròn phù hợp; mapping riêng ở `outputs/annotation_ec_01/`, không sửa file gốc.
-- Chunk `outputs/annotation_chunks_01/`: C 100+59; T 100+100+2; U 7×100+98. Chỉ hai cột `comment_id,text_clean`, seed cố định; không có nhãn/source/post/movie.
-- **Không gửi T cho AI trước khi 50 câu mù mới đã gán, import và khóa hash.** Đã xuất file, chưa làm bước 4 hoặc gọi API. Thứ tự khi được tiếp tục là C → T → U, mỗi chunk một chat mới theo quy trình.
-- Phân bố nguồn/post/movie đầy đủ: `outputs/annotation_tu_02/REPORT.md`. Không thay selection 1.000 ID, nhãn pilot, Gold V1 hoặc canonical.
+Split theo seed `20261115` tạo T gốc 202 quyết định trên 12 bài và U 798 câu trên 49 bài. E có 41 nhãn người, C có 159 quyết định, gồm 17 dòng được nối lại ID bằng văn bản khớp duy nhất, nhãn cũ và giá trị ID làm tròn. [Báo cáo gán nhãn V2](docs/annotation/BAO_CAO_GAN_NHAN_V2.md) ghi các mốc và phép thử.

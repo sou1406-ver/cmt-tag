@@ -7,7 +7,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from scripts.chuan_hoa_binh_luan_v2 import (
-    CORRECTIONS, NON_DEV, normalize_abbreviations, normalize_v2, technical_text,
+    CORRECTIONS, NON_DEV, correct, normalize_abbreviations, normalize_reviewed_variants, technical_text,
 )
 from src.dataset.common import ROOT, save, seal, sha, staged, verify, write_jsonl
 
@@ -40,12 +40,19 @@ def audit(workbook, output):
                 raise ValueError('Missing or duplicate comment ID or source text')
             identifiers.add(cid)
             base, _, _ = normalize_abbreviations(technical_text(raw), replacements=mappings)
-            updated = normalize_v2(raw)
+            previous, _ = correct(base)
+            updated = normalize_reviewed_variants(previous)
             comparisons[role, 'rows'] += 1
+            if previous != updated:
+                comparisons[role, 'vilexnorm_changed'] += 1
             if old == updated:
                 continue
-            reason = ('spelling_applied_uniformly' if role in NON_DEV and old==base
-                      else 'unresolved_mismatch')
+            if old == previous:
+                reason = 'vilexnorm_reviewed'
+            elif role in NON_DEV and old == base:
+                reason = 'spelling_applied_uniformly'
+            else:
+                reason = 'unresolved_mismatch'
             comparisons[role, reason] += 1
             differences.append(dict(id=cid, role=role, reason=reason, original=raw,
                                     excel=old, normalize_v2=updated))
@@ -58,7 +65,7 @@ def audit(workbook, output):
 
     roles = sorted({role for role, _ in comparisons})
     result = dict(rows=len(identifiers), matches=len(identifiers)-len(differences), differences=len(differences),
-                  unresolved=sum(d['reason']=='unresolved_mismatch' for d in differences),
+                  unresolved=sum(n for (_, reason), n in comparisons.items() if reason == 'unresolved_mismatch'),
                   by_role={role:{reason:n for (key,reason),n in comparisons.items() if key==role} for role in roles},
                   abbreviation_mappings=len(mappings), gold_T_scored=False, workbook_updated=False)
     with staged(output) as work:

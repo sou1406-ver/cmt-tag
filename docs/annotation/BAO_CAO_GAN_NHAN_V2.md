@@ -90,4 +90,4 @@ PhoBERT và ViSoBERT là hai checkpoint cũ đã học từ 425 nhãn người V
 | PhoBERT | 61,5% | 0,568 | 0,592 | 0,702 | 0,411 |
 | ViSoBERT | 65,0% | 0,636 | 0,604 | 0,699 | 0,606 |
 
-ViSoBERT đạt macro-F1 cao hơn 0,068 trên phép thử này, với chênh lệch lớn nhất ở NEU. Sau khi chốt nhãn 20 chunk, chạy lại baseline và so ViSoBERT fine-tune trên V2 với TF-IDF từ + LinearSVC bằng cùng dữ liệu train, fold và 149 câu C. Tập T chưa dùng để chấm ở cả hai phép thử. Kết quả chi tiết lưu local trong `outputs/annotation_v2_expansion_preliminary_cv_01/` và `outputs/annotation_v2_expansion_bert_probe_01/`.
+ViSoBERT đạt macro-F1 cao hơn 0,068 trên phép thử này, với chênh lệch lớn nhất ở NEU. Tập T chưa dùng để chấm ở cả hai phép thử. Số liệu thử BERT dựa trên checkpoint demo V1 được giữ trong bảng trên.

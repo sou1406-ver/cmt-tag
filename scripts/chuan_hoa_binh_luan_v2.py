@@ -652,6 +652,21 @@ CORRECTION_PATTERN = word_pattern(CORRECTIONS)
 
 REVIEW_PATTERN = word_pattern(REVIEW)
 
+# Rà ViLexNorm trên bình luận phát triển V2. Các mục bổ sung sát ngưỡng
+# được duyệt riêng từ ví dụ V2, cùng quy tắc ngữ cảnh cho dạng đa nghĩa.
+VILEXNORM_REVIEWED = {
+    'gòi': 'rồi', 'gòy': 'rồi', 'cno': 'chúng nó', 'chời': 'trời',
+    'tgian': 'thời gian', 'qá': 'quá', 'luon': 'luôn', 'hem': 'không',
+    'dui': 'vui', 'hnay': 'hôm nay', 'cíu': 'cứu', 'ctay': 'chia tay',
+    'zai': 'trai', 'sv': 'sinh viên', 'khók': 'khóc', 'kiu': 'kêu',
+    'thoy': 'thôi', 'nta': 'người ta', 'cbi': 'chuẩn bị', 'khùm': 'khùng',
+}
+VILEXNORM_MANUAL = {'lun': 'luôn', 'rùi': 'rồi', 'mún': 'muốn', 'zậy': 'vậy'}
+VILEXNORM_RULES = VILEXNORM_REVIEWED | VILEXNORM_MANUAL
+VILEXNORM_PATTERN = word_pattern(VILEXNORM_RULES)
+STUDENT_CUE = re.compile(r'^\s+(?:năm\s+(?:[1-6]|nhất|hai|ba|tư)|trường|đại học|cao đẳng|thực tập|ngành|sư phạm)\b')
+THANK_YOU_PREFIX = re.compile(r'\b(?:thank|thanh|thăn)\s*$')
+
 NON_DEV = {'T2_SCORE', 'T2_REVIEW_OR_EXCLUDE', 'PENDING_SUPPLEMENT'}
 
 def eligible_matches(pattern, text):
@@ -681,6 +696,27 @@ def correct(text):
         cursor = match.end()
     pieces.append(text[cursor:])
     return ''.join(pieces), edits
+
+
+def normalize_reviewed_variants(text):
+    parts = []
+    cursor = 0
+    for match in eligible_matches(VILEXNORM_PATTERN, text):
+        original = match[0]
+        source = original.casefold()
+        if original.isupper():
+            continue
+        if source == 'sv' and not STUDENT_CUE.match(text[match.end():].casefold()):
+            continue
+        if source == 'kiu' and THANK_YOU_PREFIX.search(text[:match.start()].casefold()):
+            continue
+        target = VILEXNORM_RULES[source]
+        if original[0].isupper():
+            target = target[0].upper() + target[1:]
+        parts.extend((text[cursor:match.start()], target))
+        cursor = match.end()
+    parts.append(text[cursor:])
+    return ''.join(parts)
 
 def minimal_filter_text(text):
     """Small data view: NFC, exact valid HTML, CRLF/NBSP and outer whitespace.
@@ -727,11 +763,13 @@ def technical_text(text):
     return ' '.join(CONTROL.sub('', minimal_filter_text(text)).split())
 
 
-def normalize_comment(text, *, apply_spelling=True):
+def normalize_comment(text, *, apply_spelling=True, apply_reviewed_variants=True):
     """Giữ nguyên chữ tục, emoji, emoticon và sắc thái ngoài quy tắc đã duyệt."""
     base = technical_text(text)
     abbreviated, _, _ = normalize_abbreviations(base)
-    return correct(abbreviated)[0] if apply_spelling else abbreviated
+    if apply_spelling:
+        abbreviated = correct(abbreviated)[0]
+    return normalize_reviewed_variants(abbreviated) if apply_reviewed_variants else abbreviated
 
 
 def normalize_v2(text):

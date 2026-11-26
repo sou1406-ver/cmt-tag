@@ -2,7 +2,7 @@
 
 **Bài tập lớn Xử lý dữ liệu văn bản · cmt-tag**
 
-**Cập nhật 26/11/2026.** T2 đã khóa ở 613 câu. Thực nghiệm E+C đã chốt biến thể văn bản cho lượt chạy chính thức V2. T2 chưa chấm trong thiết kế này.
+**Cập nhật 26/11/2026.** Train và T2 đã đóng băng cho lượt chạy chính thức V2. Báo cáo có kết quả E+C cho các biến thể chuẩn hóa. T2 chưa chấm.
 
 ## 1. Bài toán
 
@@ -32,7 +32,7 @@ Dựng lại tập train từ E, C, U đã chốt và các nhãn mở rộng chu
 
 ### Chuẩn hóa văn bản
 
-Khôi phục văn bản và ID lỗi Excel từ nguồn đã đối chiếu trước khi chạy phép chuẩn hóa. Dấu `=` đầu câu vẫn là chữ khi thuộc emoticon như `=)))`. ID lưu dưới dạng chuỗi. Với cả train và T2, chuẩn hóa NFC, xử lý ký tự điều khiển, giải mã HTML entity hợp lệ và chuẩn hóa khoảng trắng. Giữ emoji, emoticon và ký tự nối chuỗi emoji. Kết quả đối chứng E+C ở mục 6 chọn văn bản sau bước kỹ thuật này làm đầu vào chính thức, với cách viết tắt gốc của người dùng.
+Khôi phục văn bản và ID lỗi Excel từ nguồn đã đối chiếu trước khi chạy phép chuẩn hóa. Dấu `=` đầu câu vẫn là chữ khi thuộc emoticon như `=)))`. ID lưu dưới dạng chuỗi. Với cả train và T2, chuẩn hóa NFC, xử lý ký tự điều khiển, giải mã HTML entity hợp lệ và chuẩn hóa khoảng trắng. Giữ emoji, emoticon và ký tự nối chuỗi emoji. Bộ đầu vào chính thức được chuẩn bị bằng `normalize_v2` đã duyệt theo yêu cầu. Kết quả đối chứng E+C ở mục 6 ghi riêng hiệu quả của việc giữ cách viết gốc.
 
 | Quy tắc | Số câu train thay đổi | Số câu T2 thay đổi |
 | --- | ---: | ---: |
@@ -52,7 +52,11 @@ Chạy [script chuẩn hóa và nối nhãn](../scripts/prepare_v2_normalized.py
 .\.venv\Scripts\python.exe -m scripts.prepare_v2_normalized --output outputs/V2_chuan_hoa_chay_lai
 ```
 
-Lượt này đã được tái lập với SHA-256 khớp cho năm tệp dữ liệu và thống kê. Sửa chính tả và áp dụng bảng viết tắt được để sang lượt phát triển riêng.
+Lượt chuẩn hóa kỹ thuật đã được tái lập với SHA-256 khớp cho năm tệp dữ liệu và thống kê. Từ snapshot này, [script đóng băng đầu vào](../scripts/freeze_v2_official.py) tạo tập train chính thức **4.945 câu** (2.150 NEG, 1.646 NEU, 1.149 POS) sau khi loại hai câu trùng văn bản. Đối chiếu cả dạng gốc và dạng chuẩn hóa với 652 quyết định test. Bộ chấm có 613 câu gồm 189 T gốc và 424 T bổ sung. Manifest tại `outputs/03_Dau_vao_chinh_thuc/manifest.json` có SHA-256 `28ffb27c58f9ad0bb396a5338ffe4fc8c06a60b1bd3853615e5b93f04ceb8d27`. Script này chỉ chuẩn bị dữ liệu và cấu hình.
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.freeze_v2_official --input-view normalize_v2 --output outputs/V2_dong_bang_chay_lai
+```
 
 ### Cấu hình mô hình
 
@@ -110,7 +114,7 @@ Ablation dùng cùng 5 fold theo bài đã khóa cho từng seed `20261123` và 
 
 Hai nhánh ViSoBERT chạy đủ 20 lượt trên Modal A10 sau khi L4 chưa cấp container. Modal báo 0,5544 USD cho lượt A10 và 0,5613 USD tổng trên workspace mới khi tính cả kiểm tra GPU và lần khởi tạo L4. Các app đã dừng.
 
-Manifest đầu vào có SHA-256 `ee3eeee892cd2183c57716411f93083694ca7e91c6bdb0e36ebc123fe13657e1`. Manifest kết quả chốt `selected_view=original` với SHA-256 `7027b20a0641f88714be512e2f14e6f3b33a9bd7695a7a14873011fc3202f70a`. Bảng điểm theo seed và dự đoán theo ID lưu cục bộ cùng manifest. Lượt chấm chính thức trên T2 vẫn đang chờ.
+Manifest đầu vào có SHA-256 `ee3eeee892cd2183c57716411f93083694ca7e91c6bdb0e36ebc123fe13657e1`. Manifest kết quả chốt `selected_view=original` với SHA-256 `7027b20a0641f88714be512e2f14e6f3b33a9bd7695a7a14873011fc3202f70a`. Điểm tổng hợp lưu trong báo cáo. Lượt chấm chính thức trên T2 vẫn đang chờ.
 
 ### Chuẩn hóa bản đọc V2
 
@@ -132,7 +136,7 @@ Chạy thêm `--suggest` để xuất sheet **Gợi ý từ corpus** trong cùng
 
 Hàm `normalize_v2(text)` đóng gói viết tắt theo ngữ cảnh và đúng 10 ánh xạ chính tả ở nhóm **Đã sửa**. Cùng một hàm áp dụng cho mọi câu. Hàm giữ từ tục và để nguyên các mục **Cần rà**. Sheet **Viết tắt đã sửa** dùng để đối chiếu 159 ánh xạ đã áp dụng.
 
-Đối chiếu với cột **Sau chuẩn hóa** trên 14.408 bình luận cho kết quả **14.406 câu khớp**. Cả 613 câu T2 khớp. Hai câu sai khác đều thuộc hàng chờ test, có tổng cộng năm lượt `xuất chiếu → suất chiếu` từng bị bỏ qua ở bản Excel. Không có sai khác chưa giải thích. Danh sách đủ hai câu và manifest đối chiếu lưu cục bộ. Các kết quả trên là đối chiếu văn bản, chưa chấm T2.
+Đối chiếu với cột **Sau chuẩn hóa** trên 14.408 bình luận lúc đó cho kết quả **14.406 câu khớp**. Cả 613 câu T2 khớp. Hai câu sai khác đều thuộc hàng chờ test, có tổng cộng năm lượt `xuất chiếu → suất chiếu` từng bị bỏ qua ở Excel. Hai câu đã cập nhật trong workbook chính. T2 chưa chấm.
 
 So hai nhánh sau cùng một bước làm sạch kỹ thuật: giữ cách viết gốc và dùng `normalize_v2`. Dùng lại 5 fold theo bài cho mỗi seed `20261123` và `20261124`, cùng 3.922–3.928 mẫu train mỗi fold. Bộ quy tắc mới làm thay đổi 79/184 câu E+C. Kiểm tra gần trùng không phát sinh mẫu cần loại ở bất kỳ fold nào. Manifest đầu vào có SHA-256 `878e3c79808e9385a9fd02930a4bcf9c80e34a3fc419555c9dd724f5f055dbb1`. Giữ tiêu chí đã định trước là macro-F1 ViSoBERT ngoài fold trung bình, ưu tiên văn bản gốc nếu bằng điểm.
 
@@ -143,4 +147,30 @@ So hai nhánh sau cùng một bước làm sạch kỹ thuật: giữ cách vi�
 
 Điểm là trung bình ± độ lệch chuẩn mẫu qua hai seed. Từng seed của ViSoBERT đạt 0,8258 và 0,8245 khi giữ cách viết gốc, so với 0,8007 và 0,8153 với `normalize_v2`. Chốt **văn bản gốc sau làm sạch kỹ thuật** theo tiêu chí đã định trước. Manifest kết quả ghi `selected_view=original` và có SHA-256 `6a03ce54523241bde48ccf642e15c1fb1ec42234c76c391561ce35d80b7d9234`.
 
-Modal đã hoàn tất 20 lượt ViSoBERT trên A10 với chi phí 0,5190 USD trước tín dụng và đã dừng app. Các dự đoán ngoài fold và bảng điểm lưu cục bộ. T2 được dùng để đối chiếu văn bản với Excel. T2 chưa được dùng để chọn biến thể hoặc chấm điểm trong lượt này.
+Modal đã hoàn tất 20 lượt ViSoBERT trên A10 với chi phí 0,5190 USD trước tín dụng và đã dừng app. T2 chỉ được dùng để đối chiếu văn bản với Excel trong lượt này.
+
+### Đối chiếu viết tắt và chính tả với nguồn ngoài
+
+Trích các thay thế từ tập train của ViLexNorm (8.372 cặp bình luận gốc và chuẩn hóa do người chú giải), ghim revision `1070c6b9b00830fad278f48d9797df9ae1c942ac`. Dùng Viet74K tại revision `688b0953c8cdb21ee090ce80b83cefdb052fe2cd` để ghi nhận sự hiện diện của dạng gốc và dạng đề xuất. Hai nguồn lưu cục bộ. [Bài báo ViLexNorm, EACL 2024](https://aclanthology.org/2024.eacl-long.85/) · [Kho ViLexNorm](https://github.com/ngxtnhi/ViLexNorm) · [Viet74K](https://github.com/duyet/vietnamese-wordlist)
+
+[Script đối chiếu](../scripts/audit_v2_external_lexicon.py) căn chỉnh từng cặp bình luận theo token, lấy cụm thay thế dài tối đa ba token mỗi phía và bỏ qua các dạng tục đã được bảo vệ. Một gợi ý cần ít nhất ba cặp hỗ trợ trong ViLexNorm và ít nhất ba bình luận V2 còn giữ dạng gốc trong bản đọc. Trên 12.030 bình luận ngoài T2 và hàng chờ test, thu được **207 dạng cần rà**. Ví dụ, `lun → luôn` có 87/126 câu hỗ trợ trong ViLexNorm và 99 câu V2 còn giữ `lun`. Từ `dị` xuất hiện cả trong cụm `kinh dị`, minh họa vì sao việc thay thế cần xét ngữ cảnh. Tần suất và kết quả tra từ điển dùng để rà thủ công. Bước đối chiếu này chưa đưa gợi ý vào `normalize_v2` hay huấn luyện lại mô hình.
+
+Lọc đợt rà tiếp theo theo bốn điều kiện: dạng gốc vắng trong Viet74K, dạng đích có trong Viet74K, ít nhất năm câu ViLexNorm hỗ trợ, và tỷ lệ hỗ trợ ít nhất 70% trên số câu ViLexNorm có dạng gốc. Loại các dạng đa nghĩa đã liệt kê, từ tục, chữ kéo dài và các dạng từng được áp dụng trong bảng 159 dòng ánh xạ. Kết quả là **21 dạng đạt ngưỡng, tương ứng 166 lượt xuất hiện**, và **186 dạng bị loại**. Sheet **Gợi ý từ ViLexNorm** lưu ví dụ và lý do loại. Hai dạng `toy` và `sv` có ví dụ cần xét thêm theo ngữ cảnh trước khi duyệt.
+
+### Ablation sau lượt duyệt ViLexNorm
+
+Bổ sung 20 mục từ danh sách lọc sau khi bỏ `toy`. Các dạng `lun`, `rùi`, `mún`, `zậy` được duyệt tay. `sv` chỉ đổi khi có tín hiệu về trường, ngành hoặc năm học. Giữ `thanh kiu` trong các biến thể của *thank you*. Quy tắc mới làm đổi thêm **353/14.408 câu** so với code trước đó, gồm 138 ứng viên train, 158 câu corpus, 43 câu chờ, 13 câu T2 được chấm về sau và một câu T2 có nhãn ngoài ba lớp. Workbook cập nhật 355 câu vì còn hai trường hợp chính tả cũ chưa cập nhật ở hàng chờ. Nhãn giữ theo ID.
+
+Hai biến thể dùng cùng 184 dự đoán ngoài fold E+C cho mỗi seed, 5 fold theo bài và hai seed `20261123`, `20261124`. Không phát sinh mẫu gần trùng cần loại thêm trong 10 fold. Macro-F1 và accuracy báo trung bình ± độ lệch chuẩn mẫu qua seed.
+
+| Mô hình | Macro-F1 gốc | Macro-F1 `normalize_v2` | Accuracy gốc | Accuracy `normalize_v2` |
+| --- | ---: | ---: | ---: | ---: |
+| TF-IDF từ + LinearSVC | **0,6815 ± 0,0039** | 0,6687 ± 0,0108 | **0,6984 ± 0,0038** | 0,6875 ± 0,0115 |
+| ViSoBERT | **0,8262 ± 0,0148** | 0,8100 ± 0,0232 | **0,8370 ± 0,0077** | 0,8234 ± 0,0192 |
+
+| Seed | TF-IDF gốc | TF-IDF chuẩn hóa | ViSoBERT gốc | ViSoBERT chuẩn hóa |
+| --- | ---: | ---: | ---: | ---: |
+| `20261123` | 0,6788 | 0,6611 | 0,8157 | 0,7936 |
+| `20261124` | 0,6843 | 0,6763 | 0,8366 | 0,8264 |
+
+Macro-F1 trên E+C nghiêng về giữ cách viết gốc ở cả hai mô hình. `normalize_v2` là biến thể chuẩn bị cho T2 theo lựa chọn đã nêu, với các thay thế được ghi trong code và workbook. ViSoBERT hoàn tất 20 lượt trên Modal A10 và app đã dừng. Tổng thời gian huấn luyện ghi trong log là 1.265,66 giây GPU. Đây chưa phải thời gian tính phí đầy đủ. SHA-256 manifest E+C đầu vào `cace1f591e393c4f36d9a81ffde0cabe27b88a2c6ef4a708f746aa0b73b20612`, manifest kết quả `c8582c03a6b8d00ed660c8151adcb97566376b0facebfb02840449533961ebb6`. T2 chưa chấm.

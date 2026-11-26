@@ -62,7 +62,7 @@ The earlier guideline/documentation update did not execute the protocol. In the 
 
 ## Protocol revision: new T/U, E/C and chunk export (2026-11-16)
 
-The original all-source-T split and old blind-50 workbook were unused/unlabeled and are marked SUPERSEDED via new sidecars, with original manifests/files preserved. The sealed 1,000-ID selection was not changed. The replacement removes the one-post-per-source-in-T requirement: seed 20261115 chooses one of the three small-source posts for T, two for U, then allocates the remaining T budget in proportion to the two major sources' counts (660:250), keeping whole posts. The nearest size on that path is T=202 and U=798.
+The original all-source-T split and blind-50 workbook were unused. They were marked SUPERSEDED and removed from local outputs on 25 November 2026. With seed 20261115, the replacement assigns one of the three small-source posts to T and two to U, then allocates the remaining T budget in proportion to the two major sources' counts (660:250), keeping whole posts. This yields T=202 and U=798. The locked T and U labels are under `outputs/02_Du_lieu_va_nhan/Nguon_V2/`.
 
 | Source | T | U |
 |---|---:|---:|

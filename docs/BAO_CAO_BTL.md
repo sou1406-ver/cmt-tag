@@ -2,11 +2,21 @@
 
 **Bài tập lớn Xử lý dữ liệu văn bản · cmt-tag**
 
-**Cập nhật 26/11/2026.** Train và T2 đã đóng băng cho lượt chạy chính thức V2. Báo cáo có kết quả E+C cho các biến thể chuẩn hóa. T2 chưa chấm.
+**Cập nhật 27/11/2026.** Báo cáo trình bày kết quả của sáu mô hình, mỗi mô hình chạy ba seed trên cùng tập train 7.864 bình luận và tập test T2 gồm 613 bình luận.
 
 ## 1. Bài toán
 
 Dự đoán cảm xúc chung mà người viết thể hiện trong một bình luận Facebook về phim. Ba lớp là **POS** (tích cực), **NEG** (tiêu cực) và **NEU** (trung tính). Người gán đọc `text_clean` của chính bình luận. `REVIEW` dùng khi cần xem lại và `EXCLUDE` dùng cho mẫu bị loại theo [hướng dẫn gán nhãn](guidelines/SENTIMENT_GUIDELINE.md).
+
+### Cơ sở lý thuyết
+
+**Biểu diễn văn bản.** Bag of Words (BoW) đếm số lần mỗi từ xuất hiện trong bình luận và bỏ qua thứ tự từ. TF-IDF tăng trọng số của đặc trưng hay xuất hiện trong một bình luận và giảm trọng số của đặc trưng phổ biến trên nhiều bình luận. Thực nghiệm dùng BoW unigram, TF-IDF unigram và bigram theo từ, cùng TF-IDF n-gram ký tự độ dài 3–5 trong từ. Từ vựng và IDF được học trên tập train. [1]
+
+**Phân loại cổ điển.** Multinomial Naive Bayes ước lượng phân phối từ theo từng lớp dưới giả định các đặc trưng độc lập có điều kiện theo lớp. Complement Naive Bayes ước lượng trọng số từ các mẫu thuộc phần bù của từng lớp. LinearSVC học ranh giới tuyến tính để phân loại các vector TF-IDF. Với ba nhãn, mô hình học một bộ phân loại cho mỗi nhãn đối lập với các nhãn còn lại. [1–3]
+
+**Mô hình ngôn ngữ tiền huấn luyện.** PhoBERT được tiền huấn luyện chuyên biệt cho tiếng Việt. ViSoBERT dùng kiến trúc XLM-R và được tiền huấn luyện trên văn bản mạng xã hội tiếng Việt. Hai mô hình biểu diễn văn bản theo ngữ cảnh, sau đó được fine-tune cùng đầu phân loại POS, NEG và NEU trên tập train của bài. [4–5]
+
+**Chỉ số.** Accuracy là số câu dự đoán đúng chia cho tổng số câu. Với từng lớp, Precision là tỷ lệ dự đoán về lớp đó đúng, Recall là tỷ lệ mẫu thực tế thuộc lớp đó được nhận ra, và F1 là trung bình điều hòa của Precision và Recall. Macro-Precision, Macro-Recall và Macro-F1 lấy trung bình đơn giản qua ba lớp. Ma trận nhầm lẫn ghi số mẫu theo cặp nhãn thực tế và nhãn dự đoán. [6]
 
 ## 2. Dữ liệu và gán nhãn
 
@@ -20,31 +30,17 @@ Crawler thu bình luận theo từng bài. Bước tiền xử lý tối thiểu
 | Test bổ sung | 450 | 119 | 145 | 160 | 424 |
 | **T2** | **652** | **174** | **206** | **233** | **613** |
 
-Trong 652 quyết định có 32 REVIEW và 7 EXCLUDE. Manifest lưu nguồn từng câu và SHA-256 của bản đang dùng. Hàng chờ 1.731 câu được giữ riêng và nằm ngoài train lẫn test của lượt chính thức này.
-
-Phần bổ sung 424 câu đã được chấm trong một lượt thử nghiệm một seed. T gốc 189 câu chưa được chấm. Bảng kết quả tách điểm của hai phần và của toàn bộ T2.
+Trong 652 quyết định có 32 REVIEW và 7 EXCLUDE. Sáu mô hình được chấm trên toàn bộ 613 câu có nhãn POS, NEG hoặc NEU. Manifest lưu nguồn từng câu và SHA-256 của bản đang dùng.
 
 ## 4. Thiết kế thực nghiệm chính
 
 ### Nguồn train và kiểm tra rò rỉ
 
-Dựng lại tập train từ E, C, U đã chốt và các nhãn mở rộng chunk 01–50 theo quy tắc chọn nhãn hiện hành. Chỉ dùng quyết định POS, NEG, NEU. Cả sáu mô hình dùng một danh sách train sau khi loại các mẫu trùng ID hoặc cùng bài với T2, trùng văn bản, hoặc gần trùng ở dạng gốc hay sau chuẩn hóa. Kiểm tra gần trùng dùng hàm hiện có của repo, với Jaccard ít nhất `0,9` trên cụm ba token và văn bản chuẩn hóa dài tối thiểu 40 ký tự.
+Qua hai lượt gán nhãn, GPT, Claude và Gemini cùng chọn một nhãn POS, NEG hoặc NEU cho **9.772/12.758** bình luận. Sau khi ghép thêm 957 câu E/C/U đã chốt, nhóm loại 2.842 câu cùng bài với T2 và 23 câu trùng văn bản với T2. Tập train cuối gồm **7.864** câu với 1.759 POS, 3.261 NEG và 2.844 NEU. Khi lọc train, nhóm kiểm tra trùng và gần trùng ở cả dạng gốc và dạng chuẩn hóa. Tiêu chí gần trùng là Jaccard ít nhất `0,9` trên cụm ba token với văn bản chuẩn hóa dài tối thiểu 40 ký tự. [Manifest train cuối](../outputs/06_Du_lieu_cuoi_V2/manifest.json)
 
 ### Chuẩn hóa văn bản
 
 Khôi phục văn bản và ID lỗi Excel từ nguồn đã đối chiếu trước khi chạy phép chuẩn hóa. Dấu `=` đầu câu vẫn là chữ khi thuộc emoticon như `=)))`. ID lưu dưới dạng chuỗi. Với cả train và T2, chuẩn hóa NFC, xử lý ký tự điều khiển, giải mã HTML entity hợp lệ và chuẩn hóa khoảng trắng. Giữ emoji, emoticon và ký tự nối chuỗi emoji. Bộ đầu vào chính thức được chuẩn bị bằng `normalize_v2` đã duyệt theo yêu cầu. Kết quả đối chứng E+C ở mục 6 ghi riêng hiệu quả của việc giữ cách viết gốc.
-
-| Quy tắc | Số câu train thay đổi | Số câu T2 thay đổi |
-| --- | ---: | ---: |
-| Khôi phục văn bản lỗi Excel | — | — |
-| Đối chiếu và khôi phục ID từ nguồn | — | — |
-| Chuẩn hóa Unicode NFC | — | — |
-| Xử lý ký tự điều khiển | — | — |
-| Giải mã HTML entity | — | — |
-| Chuẩn hóa khoảng trắng | — | — |
-| **Số câu bị thay đổi bởi ít nhất một quy tắc** | **—** | **—** |
-
-Một câu có thể xuất hiện ở nhiều hàng. Số liệu train ghi kèm số mẫu trước và sau lọc, cùng số loại theo từng lý do.
 
 Chạy [script chuẩn hóa và nối nhãn](../scripts/prepare_v2_normalized.py) từ thư mục gốc repo. Dùng một thư mục đích mới dưới `outputs/`.
 
@@ -52,46 +48,60 @@ Chạy [script chuẩn hóa và nối nhãn](../scripts/prepare_v2_normalized.py
 .\.venv\Scripts\python.exe -m scripts.prepare_v2_normalized --output outputs/V2_chuan_hoa_chay_lai
 ```
 
-Lượt chuẩn hóa kỹ thuật đã được tái lập với SHA-256 khớp cho năm tệp dữ liệu và thống kê. Từ snapshot này, [script đóng băng đầu vào](../scripts/freeze_v2_official.py) tạo tập train chính thức **4.945 câu** (2.150 NEG, 1.646 NEU, 1.149 POS) sau khi loại hai câu trùng văn bản. Đối chiếu cả dạng gốc và dạng chuẩn hóa với 652 quyết định test. Bộ chấm có 613 câu gồm 189 T gốc và 424 T bổ sung. Manifest tại `outputs/03_Dau_vao_chinh_thuc/manifest.json` có SHA-256 `28ffb27c58f9ad0bb396a5338ffe4fc8c06a60b1bd3853615e5b93f04ceb8d27`. Script này chỉ chuẩn bị dữ liệu và cấu hình.
+Lượt chuẩn hóa kỹ thuật đã được tái lập với SHA-256 khớp cho năm tệp dữ liệu và thống kê. Snapshot trước đợt gộp dùng 4.945 câu train và là nguồn của tập T2 đã khóa. Hai biến thể đầu vào của snapshot này có cùng ID và nhãn trên từng tập. Kết quả ở mục 5 dùng tập train cuối 7.864 câu và đầu vào `normalize_v2`.
+
+| Vai trò | Thư mục đầu vào | SHA-256 manifest |
+| --- | --- | --- |
+| Trước đợt gộp · `normalize_v2` và tập T2 | `outputs/03_Dau_vao_chinh_thuc/` | `9573f5ebd776be8ee2de86667600abfd52b38c61ddf4ac3b273902045541f637` |
+| Đối chứng trước đợt gộp · `original` | `outputs/04_Dau_vao_phu/` | `bb2bd66feb0bf58f7b6d521bfe64746cacd59a88f2e095a5dd4aabc635d46667` |
 
 ```powershell
 .\.venv\Scripts\python.exe -m scripts.freeze_v2_official --input-view normalize_v2 --output outputs/V2_dong_bang_chay_lai
+.\.venv\Scripts\python.exe -m scripts.freeze_v2_official --input-view original --output outputs/V2_doi_chieu_chay_lai
 ```
 
 ### Cấu hình mô hình
 
 | Hạng mục | Cấu hình |
 | --- | --- |
-| Baseline | Giữ pipeline hiện có sau bước chuẩn hóa chung. Gồm BoW + MultinomialNB, BoW + ComplementNB, TF-IDF từ + LinearSVC và TF-IDF ký tự + LinearSVC. |
+| Baseline | BoW + MultinomialNB, BoW + ComplementNB, TF-IDF từ + LinearSVC và TF-IDF ký tự + LinearSVC. Cả hai biến thể dùng `v2_baseline_model`: chuyển chữ thường, rút gọn chữ kéo dài, tách dấu câu và giữ emoji, emoticon ở bước tiền xử lý. `teencode=False`, `segment=False`. |
 | PhoBERT | `vinai/phobert-base`, revision `01daacda68afe13d83023d16ec647239e344a1e6`. Chuẩn hóa chung rồi tách từ bằng PyVi. |
 | ViSoBERT | `uitnlp/visobert`, revision `196a62afad9cbe4f52a54aabad828b13f0eec59a`. Dùng chuẩn hóa chung. |
 | Khởi tạo | Tải trọng số pretrained gốc và khởi tạo đầu phân loại mới cho mỗi seed. |
 | Fine-tune | 4 epoch, learning rate `2e-5`, batch 16, tối đa 128 token, warmup 10%, weight decay `0,01`, trọng số lớp `N / (3 × n_lớp)`. Dùng mô hình sau epoch cuối, với cấu hình cố định trước khi chấm. |
-| Seed BERT | `20261123`, `20261124`, `20261125`. |
-| Tái lập | Đóng băng SHA-256 của train, test, code và cấu hình trước khi gửi lượt chạy BERT lên Modal. Lệnh tái lập sẽ kiểm tra manifest trước khi chạy, sau đó ghi dự đoán theo ID, bảng điểm, thời gian và chi phí thực tế. |
+| Seed | `20261123`, `20261124`, `20261125` cho cả sáu mô hình. LinearSVC dùng `random_state` theo seed, hai biến thể Naive Bayes cho kết quả xác định trên cùng dữ liệu. |
+| Tái lập | Các script kiểm tra SHA-256 của train, test và checkpoint. Dự đoán từng seed được đối chiếu theo ID và lưu cục bộ. |
 
-## 5. Kết quả chính thức trên T2
+`GOLD_CONFIG` cấu hình vectorizer và bộ phân loại. Bộ teencode nằm trong tiền xử lý tùy chọn đã dùng ở các lượt phát triển. So trên ví dụ tổng hợp, các ánh xạ `ko`, `k0`, `khong`, `hok`, `khum`, `đc`, `cx` có chỗ trùng. Quy tắc cũ đổi `hông` thành `không`, có thể đổi `đc comics` thành `được comics`, và xét `mn` theo ngữ cảnh khác. Hai biến thể chính thức cùng tắt bước teencode ở baseline để khác biệt đầu vào chỉ đến từ văn bản đã đóng băng.
 
-**Chưa chạy.** Mỗi ô ghi macro-F1. Hai mô hình BERT báo mean ± độ lệch chuẩn mẫu qua ba seed. Bảng chi tiết ghi accuracy, F1 POS, F1 NEG và F1 NEU theo từng seed và theo ba phần test.
+## 5. Kết quả trên T2
 
-| Mô hình | T gốc (189) | Bổ sung (424) | T2 (613) |
-| --- | ---: | ---: | ---: |
-| BoW + MultinomialNB | — | — | — |
-| BoW + ComplementNB | — | — | — |
-| TF-IDF từ + LinearSVC | — | — | — |
-| TF-IDF ký tự + LinearSVC | — | — | — |
-| PhoBERT | — | — | — |
-| ViSoBERT | — | — | — |
+Mỗi ô là trung bình ± độ lệch chuẩn mẫu qua ba seed. Mọi lượt chấm sử dụng cùng 613 câu T2. [Kết quả chi tiết theo seed](../outputs/08_Danh_gia_T2_V2_chi_tiet/manifest.json)
+
+| Mô hình | Accuracy | Macro-Precision | Macro-Recall | Macro-F1 |
+| --- | ---: | ---: | ---: | ---: |
+| BoW + Multinomial NB | 0,6509 ± 0,0000 | 0,6577 ± 0,0000 | 0,6538 ± 0,0000 | 0,6507 ± 0,0000 |
+| BoW + Complement NB | 0,6248 ± 0,0000 | 0,6312 ± 0,0000 | 0,6359 ± 0,0000 | 0,6232 ± 0,0000 |
+| TF-IDF từ + LinearSVC | 0,6688 ± 0,0000 | 0,6774 ± 0,0000 | 0,6675 ± 0,0000 | 0,6682 ± 0,0000 |
+| TF-IDF ký tự + LinearSVC | 0,6362 ± 0,0000 | 0,6401 ± 0,0000 | 0,6346 ± 0,0000 | 0,6368 ± 0,0000 |
+| PhoBERT | 0,7238 ± 0,0034 | 0,7264 ± 0,0027 | 0,7266 ± 0,0043 | 0,7260 ± 0,0039 |
+| ViSoBERT | 0,7292 ± 0,0016 | 0,7376 ± 0,0024 | 0,7266 ± 0,0013 | 0,7293 ± 0,0018 |
+
+TF-IDF từ + LinearSVC có Macro-F1 cao nhất trong bốn baseline. Với cùng LinearSVC, TF-IDF từ đạt 0,6682 và TF-IDF ký tự đạt 0,6368. Với cùng BoW, Multinomial NB đạt 0,6507 và Complement NB đạt 0,6232. ViSoBERT đạt Macro-F1 trung bình cao nhất, hơn baseline tốt nhất 6,11 điểm phần trăm. PhoBERT và ViSoBERT có Macro-Recall trung bình cùng làm tròn thành 0,7266.
+
+So sánh giữa hai nhóm BoW và TF-IDF phản ánh chênh lệch của cả đặc trưng lẫn thuật toán vì nhóm BoW dùng Naive Bayes còn nhóm TF-IDF dùng LinearSVC.
 
 ### Phân tích lỗi
 
-Dùng ViSoBERT seed `20261123` cho ma trận nhầm lẫn trên T2. Hàng là nhãn người, cột là dự đoán. Bảng lỗi tổng hợp ghi số lượng theo cặp nhãn nhầm, nguồn thu thập và hai phần T gốc / bổ sung. Chọn 30 dự đoán sai theo cặp nhầm và nguồn bằng seed đã định trước. Văn bản và ID của mẫu phân tích lưu cục bộ.
+Ma trận dưới đây dùng ViSoBERT seed `20261123`. Hàng là nhãn thực tế, cột là nhãn dự đoán. Mục Thực nghiệm của web cho phép chọn đủ sáu mô hình và ba seed. [Xem ma trận trên web](http://127.0.0.1:8768/#thuc-nghiem)
 
 | Nhãn người | Dự đoán POS | Dự đoán NEG | Dự đoán NEU |
 | --- | ---: | ---: | ---: |
-| POS | — | — | — |
-| NEG | — | — | — |
-| NEU | — | — | — |
+| POS | **118** | 32 | 24 |
+| NEG | 9 | **159** | 38 |
+| NEU | 20 | 42 | **171** |
+
+Hai ô ngoài đường chéo lớn nhất là 42 câu NEU bị dự đoán thành NEG và 38 câu NEG bị dự đoán thành NEU. Hai hướng này chiếm 80/165 lỗi của ViSoBERT ở seed trên.
 
 ## 6. Thử nghiệm phát triển
 
@@ -114,7 +124,7 @@ Ablation dùng cùng 5 fold theo bài đã khóa cho từng seed `20261123` và 
 
 Hai nhánh ViSoBERT chạy đủ 20 lượt trên Modal A10 sau khi L4 chưa cấp container. Modal báo 0,5544 USD cho lượt A10 và 0,5613 USD tổng trên workspace mới khi tính cả kiểm tra GPU và lần khởi tạo L4. Các app đã dừng.
 
-Manifest đầu vào có SHA-256 `ee3eeee892cd2183c57716411f93083694ca7e91c6bdb0e36ebc123fe13657e1`. Manifest kết quả chốt `selected_view=original` với SHA-256 `7027b20a0641f88714be512e2f14e6f3b33a9bd7695a7a14873011fc3202f70a`. Điểm tổng hợp lưu trong báo cáo. Lượt chấm chính thức trên T2 vẫn đang chờ.
+Manifest đầu vào có SHA-256 `ee3eeee892cd2183c57716411f93083694ca7e91c6bdb0e36ebc123fe13657e1`. Manifest kết quả E+C chốt `selected_view=original` với SHA-256 `7027b20a0641f88714be512e2f14e6f3b33a9bd7695a7a14873011fc3202f70a`.
 
 ### Chuẩn hóa bản đọc V2
 
@@ -128,7 +138,7 @@ py -X utf8 scripts\chuan_hoa_binh_luan_v2.py --input "cmt.xlsx" --output "cmt_ch
 py -X utf8 scripts\chuan_hoa_binh_luan_v2.py --text "ko bt rạp có mấy xuất chiếu"
 ```
 
-Chế độ Excel giữ các sheet, thêm cột **Bình luận chuẩn hóa** và có thể chỉ định cột nguồn bằng `--sheet`, `--column` và `--header-row`. Chế độ một câu chỉ cần Python. Đây là công cụ tạo bản đọc. Lượt chấm chính thức vẫn theo lựa chọn đầu vào của ablation ở trên.
+Chế độ Excel giữ các sheet, thêm cột **Bình luận chuẩn hóa** và có thể chỉ định cột nguồn bằng `--sheet`, `--column` và `--header-row`. Chế độ một câu chỉ cần Python.
 
 Chạy thêm `--suggest` để xuất sheet **Gợi ý từ corpus** trong cùng Excel đầu ra. Script lấy những dạng xuất hiện tối đa ba lượt, tìm từ gần giống sau khi bỏ dấu và so số lượt cùng từ đứng cạnh. Cách làm này dùng tần suất trong file đầu vào để ưu tiên gợi ý cần đọc lại. Các mục ở sheet gợi ý chưa trở thành quy tắc tự sửa.
 
@@ -136,7 +146,7 @@ Chạy thêm `--suggest` để xuất sheet **Gợi ý từ corpus** trong cùng
 
 Hàm `normalize_v2(text)` đóng gói viết tắt theo ngữ cảnh và đúng 10 ánh xạ chính tả ở nhóm **Đã sửa**. Cùng một hàm áp dụng cho mọi câu. Hàm giữ từ tục và để nguyên các mục **Cần rà**. Sheet **Viết tắt đã sửa** dùng để đối chiếu 159 ánh xạ đã áp dụng.
 
-Đối chiếu với cột **Sau chuẩn hóa** trên 14.408 bình luận lúc đó cho kết quả **14.406 câu khớp**. Cả 613 câu T2 khớp. Hai câu sai khác đều thuộc hàng chờ test, có tổng cộng năm lượt `xuất chiếu → suất chiếu` từng bị bỏ qua ở Excel. Hai câu đã cập nhật trong workbook chính. T2 chưa chấm.
+Đối chiếu với cột **Sau chuẩn hóa** trên 14.408 bình luận lúc đó cho kết quả **14.406 câu khớp**. Cả 613 câu T2 khớp. Hai câu sai khác đều thuộc hàng chờ test, có tổng cộng năm lượt `xuất chiếu → suất chiếu` từng bị bỏ qua ở Excel. Hai câu đã cập nhật trong workbook chính.
 
 So hai nhánh sau cùng một bước làm sạch kỹ thuật: giữ cách viết gốc và dùng `normalize_v2`. Dùng lại 5 fold theo bài cho mỗi seed `20261123` và `20261124`, cùng 3.922–3.928 mẫu train mỗi fold. Bộ quy tắc mới làm thay đổi 79/184 câu E+C. Kiểm tra gần trùng không phát sinh mẫu cần loại ở bất kỳ fold nào. Manifest đầu vào có SHA-256 `878e3c79808e9385a9fd02930a4bcf9c80e34a3fc419555c9dd724f5f055dbb1`. Giữ tiêu chí đã định trước là macro-F1 ViSoBERT ngoài fold trung bình, ưu tiên văn bản gốc nếu bằng điểm.
 
@@ -173,4 +183,17 @@ Hai biến thể dùng cùng 184 dự đoán ngoài fold E+C cho mỗi seed, 5 f
 | `20261123` | 0,6788 | 0,6611 | 0,8157 | 0,7936 |
 | `20261124` | 0,6843 | 0,6763 | 0,8366 | 0,8264 |
 
-Macro-F1 trên E+C nghiêng về giữ cách viết gốc ở cả hai mô hình. `normalize_v2` là biến thể chuẩn bị cho T2 theo lựa chọn đã nêu, với các thay thế được ghi trong code và workbook. ViSoBERT hoàn tất 20 lượt trên Modal A10 và app đã dừng. Tổng thời gian huấn luyện ghi trong log là 1.265,66 giây GPU. Đây chưa phải thời gian tính phí đầy đủ. SHA-256 manifest E+C đầu vào `cace1f591e393c4f36d9a81ffde0cabe27b88a2c6ef4a708f746aa0b73b20612`, manifest kết quả `c8582c03a6b8d00ed660c8151adcb97566376b0facebfb02840449533961ebb6`. T2 chưa chấm.
+Macro-F1 trên E+C nghiêng về giữ cách viết gốc ở cả hai mô hình. Lượt T2 ở mục 5 sử dụng `normalize_v2`, với các thay thế được ghi trong code và workbook. ViSoBERT hoàn tất 20 lượt E+C trên Modal A10. Tổng thời gian huấn luyện ghi trong log là 1.265,66 giây GPU. SHA-256 manifest E+C đầu vào `cace1f591e393c4f36d9a81ffde0cabe27b88a2c6ef4a708f746aa0b73b20612`, manifest kết quả `c8582c03a6b8d00ed660c8151adcb97566376b0facebfb02840449533961ebb6`.
+
+## 7. Kết luận
+
+Trong sáu mô hình chấm trên T2, ViSoBERT đạt Macro-F1 trung bình 0,7293 và Accuracy trung bình 0,7292. TF-IDF theo từ + LinearSVC dẫn nhóm baseline với Macro-F1 0,6682. Ma trận nhầm lẫn của ViSoBERT cho thấy lỗi tập trung giữa lớp trung tính và tiêu cực. Kết quả tổng hợp mô tả hiệu suất trên tập T2 đã khóa với ba seed sử dụng cùng tập train.
+
+## Tài liệu tham khảo
+
+1. Christopher D. Manning, Prabhakar Raghavan và Hinrich Schütze (2008). *Introduction to Information Retrieval*. Cambridge University Press. [Sách trực tuyến](https://nlp.stanford.edu/IR-book/)
+2. Jason D. M. Rennie, Lawrence Shih, Jaime Teevan và David R. Karger (2003). *Tackling the Poor Assumptions of Naive Bayes Text Classifiers*. ICML. [Bài báo](https://people.csail.mit.edu/jrennie/papers/icml03-nb.pdf)
+3. Corinna Cortes và Vladimir Vapnik (1995). *Support-Vector Networks*. Machine Learning, 20, 273–297. [Bài báo](https://doi.org/10.1007/BF00994018) · [Tài liệu LinearSVC](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html)
+4. Dat Quoc Nguyen và Anh Tuan Nguyen (2020). *PhoBERT: Pre-trained language models for Vietnamese*. Findings of EMNLP. [ACL Anthology](https://aclanthology.org/2020.findings-emnlp.92/)
+5. Nam Nguyen, Thang Phan, Duc-Vu Nguyen và Kiet Nguyen (2023). *ViSoBERT: A Pre-Trained Language Model for Vietnamese Social Media Text Processing*. EMNLP. [ACL Anthology](https://aclanthology.org/2023.emnlp-main.315/)
+6. Nhóm phát triển scikit-learn. *Metrics and scoring: quantifying the quality of predictions*. [Tài liệu chỉ số](https://scikit-learn.org/stable/modules/model_evaluation.html)

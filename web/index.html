@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Quy trình xây dựng mô hình và demo phân tích cảm xúc bình luận phim tiếng Việt của cmt-tag.">
+  <title>cmt-tag · Phân tích bình luận phim</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Đến nội dung chính</a>
+  <aside class="sidebar">
+    <a class="brand" href="#phan-tich">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>cmt-tag<small>Bình luận phim</small></span>
+    </a>
+    <nav class="nav" aria-label="Mục demo">
+      <a href="#phan-tich" aria-current="page"><span class="nav-icon icon-wave" aria-hidden="true"></span>Phân tích</a>
+      <a href="#quy-trinh"><span class="nav-icon icon-flow" aria-hidden="true"></span>Quy trình</a>
+      <a href="#du-lieu"><span class="nav-icon icon-data" aria-hidden="true"></span>Dữ liệu</a>
+      <a href="#thuc-nghiem"><span class="nav-icon icon-chart" aria-hidden="true"></span>Thực nghiệm</a>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="connection" aria-hidden="true"></span>
+      <div><strong>Chạy cục bộ</strong><p>Demo bài tập lớn V2</p></div>
+    </div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar">
+      <div><span class="crumb">cmt-tag</span><span class="separator" aria-hidden="true">/</span><strong id="section-name">Phân tích</strong></div>
+      <span class="status" id="app-status" role="status">Đang nạp mô hình</span>
+    </header>
+    <main id="main" tabindex="-1">
+      <section class="view" id="phan-tich" aria-labelledby="analysis-title">
+        <div class="hero">
+          <div class="hero-copy">
+            <h1 id="analysis-title">Phân tích cảm xúc<br>bình luận phim</h1>
+            <p>Nhập một bình luận hoặc thu bình luận từ bài Facebook để dự đoán cảm xúc.</p>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <span class="ring ring-one"></span><span class="ring ring-two"></span><span class="ring ring-three"></span>
+            <div class="art-bubble"><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+        <nav class="analysis-modes" aria-label="Cách phân tích">
+          <a href="#phan-tich" aria-current="page">Nhập bình luận</a>
+          <a href="#phan-tich-crawl">Crawl Facebook</a>
+        </nav>
+        <div id="analysis-single">
+          <div class="analysis-grid">
+            <section class="card form-card" aria-labelledby="input-title">
+              <h2 id="input-title">Nhập bình luận</h2>
+              <form id="analysis-form">
+                <label for="comment">Nội dung tiếng Việt</label>
+                <div class="text-box">
+                  <textarea id="comment" name="comment" rows="5" maxlength="2000" required spellcheck="false" placeholder="Ví dụ: Mê cảnh cuối, diễn hay quá 😭"></textarea>
+                  <p id="char-count">0 / 2.000 ký tự</p>
+                </div>
+                <div class="samples" aria-label="Bình luận mẫu">
+                  <span>Thử mẫu</span>
+                  <button type="button" data-sample="0">Tích cực</button>
+                  <button type="button" data-sample="1">Tiêu cực</button>
+                  <button type="button" data-sample="2">Trung tính</button>
+                </div>
+                <div class="form-actions">
+                  <div class="model-picker">
+                    <label for="model">Mô hình</label>
+                    <select id="model" name="model" disabled><option>Đang nạp mô hình</option></select>
+                  </div>
+                  <button class="button primary" id="submit" type="submit" disabled>Phân tích</button>
+                </div>
+                <p id="model-runtime" class="runtime-note" hidden></p>
+                <p id="form-error" class="error" role="alert" hidden></p>
+              </form>
+            </section>
+            <section class="card result-card" aria-labelledby="result-title">
+              <div class="card-heading">
+                <h2 id="result-title">Kết quả dự đoán</h2>
+                <span class="tag" id="result-tag" hidden></span>
+              </div>
+              <div class="result-placeholder" id="result-empty">
+                <span class="empty-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+                <p>Nhập bình luận hoặc chọn một mẫu để thử.</p>
+              </div>
+              <div id="result-data" hidden aria-live="polite">
+                <div class="prediction" id="prediction">
+                  <span id="prediction-name"></span>
+                  <small id="prediction-model"></small>
+                </div>
+                <div class="score-heading"><strong>Điểm từng nhãn</strong><span id="score-kind"></span></div>
+                <div class="scores" id="scores"></div>
+                <p class="score-note" id="score-note"></p>
+                <div class="model-comparison" id="model-comparison" hidden>
+                  <span>TF-IDF từ trên cùng bình luận</span>
+                  <strong id="baseline-result"></strong>
+                </div>
+              </div>
+            </section>
+          </div>
+          <section class="card normalization" aria-labelledby="normalize-title">
+            <div class="card-heading">
+              <div><h2 id="normalize-title">Sau chuẩn hóa</h2><p>Văn bản đưa vào mô hình</p></div>
+              <button id="copy" class="button subtle" type="button" hidden>Sao chép</button>
+            </div>
+            <p class="normalized-text" id="normalized" aria-live="polite">Kết quả chuẩn hóa sẽ hiện ở đây.</p>
+            <p id="copy-status" role="status"></p>
+          </section>
+        </div>
+        <section class="card crawl-card" id="phan-tich-crawl" aria-labelledby="crawl-form-title" hidden>
+          <h2 id="crawl-form-title">Crawl bài Facebook</h2>
+          <p class="data-help">Brave sẽ mở để đăng nhập nếu cần. Sau đó quay lại web và bấm Tiếp tục crawl.</p>
+          <form class="data-filters crawl-form" id="crawl-form">
+            <div>
+              <label for="crawl-url">Link trực tiếp của bài</label>
+              <input id="crawl-url" name="url" type="url" maxlength="2000" required placeholder="https://www.facebook.com/…">
+            </div>
+            <div>
+              <label for="crawl-movie">Mã phim</label>
+              <input id="crawl-movie" name="movie" maxlength="60" required placeholder="mua_do">
+            </div>
+            <div>
+              <label for="crawl-limit">Số bình luận tối đa</label>
+              <input id="crawl-limit" name="limit" type="number" value="50" min="1" max="200" required>
+            </div>
+            <button class="button primary" id="crawl-start" type="submit">Bắt đầu crawl</button>
+          </form>
+          <div class="data-toolbar">
+            <p id="crawl-status" role="status"></p>
+            <button class="button subtle" id="crawl-continue" type="button" hidden>Tiếp tục crawl</button>
+          </div>
+          <section class="crawl-output" id="crawl-output" aria-labelledby="crawl-results-title" hidden>
+            <h3 id="crawl-results-title">Bình luận đã thu thập</h3>
+            <form class="crawl-label-form" id="crawl-label-form">
+              <div class="model-picker">
+                <label for="crawl-model">Mô hình gán nhãn</label>
+                <select id="crawl-model" disabled></select>
+              </div>
+              <button class="button primary" id="crawl-label-submit" type="submit" disabled>Gán nhãn bình luận</button>
+            </form>
+            <p class="data-help" id="crawl-label-status" role="status"></p>
+            <ul class="comment-list crawl-results" id="crawl-comments" aria-label="Bình luận mới"></ul>
+          </section>
+        </section>
+      </section>
+      <section class="view" id="quy-trinh" aria-labelledby="pipeline-title" hidden>
+        <div class="pipeline-board">
+          <div class="pipeline-heading">
+            <h1 id="pipeline-title">Từ bình luận đến mô hình</h1>
+            <p>Chọn một bước để xem cách dữ liệu đi từ Facebook đến dự đoán cảm xúc.</p>
+          </div>
+          <nav class="pipeline-nav" aria-label="Các bước trong quy trình">
+            <a href="#quy-trinh-crawl" aria-controls="quy-trinh-crawl" aria-current="step"><small>Facebook</small><strong>Thu thập</strong></a>
+            <a href="#quy-trinh-chuan-hoa" aria-controls="quy-trinh-chuan-hoa"><small>Văn bản V2</small><strong>Chuẩn hóa</strong></a>
+            <a href="#quy-trinh-gan-nhan" aria-controls="quy-trinh-gan-nhan"><small>POS · NEG · NEU</small><strong>Gán nhãn</strong></a>
+            <a href="#quy-trinh-chia-tap" aria-controls="quy-trinh-chia-tap"><small>Train · T2</small><strong>Chia tập</strong></a>
+            <a href="#quy-trinh-huan-luyen" aria-controls="quy-trinh-huan-luyen"><small>Baseline · BERT</small><strong>Huấn luyện</strong></a>
+            <a href="#quy-trinh-danh-gia" aria-controls="quy-trinh-danh-gia"><small>Macro-F1</small><strong>Đánh giá</strong></a>
+          </nav>
+        </div>
+        <div class="pipeline-steps">
+          <section class="card pipeline-step" id="quy-trinh-crawl" aria-labelledby="crawl-title">
+            <h2 id="crawl-title">Thu thập bình luận Facebook</h2>
+            <p>Crawler Python đọc bình luận và phản hồi tải được từ các trang và nhóm về phim, theo giới hạn của từng bài.</p>
+            <ol class="pipeline-artifacts" aria-label="Đầu vào và đầu ra của crawler">
+              <li><strong>114 link bài đăng</strong><span>Danh sách crawl V2</span></li>
+              <li><strong>Bình luận và phản hồi</strong><span>Nội dung hiển thị trong trình duyệt</span></li>
+              <li><strong>Nhật ký và CSV</strong><span>Kiểm tra số dòng, trùng ID và lỗi tải</span></li>
+            </ol>
+            <ul>
+              <li>Lưu văn bản, ID bình luận, ID bài đăng, mã phim và nguồn. Phản hồi có thêm ID bình luận cha khi lấy được.</li>
+              <li>Ghi tiến độ theo bài để có thể chạy tiếp khi bị gián đoạn.</li>
+            </ul>
+            <p><a class="pipeline-link" href="#phan-tich-crawl">Mở form crawl bài Facebook</a></p>
+          </section>
+          <section class="card pipeline-step" id="quy-trinh-chuan-hoa" aria-labelledby="pipeline-normalize-title" hidden>
+            <h2 id="pipeline-normalize-title">Làm sạch và chuẩn hóa tiếng Việt</h2>
+            <dl class="pipeline-example">
+              <div><dt>Trước chuẩn hóa</dt><dd><mark>ko bt</mark> rạp có mấy <mark>xuất</mark> chiếu :))</dd></div>
+              <div><dt>Sau chuẩn hóa V2</dt><dd><mark>không biết</mark> rạp có mấy <mark>suất</mark> chiếu :))</dd></div>
+            </dl>
+            <p>Chuẩn hóa Unicode NFC, xử lý ký tự điều khiển, giải mã HTML hợp lệ và dọn khoảng trắng. <code>normalize_v2</code> mở rộng viết tắt theo ngữ cảnh và sửa lỗi gõ đã duyệt. Emoji và emoticon được giữ lại.</p>
+          </section>
+          <section class="card pipeline-step" id="quy-trinh-gan-nhan" aria-labelledby="annotation-title" hidden>
+            <h2 id="annotation-title">Gán nhãn cảm xúc</h2>
+            <dl class="pipeline-facts evaluation-facts" data-consensus-visible hidden aria-label="Kết quả hai lượt gán nhãn">
+              <div><dt>Bình luận qua ba AI</dt><dd data-consensus-size="annotated">—</dd></div>
+              <div><dt>Cùng nhãn POS, NEG hoặc NEU</dt><dd data-consensus-size="agreed">—</dd></div>
+              <div><dt>Tỷ lệ đồng thuận</dt><dd data-consensus-rate>—</dd></div>
+            </dl>
+            <dl class="pipeline-labels" aria-label="Ví dụ cho ba nhãn cảm xúc">
+              <div data-tone="POS"><dt>POS · Tích cực</dt><dd>Diễn xuất hay thật.</dd></div>
+              <div data-tone="NEG"><dt>NEG · Tiêu cực</dt><dd>Kịch bản dài dòng quá.</dd></div>
+              <div data-tone="NEU"><dt>NEU · Trung tính</dt><dd>Phim chiếu lúc mấy giờ?</dd></div>
+            </dl>
+            <ul>
+              <li>ChatGPT, Claude và Gemini đọc từng bình luận và gán độc lập. Ghép phiếu theo ID. Khi 3/3 phiếu cùng nhãn cảm xúc, câu trở thành ứng viên cho train.</li>
+              <li>Câu bất đồng được gán lại hoặc rà tay. <code>REVIEW</code> dành cho câu cần xem lại, <code>EXCLUDE</code> dành cho câu bị loại.</li>
+              <li>Người gán chốt nhãn của tập test T2.</li>
+            </ul>
+          </section>
+          <section class="card pipeline-step" id="quy-trinh-chia-tap" aria-labelledby="split-title" hidden>
+            <h2 id="split-title">Tách train và khóa tập test</h2>
+            <p>Ghép nhãn E/C/U đã chốt với nhãn AI đồng thuận qua hai lượt. Trước khi khóa train, nhóm kiểm tra ID, bài đăng và nội dung trùng hoặc gần trùng với T2.</p>
+            <dl class="pipeline-facts" aria-label="Kích thước snapshot đang dùng">
+              <div><dt>Train V2 đã khóa</dt><dd data-dataset-size="train_size">—</dd></div>
+              <div><dt>T2 để chấm</dt><dd data-dataset-size="test_size">—</dd></div>
+            </dl>
+            <p data-consensus-visible hidden>Trước khi lọc có thêm <strong data-consensus-size="locked">—</strong> câu E/C/U đã chốt. Có <strong data-consensus-size="identity_excluded">—</strong> câu bị loại qua kiểm tra ID và bài đăng, cùng <strong data-consensus-size="duplicate_excluded">—</strong> câu bị loại qua kiểm tra văn bản với T2.</p>
+            <p><a class="pipeline-link" href="#du-lieu">Xem phân bố nhãn và mã kiểm tra snapshot</a></p>
+          </section>
+          <section class="card pipeline-step" id="quy-trinh-huan-luyen" aria-labelledby="training-title" hidden>
+            <h2 id="training-title">Huấn luyện baseline và BERT</h2>
+            <div class="training-grid">
+              <div>
+                <h3>4 baseline</h3>
+                <ul>
+                  <li>TF-IDF theo từ và theo ký tự, mỗi loại kết hợp với LinearSVC.</li>
+                  <li>Bag of Words kết hợp với Multinomial Naive Bayes hoặc Complement Naive Bayes.</li>
+                </ul>
+              </div>
+              <div>
+                <h3>2 mô hình BERT</h3>
+                <ul>
+                  <li>PhoBERT (<code>vinai/phobert-base</code>) nhận văn bản đã tách từ bằng PyVi.</li>
+                  <li>ViSoBERT (<code>uitnlp/visobert</code>) dùng tokenizer đi kèm mô hình.</li>
+                </ul>
+              </div>
+            </div>
+            <dl class="pipeline-settings" aria-label="Cấu hình fine-tune BERT">
+              <div><dt>Epoch</dt><dd>4</dd></div>
+              <div><dt>Batch size</dt><dd>16</dd></div>
+              <div><dt>Token tối đa</dt><dd>128</dd></div>
+              <div><dt>Learning rate</dt><dd>2e−5</dd></div>
+            </dl>
+            <p>Fine-tune từ trọng số pretrained với đầu phân loại 3 lớp, warmup 10% và trọng số lớp để cân bằng chênh lệch số mẫu.</p>
+          </section>
+          <section class="card pipeline-step" id="quy-trinh-danh-gia" aria-labelledby="evaluation-title" hidden>
+            <h2 id="evaluation-title">Đánh giá và thử dự đoán</h2>
+            <p>Tập T2 đã khóa gồm <strong data-dataset-size="test_size">—</strong> bình luận. <span data-t2-status>Chờ kết quả ba seed</span>.</p>
+            <p>Macro-F1 lấy trung bình F1 của ba lớp với trọng số ngang nhau. Accuracy là tỷ lệ dự đoán đúng.</p>
+            <p>Khi nhận bình luận trong demo, hệ thống chạy <code>normalize_v2</code> rồi đưa văn bản vào mô hình đã chọn. Kết quả hiện nhãn, điểm từng lớp và câu sau chuẩn hóa.</p>
+            <div class="pipeline-actions">
+              <a class="button primary" href="#phan-tich">Thử một bình luận</a>
+              <a class="pipeline-link" href="#thuc-nghiem">Xem chỉ số và ma trận nhầm lẫn</a>
+            </div>
+          </section>
+        </div>
+      </section>
+      <section class="view" id="du-lieu" aria-labelledby="data-title" hidden>
+        <div class="page-heading">
+          <h1 id="data-title">Dữ liệu V2</h1>
+          <p>Xem bình luận đã chuẩn hóa và nhãn trong snapshot train V2.</p>
+        </div>
+        <div id="dataset-body" hidden>
+          <div class="summary-grid">
+            <article class="card stat"><span>Mẫu huấn luyện</span><strong data-dataset-size="train_size">—</strong><p>Train V2 đã khóa</p></article>
+            <article class="card stat"><span>Lớp cảm xúc</span><strong>3</strong><p>POS · NEG · NEU</p></article>
+            <article class="card stat"><span>Mẫu đánh giá T2</span><strong data-dataset-size="test_size">—</strong><p id="test-splits"></p></article>
+          </div>
+          <section class="card data-card">
+            <h2>Phân bố nhãn train</h2>
+            <div class="scores counts" id="label-counts"></div>
+            <p class="table-note" data-consensus-visible hidden><strong data-consensus-size="train_agreed">—</strong> câu AI đồng thuận và <strong data-consensus-size="train_locked">—</strong> câu E/C/U đã chốt trong tập train.</p>
+            <details class="snapshot"><summary>SHA-256 của snapshot train</summary><code id="train-sha"></code></details>
+          </section>
+          <section class="card data-card" aria-labelledby="comments-title">
+            <h2 id="comments-title">Bình luận trong tập train</h2>
+            <form class="data-filters" id="comments-form">
+              <div>
+                <label for="comments-query">Tìm theo nội dung</label>
+                <input id="comments-query" name="q" type="search" maxlength="200" placeholder="Nhập từ hoặc cụm từ">
+              </div>
+              <div>
+                <label for="comments-label">Nhãn cảm xúc</label>
+                <div class="model-picker">
+                  <select id="comments-label" name="label">
+                    <option value="">Tất cả</option>
+                    <option value="POS">POS · Tích cực</option>
+                    <option value="NEG">NEG · Tiêu cực</option>
+                    <option value="NEU">NEU · Trung tính</option>
+                  </select>
+                </div>
+              </div>
+              <button class="button primary" type="submit">Tìm</button>
+            </form>
+            <div class="data-toolbar">
+              <p id="comments-status" role="status">Đang tải bình luận…</p>
+              <div class="data-pagination" aria-label="Phân trang bình luận">
+                <button class="button subtle" id="comments-prev" type="button" disabled>Trang trước</button>
+                <button class="button subtle" id="comments-next" type="button" disabled>Trang sau</button>
+              </div>
+            </div>
+            <ul class="comment-list" id="comments-list" aria-label="Bình luận đã chuẩn hóa"></ul>
+          </section>
+        </div>
+        <p class="card data-card" id="dataset-empty" role="status">Đang kiểm tra dữ liệu train…</p>
+      </section>
+      <section class="view" id="thuc-nghiem" aria-labelledby="runs-title" hidden>
+        <div class="page-heading">
+          <h1 id="runs-title">Thực nghiệm mô hình</h1>
+          <p>So sánh sáu mô hình trên cùng tập test T2.</p>
+        </div>
+        <section class="card experiment-card" id="current-training" aria-labelledby="current-training-title" data-consensus-visible hidden>
+          <div class="card-heading"><h2 id="current-training-title">Kết quả trên tập test T2</h2></div>
+          <p class="table-note" id="current-training-note">Huấn luyện trên <strong data-dataset-size="train_size">—</strong> bình luận sau gộp. T2 có <strong data-dataset-size="test_size">—</strong> câu. <span data-t2-status>Chờ kết quả ba seed</span>.</p>
+          <div class="table-scroll">
+            <table class="current-models" aria-describedby="current-training-note t2-seeds">
+              <thead><tr><th scope="col">Mô hình</th><th scope="col">Accuracy</th><th scope="col">Macro-Precision</th><th scope="col">Macro-Recall</th><th scope="col">Macro-F1</th></tr></thead>
+              <tbody id="current-model-rows"></tbody>
+            </table>
+          </div>
+          <p class="table-note" id="t2-seeds" hidden></p>
+        </section>
+        <section class="card data-card" id="t2-matrix-panel" aria-labelledby="t2-matrix-title" hidden>
+          <h2 id="t2-matrix-title">Ma trận nhầm lẫn</h2>
+          <div class="matrix-controls">
+            <div class="model-picker"><label for="t2-matrix-model">Mô hình</label><select id="t2-matrix-model"></select></div>
+            <div class="model-picker"><label for="t2-matrix-seed">Seed</label><select id="t2-matrix-seed"></select></div>
+          </div>
+          <p class="table-note" id="t2-matrix-guide">Hàng là nhãn thực tế, cột là nhãn dự đoán. Các ô được tô màu là số dự đoán đúng.</p>
+          <div class="table-scroll">
+            <table class="confusion-matrix" aria-describedby="t2-matrix-guide">
+              <thead><tr><th scope="col">Nhãn thực tế</th><th scope="col">POS</th><th scope="col">NEG</th><th scope="col">NEU</th></tr></thead>
+              <tbody id="t2-matrix-rows"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

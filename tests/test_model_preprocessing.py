@@ -11,6 +11,7 @@ import unittest
 from src.preprocessing import preprocess
 from src.preprocessing.model import (ModelOptions, ModelText, model_view, text_model,
                                      normalize_teencode, reduce_elongation)
+from src.models.core import GOLD_CONFIG, v2_baseline_model
 from src.models.preprocessing_cv import estimator, fit_fold, fold_plan, TOKEN_PATTERN
 
 
@@ -77,6 +78,13 @@ class ModelPreprocessingTests(unittest.TestCase):
     def test_punctuation_is_kept_as_tokens(self):
         out = text_model('PHIM hay!!! không?', ModelOptions(segment=False))
         self.assertEqual(out, 'phim hay ! ! ! không ?')
+
+    def test_official_v2_baselines_keep_input_abbreviations(self):
+        for name in GOLD_CONFIG:
+            with self.subTest(name=name):
+                preprocess_input = v2_baseline_model(name).named_steps['preprocessing']
+                self.assertEqual(preprocess_input.transform(['KO hông hayyy!!! :D 👍🏽']),
+                                 ['ko hông hay ! ! ! :D 👍🏽'])
 
     def test_pyvi_and_no_pyvi_control(self):
         self.assertEqual(text_model('diễn xuất không hay'), 'diễn_xuất không hay')

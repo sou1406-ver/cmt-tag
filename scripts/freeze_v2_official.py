@@ -2,16 +2,18 @@
 
 import argparse
 from collections import Counter
+from dataclasses import asdict
 from pathlib import Path
 
 from scripts.chuan_hoa_binh_luan_v2 import normalize_v2, technical_text
 from src.annotation.pilot import fingerprints, near_any, reference_index
 from src.dataset.common import ROOT, load, normal, read_jsonl, save, seal, sha, staged, verify, write_jsonl
-from src.models.core import GOLD_CONFIG, LABELS
+from src.models.core import GOLD_CONFIG, LABELS, V2_BASELINE_OPTIONS
 
 
 TECHNICAL_SNAPSHOT = ROOT / 'outputs/02_Du_lieu_va_nhan/05_Chuan_hoa_ky_thuat_V2'
 SCORE_GROUPS = {'T_original': 189, 'T_supplement': 424}
+INPUT_ROLES = {'normalize_v2': 'primary', 'original': 'secondary'}
 
 
 def freeze(snapshot, output, input_view):
@@ -37,6 +39,7 @@ def freeze(snapshot, output, input_view):
     test_exact = tuple({normal(text) for text in view} for view in (original, normalized))
     test_near = tuple(reference_index(fingerprints(text) for text in view) for view in (original, normalized))
     text_index = ('original', 'normalize_v2').index(input_view)
+    input_role = INPUT_ROLES[input_view]
 
     def model_row(row, text):
         return dict(id=row['comment_id'], post_id=row['post_id'], movie_id=row['movie_id'],
@@ -63,7 +66,11 @@ def freeze(snapshot, output, input_view):
 
     proofs = ROOT / 'data/local_models/v2_fresh_checkpoints'
     checkpoints = {name: load(proofs / f'{name}.json') for name in ('phobert', 'visobert')}
-    config = dict(input_view=input_view, labels=LABELS, baselines=GOLD_CONFIG,
+    config = dict(input_view=input_view, input_role=input_role, evaluation_views=INPUT_ROLES,
+                  labels=LABELS, baselines=GOLD_CONFIG,
+                  baseline_preprocessing=dict(entrypoint='src.models.core.v2_baseline_model',
+                                              lowercase=True, preserve_emoji_emoticons=True,
+                                              **asdict(V2_BASELINE_OPTIONS)),
                   checkpoints={model: {key: proof[key] for key in ('repository', 'revision', 'files')}
                                for model, proof in checkpoints.items()},
                   seeds=[20261123, 20261124, 20261125], epochs=4, learning_rate=2e-5,
@@ -75,23 +82,24 @@ def freeze(snapshot, output, input_view):
         write_jsonl(folder / 'train.local.jsonl', train)
         write_jsonl(folder / 'T2.local.jsonl', test)
         seal(folder, dict(kind='V2_OFFICIAL_FROZEN_INPUTS', scored=False, input_view=input_view,
+                          input_role=input_role, evaluation_views=INPUT_ROLES,
                           source_sha256=sha(snapshot / 'manifest.json'),
                           T2_source_manifest_sha256=source['t2_manifest_sha256'],
                           code_sha256={path: sha(ROOT / path) for path in (
                               'scripts/freeze_v2_official.py', 'scripts/chuan_hoa_binh_luan_v2.py',
-                              'src/annotation/pilot.py', 'src/models/core.py',
-                              'src/models/transformer_demo.py')},
+                              'src/annotation/pilot.py', 'src/dataset/common.py',
+                              'src/models/core.py', 'src/preprocessing/model.py')},
                           train_candidates=len(candidates), train_size=len(train),
                           train_labels=dict(Counter(row['label'] for row in train)),
                           exclusions=dict(exclusions), test_size=len(test), test_groups=SCORE_GROUPS))
     manifest = verify(output)
-    print({key: manifest[key] for key in ('input_view', 'train_size', 'train_labels', 'exclusions', 'test_size')})
+    print({key: manifest[key] for key in ('input_view', 'input_role', 'train_size', 'train_labels', 'exclusions', 'test_size')})
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--snapshot', type=Path, default=TECHNICAL_SNAPSHOT)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--input-view', choices=('original', 'normalize_v2'), required=True)
+    parser.add_argument('--input-view', choices=tuple(INPUT_ROLES), required=True)
     args = parser.parse_args()
     freeze(args.snapshot, args.output, args.input_view)

@@ -13,11 +13,13 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import FunctionTransformer
 from sklearn.svm import LinearSVC
 
 from src.annotation.core import load_release, now, save
 from src.data.importers import digest
 from src.data.schema import gold_label
+from src.preprocessing.model import ModelOptions, text_model
 
 LABELS=['POS','NEG','NEU']
 
@@ -27,6 +29,8 @@ GOLD_CONFIG={
     'tfidf_word_svm':{'feature':'word','model':'svm','ngram_range':[1,2],'class_weight':'balanced','C':1.0},
     'tfidf_char_svm':{'feature':'char_wb','model':'svm','ngram_range':[3,5],'class_weight':'balanced','C':1.0},
 }
+
+V2_BASELINE_OPTIONS = ModelOptions(teencode=False, elongation=True, punctuation=True, segment=False)
 
 
 def gold_model(name):
@@ -40,6 +44,17 @@ def gold_model(name):
         vec=TfidfVectorizer(analyzer='char_wb',ngram_range=(3,5)) if cfg['feature']=='char_wb' else TfidfVectorizer(ngram_range=(1,2),token_pattern=r'(?u)\b\w+\b')
         estimator=LinearSVC(C=1.0,class_weight='balanced',random_state=20261113,max_iter=20000)
     return Pipeline([('vectorizer',vec),('model',estimator)])
+
+
+def _v2_baseline_texts(texts):
+    return [text_model(text, V2_BASELINE_OPTIONS) for text in texts]
+
+
+def v2_baseline_model(name):
+    """Apply the same text processing to both official V2 input variants."""
+    estimator = gold_model(name)
+    preprocessing = FunctionTransformer(_v2_baseline_texts)
+    return Pipeline([('preprocessing', preprocessing), *estimator.steps])
 
 
 def confusion_png(path,matrix):

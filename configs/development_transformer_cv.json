@@ -1,0 +1,20 @@
+{
+  "models": ["phobert", "visobert"],
+  "conditions": ["human_only", "human_plus_silver"],
+  "seed": 20261113,
+  "n_splits": 5,
+  "epochs": 3,
+  "batch_size": 8,
+  "max_length": 128,
+  "learning_rate": 0.00002,
+  "weight_decay": 0.01,
+  "threads": 2,
+  "workers": 4,
+  "selection": "Reuse the sealed classical-CV selection and exact paired fold rosters",
+  "initialization": "Fresh pinned pretrained weights on every fold, never demo checkpoints",
+  "epoch_selection": "Fixed final epoch; no validation-based selection",
+  "text_recipe": "Minimal source view preserving case; PyVi 0.1.1 for PhoBERT only; same in both conditions",
+  "gold_allowed": false,
+  "approved_release": false,
+  "save_fold_weights": false
+}

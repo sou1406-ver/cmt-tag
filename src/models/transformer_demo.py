@@ -23,6 +23,39 @@ def text_view(text,name):
     return text
 
 
+def fit_prepared(name,snapshot,texts,labels,config,emit=print):
+    """Fresh pretrained initialization; caller supplies exactly-once model views."""
+    import numpy as np
+    import torch
+    from transformers import AutoTokenizer,AutoModelForSequenceClassification
+    if not texts or len(texts)!=len(labels) or not set(labels)<=set(LABELS):raise ValueError('Invalid training rows')
+    torch.set_num_threads(config['threads'])
+    random.seed(config['seed']);np.random.seed(config['seed']);torch.manual_seed(config['seed'])
+    tokenizer=AutoTokenizer.from_pretrained(snapshot,local_files_only=True,trust_remote_code=False,use_fast=name!='phobert')
+    model=AutoModelForSequenceClassification.from_pretrained(snapshot,local_files_only=True,
+        trust_remote_code=False,num_labels=3,id2label=dict(enumerate(LABELS)),label2id={v:k for k,v in enumerate(LABELS)})
+    # Training must never write through a loader's file-backed parameter storage.
+    # Explicitly detach every parameter from pretrained cache/memory maps.
+    with torch.no_grad():
+        for parameter in model.parameters():parameter.data=parameter.detach().clone()
+    targets=torch.tensor([LABELS.index(label) for label in labels])
+    optimizer=torch.optim.AdamW(model.parameters(),lr=config['learning_rate'],weight_decay=config['weight_decay'])
+    generator=torch.Generator().manual_seed(config['seed']);losses=[];started=time.perf_counter()
+    model.train()
+    for epoch in range(config['epochs']):
+        total=0.;seen=0;order=torch.randperm(len(texts),generator=generator).tolist()
+        for start in range(0,len(texts),config['batch_size']):
+            ids=order[start:start+config['batch_size']]
+            batch=tokenizer([texts[i] for i in ids],padding=True,truncation=True,max_length=config['max_length'],return_tensors='pt')
+            optimizer.zero_grad(set_to_none=True);loss=model(**batch,labels=targets[ids]).loss
+            if not torch.isfinite(loss):raise ValueError('Nonfinite training loss')
+            loss.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),1.0);optimizer.step()
+            total+=loss.item()*len(ids);seen+=len(ids)
+            if start%160==0:emit(f'epoch {epoch+1}/{config["epochs"]}, {seen}/{len(texts)}',flush=True)
+        losses.append(total/seen);emit(f'epoch {epoch+1} loss={losses[-1]:.4f}',flush=True)
+    return model,tokenizer,losses,time.perf_counter()-started
+
+
 def train(name,output=None,emit=print):
     import numpy as np
     import torch
@@ -44,39 +77,16 @@ def train(name,output=None,emit=print):
     snapshot=snapshot_download(REPOS[name],revision=revision,token=False,
         cache_dir=ROOT/'data/local_models/demo_cache',allow_patterns=[weights,'config.json',
         'tokenizer*','special_tokens_map.json','vocab.txt','bpe.codes','sentencepiece.bpe.model'])
-    tokenizer=AutoTokenizer.from_pretrained(snapshot,local_files_only=True,trust_remote_code=False,
-                                           use_fast=name!='phobert')
-    model=AutoModelForSequenceClassification.from_pretrained(snapshot,local_files_only=True,
-        trust_remote_code=False,num_labels=3,id2label=dict(enumerate(LABELS)),
-        label2id={v:k for k,v in enumerate(LABELS)})
     texts=[text_view(r['text_minimal'],name) for r in rows]
-    labels=torch.tensor([LABELS.index(r['human_label']) for r in rows])
-    optimizer=torch.optim.AdamW(model.parameters(),lr=CONFIG['learning_rate'],weight_decay=CONFIG['weight_decay'])
-    generator=torch.Generator().manual_seed(CONFIG['seed'])
-    epoch_losses=[];started=time.perf_counter()
-    model.train()
-    for epoch in range(CONFIG['epochs']):
-        total=0.;seen=0
-        order=torch.randperm(len(rows),generator=generator).tolist()
-        for start in range(0,len(rows),CONFIG['batch_size']):
-            ids=order[start:start+CONFIG['batch_size']]
-            batch=tokenizer([texts[i] for i in ids],padding=True,truncation=True,
-                            max_length=CONFIG['max_length'],return_tensors='pt')
-            optimizer.zero_grad(set_to_none=True)
-            loss=model(**batch,labels=labels[ids]).loss
-            if not torch.isfinite(loss):raise ValueError('Nonfinite training loss')
-            loss.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),1.0);optimizer.step()
-            total+=loss.item()*len(ids);seen+=len(ids)
-            if start%80==0:emit(f'{name}: epoch {epoch+1}/3, {seen}/425',flush=True)
-        epoch_losses.append(total/seen)
-        emit(f'{name}: epoch {epoch+1} loss={epoch_losses[-1]:.4f}',flush=True)
+    labels=[r['human_label'] for r in rows]
+    model,tokenizer,epoch_losses,elapsed=fit_prepared(name,snapshot,texts,labels,CONFIG,emit)
     if any(sha(p)!=h for p,h in inputs.items()):raise ValueError('Development input changed')
     with staged(output) as out:
         model.save_pretrained(out,safe_serialization=True);tokenizer.save_pretrained(out)
         save(out/'model_info.json',dict(status='DEVELOPMENT_DEMO_ONLY',name=name,train_records=425,
             train_ids=[r['record_id'] for r in rows],inputs_sha256=inputs,base_model=REPOS[name],
             revision=revision,config=CONFIG,labels=LABELS,train_loss=epoch_losses,
-            elapsed_seconds=time.perf_counter()-started,torch=torch.__version__,transformers=transformers.__version__,
+            elapsed_seconds=elapsed,torch=torch.__version__,transformers=transformers.__version__,
             preprocessing='minimal + PyVi 0.1.1 (not RDRSegmenter)' if name=='phobert' else 'minimal',
             preprocessing_sha256=sha(ROOT/'src/preprocessing/__init__.py'),
             implementation_sha256=sha(Path(__file__)),gold_data_used=False,metrics_computed=False,
